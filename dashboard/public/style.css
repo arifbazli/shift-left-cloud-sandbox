@@ -1,9 +1,8 @@
 /* ============================================================
    Salus · Shift-Left Sandbox — dashboard
    Design reference: dark teal-accent minimal, Inter + JetBrains Mono
+   Fonts: system stack only — no external @import (avoids CSP/offline issues)
    ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
   --bg:            #0a0e0d;
