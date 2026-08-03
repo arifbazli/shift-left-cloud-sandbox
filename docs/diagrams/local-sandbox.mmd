@@ -1,31 +1,35 @@
 flowchart LR
-    subgraph L["🖥️ Local Sandbox"]
+    subgraph L["LOCAL SANDBOX"]
         direction TB
-        TF["<b>Terraform + tfsec</b>"]
-        FL["<b>Floci Podman</b>"]
-        CK["<b>Checks</b>"]
-        AG["<b>Bounded agent</b>"]
-        SN["<b>Snapshot + act</b>"]
+        TF["Terraform + tfsec"]
+        FL["Floci Podman"]
+        CK["Checks"]
+        AG["Bounded agent"]
+        SN["Snapshot + act"]
         TF --> FL --> CK --> AG --> SN
     end
 
-    subgraph SY["🔒 Sync"]
+    subgraph SY["SYNC"]
         direction TB
-        GATE["<b>Credential gate</b>"]
+        GATE["Credential gate"]
         SN --> GATE
     end
 
-    subgraph C["☁️ Public"]
+    subgraph C["PUBLIC"]
         direction TB
-        REPO[("<b>GitHub repo</b>")]
-        PAGES["<b>Cloudflare Pages</b>"]
+        REPO[("GitHub repo")]
+        PAGES["Cloudflare Pages"]
         REPO --> PAGES
     end
 
     GATE -->|"push"| REPO
 
-    style L fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style SY fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-    style C fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-    style GATE fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
-    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    classDef section fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:1px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef diamond fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+
+    class L,SY,C section
+    class TF,FL,CK,AG,SN black
+    class GATE diamond
+    class REPO,PAGES white

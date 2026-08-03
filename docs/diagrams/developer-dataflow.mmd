@@ -1,37 +1,45 @@
 flowchart LR
-    subgraph P["① ② Plan"]
-        direction LR
-        SCAN["<b>scan.sh</b>"]
-        GATE{"<b>gate</b>"}
-        DEP["<b>deploy.sh</b>"]
-        SCAN --> GATE -->|"PASS"| DEP
+    subgraph S1["① ② GATE &amp; APPLY"]
+        direction TB
+        SCAN["scan.sh"]
+        GATE{"GATE"}
+        APPLY["deploy.sh"]
+        SCAN --> GATE -->|"PASS"| APPLY
     end
 
-    subgraph V["③ Verify"]
-        direction LR
-        V1["<b>verify.sh</b>"]
+    subgraph S2["③ VERIFY"]
+        direction TB
+        V1["verify.sh"]
     end
 
-    subgraph D["④ Drift"]
-        direction LR
-        D1["<b>drift-check.sh</b>"]
+    subgraph S3["④ DRIFT"]
+        direction TB
+        D1["drift-check.sh"]
     end
 
-    subgraph R["⑤ ⑥ Respond"]
-        direction LR
-        AG["<b>agent-loop.sh</b>"]
-        DA[("<b>JSON</b>")]
-        LOC["<b>pages dev</b>"]
-        LIVE["<b>pages deploy</b>"]
-        AG --> DA --> LOC
-        DA --> LIVE
+    subgraph S4["⑤ ⑥ RESPOND"]
+        direction TB
+        AG["agent-loop.sh"]
+        J[("JSON")]
+        DEV["pages dev"]
+        DEP["pages deploy"]
+        AG --> J
+        J --> DEV
+        J --> DEP
     end
 
-    DEP --> V1 --> D1 -->|"exit 2"| AG
-    GATE -. "blocks" .-> DEP
+    APPLY --> V1 --> D1 -->|"drift"| AG
 
-    style P fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style V fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style D fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style R fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
-    style GATE fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
+    classDef section fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:1px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef diamond fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef store fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+
+    class S1,S2,S3,S4 section
+    class SCAN,APPLY black
+    class V1,D1 white
+    class AG,DEV,DEP gray
+    class GATE diamond
+    class J store
