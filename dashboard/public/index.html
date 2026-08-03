@@ -34,25 +34,155 @@
         <span class="card-label">tfsec gate</span>
         <span class="pill idle" id="pill-scan">—</span>
       </div>
- <!-- DEPLOY -->
+
+      <div id="skel-scan" class="skeleton-wrap">
+        <div class="skeleton skel-h"></div>
+        <div class="skeleton skel-m"></div>
+      </div>
+
+      <div id="body-scan" hidden>
+        <div class="stat-row">
+          <div class="stat-item">
+            <span class="stat-num danger" id="cnt-critical">0</span>
+            <span class="stat-cap">critical</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num warn" id="cnt-high">0</span>
+            <span class="stat-cap">high</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="cnt-medium">0</span>
+            <span class="stat-cap">medium</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num dim" id="cnt-low">0</span>
+            <span class="stat-cap">low</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num dim" id="cnt-ignored">0</span>
+            <span class="stat-cap">ignored</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="empty-scan" class="empty-state" hidden>
+        No data — run <code>scripts/scan.sh</code>
+      </div>
+
+      <div class="list-row" style="margin-top:10px;padding-top:10px">
+        <span class="list-key">last run</span>
+        <span class="list-mono" id="scan-ts">—</span>
+        <span class="list-ts" id="scan-ver">tfsec —</span>
+      </div>
+    </div>
+
+    <!-- DEPLOY -->
     <div class="card" id="card-deploy">
       <div class="card-head">
         <span class="card-label">last deploy</span>
         <span class="pill idle" id="pill-deploy">—</span>
       </div>
- <!-- VERIFY -->
+
+      <div id="skel-deploy" class="skeleton-wrap">
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-s"></div>
+      </div>
+
+      <div id="body-deploy" hidden>
+        <div class="list-row">
+          <span class="list-key">endpoint</span>
+          <span class="list-mono" id="dep-endpoint">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">resources</span>
+          <span class="list-mono" id="dep-resources">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">pages</span>
+          <span class="list-mono" id="dep-gate">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">timestamp</span>
+          <span class="list-mono" id="dep-ts">—</span>
+        </div>
+      </div>
+
+      <div id="empty-deploy" class="empty-state" hidden>
+        No data — run <code>scripts/deploy.sh</code>
+      </div>
+    </div>
+
+    <!-- VERIFY -->
     <div class="card" id="card-verify">
       <div class="card-head">
         <span class="card-label">verify (api direct)</span>
         <span class="pill idle" id="pill-verify">—</span>
       </div>
- <!-- DRIFT -->
+
+      <div id="skel-verify" class="skeleton-wrap">
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-s"></div>
+      </div>
+
+      <div id="body-verify" hidden>
+        <div class="list-row">
+          <span class="list-key">endpoint</span>
+          <span class="list-mono" id="ver-endpoint">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">passed</span>
+          <span class="list-mono" id="ver-passed">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">detail</span>
+          <span class="list-mono" id="ver-detail">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">timestamp</span>
+          <span class="list-mono" id="ver-ts">—</span>
+        </div>
+      </div>
+
+      <div id="empty-verify" class="empty-state" hidden>
+        No data — run <code>scripts/verify.sh</code>
+      </div>
+    </div>
+
+    <!-- DRIFT -->
     <div class="card" id="card-drift">
       <div class="card-head">
         <span class="card-label">drift</span>
         <span class="pill idle" id="pill-drift">—</span>
       </div>
- <!-- AGENT LOOP -->
+
+      <div id="skel-drift" class="skeleton-wrap">
+        <div class="skeleton skel-h"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+      </div>
+
+      <div id="body-drift" hidden>
+        <div id="drift-changes"></div>
+      </div>
+
+      <div id="empty-drift" class="empty-state" hidden>
+        No data — run <code>scripts/drift-check.sh</code>
+      </div>
+
+      <div class="list-row" style="margin-top:10px;padding-top:10px">
+        <span class="list-key">class</span>
+        <span class="list-mono" id="drift-class">—</span>
+        <span class="list-ts" id="drift-count">0 changes</span>
+      </div>
+      <div class="list-row">
+        <span class="list-key">last run</span>
+        <span class="list-mono" id="drift-ts">—</span>
+      </div>
+    </div>
+
+    <!-- AGENT LOOP -->
     <div class="card" id="card-agent">
       <div class="card-head">
         <span class="card-label">agent loop</span>
