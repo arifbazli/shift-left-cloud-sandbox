@@ -158,5 +158,12 @@
       }
     },
     "state_snapshot": "state-snapshots/terraform.tfstate.20260803T020245Z"
+  },
+  {
+    "timestamp": "2026-08-03T02:48:08Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://c24c7409.shift-left-cloud-sandbox.pages.dev"
   }
 ]

@@ -82,10 +82,31 @@ Also required:
 |---|---|---|
 | podman | 5.x | rootless; DOCKER_HOST=podman.socket if you use the docker CLI |
 | terraform | 1.5+ | `terraform init` will pull `hashicorp/aws ~> 5.0` |
-| wrangler | 4.x | Cloudflare Pages local dev server |
+| wrangler | 4.x | Cloudflare Pages local dev server + Pages deploy |
 | jq | 1.7+ | JSON wrangling in scripts |
 | podman-compose | 1.6+ | OR `docker compose` with `DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock` |
 | python3 | 3.10+ | only used by the dashboard's tiny post-processor, no deps |
+
+## Live dashboard
+
+The dashboard is published to Cloudflare Pages:
+
+- **Live URL: https://shift-left-cloud-sandbox.pages.dev** (apex, always points at the latest production deployment)
+- Current deployment hash: `c24c7409` → `https://c24c7409.shift-left-cloud-sandbox.pages.dev`
+
+Pages auth is a **one-time manual prerequisite** that no script handles. On
+the machine that publishes, run **once**:
+
+```bash
+wrangler login
+```
+
+That opens a browser, you click "Allow", and wrangler caches an OAuth token
+in `~/.config/.wrangler/`. After that, `scripts/deploy-dashboard.sh` and
+the chain inside `scripts/sync-dashboard.sh` will publish to Pages without
+any further login. The token is never committed, never logged, never echoed.
+Alternatively, set `CLOUDFLARE_API_TOKEN=<token>` in your shell env (do not
+paste the value into chat); wrangler will pick it up automatically.
 
 ## What "deliberate misconfig" means
 
@@ -140,6 +161,48 @@ control.
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph LOCAL["🖥️ Local Sandbox (WSL, Podman) — never internet-reachable"]
+        direction TB
+        TF["Terraform + tfsec<br/><i>scan.sh gate</i>"]
+        FL["Floci (Podman)<br/><i>deploy.sh</i>"]
+        CK["Continuous checks<br/><i>drift + verify + health</i>"]
+        AG["Bounded agent<br/><i>checks scan.sh first</i>"]
+        SN["Snapshot + act<br/><i>backup tfstate before any change</i>"]
+        TF --> FL --> CK --> AG --> SN
+    end
+
+    subgraph SYNC["🔒 Sync (outbound only)"]
+        GATE["Credential scan gate<br/><i>refuses on any secret/ARN match</i>"]
+        SN -->|"JSON snapshots only"| GATE
+    end
+
+    GATE -->|"git push"| REPO[("GitHub repo<br/>arifbazli/shift-left-cloud-sandbox")]
+    REPO -->|"auto-build"| PAGES["🌐 Cloudflare Pages<br/>shift-left-cloud-sandbox.pages.dev"]
+
+    subgraph GH["☁️ GitHub cloud loop"]
+        direction TB
+        PUSH["Push to GitHub"] --> CI["CI pipeline<br/><i>scan+deploy+verify</i>"]
+        CI --> TRI["Triage agent<br/><i>gh-aw → issue</i>"]
+        TRI --> PI["Local harness → PR<br/><i>minimax-m3, verify gate</i>"]
+        PI --> HR["Human review + merge<br/><i>cannot self-approve</i>"]
+    end
+
+    TF -.->|"push"| PUSH
+    HR -.->|"merged → redeploy"| FL
+
+    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style GH fill:#1a1030,stroke:#a855f7,color:#f0e6ff
+    style SYNC fill:#1a1a1a,stroke:#888,color:#ddd
+    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style REPO fill:#1a1a1a,stroke:#888,color:#ddd
+```
+
+For the repo file layout, see [Repo layout](#repo-layout) below.
+
+## Repo layout
+
 ```
 floci-stack/
 ├── terraform/             VPC + S3 + IAM + SG + flow logs. Endpoint-overridable.
@@ -157,22 +220,14 @@ floci-stack/
 │   ├── verify.sh          curl floci directly, confirm resources exist
 │   ├── drift-check.sh     terraform plan -detailed-exitcode → dashboard JSON
 │   ├── agent-loop.sh      bounded remediation loop (allowlist only)
-│   └── sync-dashboard.sh  hard-gated publish of dashboard JSON only
+│   ├── deploy-dashboard.sh  wrangler pages deploy dashboard/public
+│   └── sync-dashboard.sh  hard-gated publish of dashboard JSON + redeploy
 ├── dashboard/
 │   └── public/
 │       ├── index.html     ← three JSON files as static assets, no KV/D1
 │       ├── app.js
-│       └── data/
-│           ├── tfsec-last.json       (written by scan.sh)
-│           ├── tfsec-history.json    (written by scan.sh)
-│           ├── deploy-last.json      (written by deploy.sh)
-│           ├── deploy-history.json   (written by deploy.sh)
-│           ├── verify-pending.json   (written by deploy.sh, consumed by verify.sh)
-│           ├── verify-last.json      (written by verify.sh)
-│           ├── verify-history.json   (written by verify.sh)
-│           ├── drift-last.json       (written by drift-check.sh)
-│           ├── drift-history.json    (written by drift-check.sh)
-│           └── agent-actions.json    (written by agent-loop.sh)
+│       ├── style.css
+│       └── data/          (10 JSON files, written by the scripts above)
 ├── wrangler.toml          Cloudflare Pages project config (no KV/D1/Workers)
 ├── podman-compose.yml     floci-core + floci-ui only
 └── README.md              (this file)

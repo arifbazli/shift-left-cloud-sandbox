@@ -77,9 +77,13 @@ fi
 # Add ONLY the dashboard JSON files
 git add dashboard/public/data/
 
-# If nothing changed, exit 0 cleanly
+# ---- Early-exit on no-op ----------------------------------------------
+# If the JSON diff is empty (no real change since last sync), skip the
+# whole pipeline: no credential gate, no git push, no Cloudflare deploy.
+# This avoids useless rebuilds on every cron cycle. Exit 0 = nothing to do.
 if git diff --cached --quiet; then
   echo "No dashboard JSON changes to sync."
+  echo "  (skipping credential gate, git push, and Cloudflare deploy)"
   exit 0
 fi
 
@@ -175,6 +179,25 @@ git commit -m "$commit_msg"
 echo ""
 echo "=== pushing ==="
 git push origin HEAD
+
+echo ""
+echo "=== republishing dashboard ==="
+# After the credential gate has passed AND the JSON has been pushed to
+# GitHub, republish the live dashboard on Cloudflare Pages. The deploy
+# script is a separate step so a deploy failure doesn't unwind the git push.
+# SEC_INTENT: deploy-dashboard.sh is read-only w.r.t. the gate — it never
+# reads secrets, never echoes CLOUDFLARE_API_TOKEN, never touches terraform/.
+if [[ -x "$SCRIPT_DIR/deploy-dashboard.sh" ]]; then
+  if "$SCRIPT_DIR/deploy-dashboard.sh" >/dev/null 2>&1; then
+    echo "  live dashboard republished."
+  else
+    echo "WARN: deploy-dashboard.sh failed (exit $?)." >&2
+    echo "  The git push succeeded; the live dashboard may be stale." >&2
+    echo "  Re-run: $SCRIPT_DIR/deploy-dashboard.sh" >&2
+  fi
+else
+  echo "WARN: $SCRIPT_DIR/deploy-dashboard.sh missing or not executable." >&2
+fi
 
 echo ""
 echo "=== sync complete ==="

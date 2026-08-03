@@ -288,8 +288,65 @@ async function refresh() {
   renderAgent(fetched.agent);
   renderDeploy(fetched.deploy);
   renderVerify(fetched.verify);
+  renderSyncIndicator(fetched);
   $('meta-refresh').textContent = fmtShortTime(new Date().toISOString());
 }
 
+// Holds the latest timestamp we observed across payloads. Updated by
+// renderSyncIndicator; consulted by the 1-second tick.
+let __latestSyncTs = null;
+
+function renderSyncIndicator(payloads) {
+  const staleWarnMs = 2 * 60 * 1000; // 2 minutes past = warn
+  let latestTs = null;
+  for (const k of Object.keys(payloads)) {
+    const p = payloads[k];
+    if (!p || p.__error) continue;
+    const ts = p.timestamp || (Array.isArray(p) && p.length > 0 ? p[p.length - 1].timestamp : null);
+    if (ts) {
+      const t = Date.parse(ts);
+      if (!isNaN(t) && (latestTs === null || t > latestTs)) latestTs = t;
+    }
+  }
+  __latestSyncTs = latestTs;
+  paintSyncIndicator();
+}
+
+function paintSyncIndicator() {
+  const el = $('meta-synced');
+  const warn = $('meta-stale');
+  if (__latestSyncTs === null) {
+    el.textContent = 'never';
+    warn.classList.remove('visible');
+    warn.removeAttribute('data-age');
+    return;
+  }
+  const ageMs = Date.now() - __latestSyncTs;
+  el.textContent = fmtAge(ageMs);
+  if (ageMs > 5 * 60 * 1000) {
+    warn.classList.add('visible');
+    warn.setAttribute('data-age', 'critical');
+  } else if (ageMs > 2 * 60 * 1000) {
+    warn.classList.add('visible');
+    warn.setAttribute('data-age', 'warn');
+  } else {
+    warn.classList.remove('visible');
+    warn.removeAttribute('data-age');
+  }
+}
+
+function fmtAge(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m ago`;
+}
+
 refresh();
+// Re-fetch from server every REFRESH_MS to pick up new JSON.
 setInterval(refresh, REFRESH_MS);
+// Re-paint the staleness counter every second so "Xs ago" stays fresh
+// even between fetches. This does NOT change any data — just the label.
+setInterval(paintSyncIndicator, 1000);
