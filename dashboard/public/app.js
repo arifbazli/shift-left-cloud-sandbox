@@ -392,11 +392,26 @@ async function fetchAll() {
   const [tfsec, deploy, verify, drift, agent] = await Promise.all(
     FETCH_TARGETS.map(safeFetch)
   );
-  renderScan(tfsec);
-  renderDeploy(deploy);
-  renderVerify(verify);
-  renderDrift(drift);
-  renderAgent(agent);
+  // Wrap each renderer in try/catch so one bad JSON can't prevent the others
+  // from rendering. Surfaces errors in console instead of leaving cards blank.
+  const renderers = [
+    ['scan',   renderScan,   tfsec],
+    ['deploy', renderDeploy, deploy],
+    ['verify', renderVerify, verify],
+    ['drift',  renderDrift,  drift],
+    ['agent',  renderAgent,  agent],
+  ];
+  for (const [name, fn, data] of renderers) {
+    try { fn(data); }
+    catch (e) {
+      console.error(`render${name} failed:`, e);
+      // Fall back to error state so the card at least shows something useful
+      try {
+        const pillEl = $(`pill-${name}`);
+        if (pillEl) setPill(`pill-${name}`, 'fail', 'ERROR');
+      } catch {}
+    }
+  }
   updateLatestTs([tfsec, deploy, verify, drift, agent]);
 }
 
