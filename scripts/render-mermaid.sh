@@ -106,6 +106,45 @@ mmdc \
   --quiet \
   --backgroundColor transparent
 
+# Post-process: inject CSS overrides for edge stroke and arrow markers.
+# mmdc's default edge stroke is 1px and markers are 8x8px — both become
+# invisible when the SVG is displayed at GitHub column width (~900px
+# vs native viewBox 1200-1700px scales everything down ~60%).
+#
+# Our overrides:
+#   .edge-thickness-normal   stroke-width: 2.5px (was 1px)
+#   .edge-thickness-thick    stroke-width: 4px    (was 3.5px)
+#   .edgePath .path          stroke-width: 2.5px (the actual edge lines)
+#   .flowchart-link          stroke-width: 2.5px
+#   marker                   markerWidth: 18, markerHeight: 18 (was 8)
+#   marker path             fill: #0a0a0a, stroke: #0a0a0a (black arrows)
+#
+# Insert these as a new <style> block right before </svg>. The
+# !important markers ensure they win against any default CSS.
+python3 - "$OUTPUT" <<'PYEOF'
+import re
+import sys
+output = sys.argv[1]
+with open(output, 'r') as f:
+    svg = f.read()
+marker_css = (
+    '<style>'
+    '#my-svg .edge-thickness-normal{stroke-width:2.5px !important;}'
+    '#my-svg .edge-thickness-thick{stroke-width:4px !important;}'
+    '#my-svg .edgePath .path{stroke-width:2.5px !important;}'
+    '#my-svg .flowchart-link{stroke-width:2.5px !important;}'
+    '#my-svg marker{markerWidth:18px !important;markerHeight:18px !important;}'
+    '#my-svg marker path{fill:#0a0a0a !important;stroke:#0a0a0a !important;}'
+    '#my-svg .arrowMarkerPath{fill:#0a0a0a !important;stroke:#0a0a0a !important;stroke-width:1.5 !important;}'
+    '</style>'
+)
+new_svg = re.sub(r'(</svg>)', marker_css + r'\1', svg, count=1)
+if new_svg == svg:
+    print('render-mermaid: WARNING: did not find </svg> in output, marker CSS not injected', file=sys.stderr)
+with open(output, 'w') as f:
+    f.write(new_svg)
+PYEOF
+
 if [[ ! -s "$OUTPUT" ]]; then
   echo "render-mermaid: output empty or missing: $OUTPUT" >&2
   exit 70
