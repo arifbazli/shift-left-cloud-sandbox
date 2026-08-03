@@ -51,8 +51,8 @@ flowchart LR
     E --> G
     F --> G
     G --> H[Cloudflare Pages]
-    style X fill:#3a1414,stroke:#e05252
-    style B fill:#1a1a1a,stroke:#f6c54b
+    style X fill:#fde2e2,stroke:#e05252,color:#7a1f1f
+    style B fill:#fff7d6,stroke:#f6c54b,color:#5a4400
 ```
 
 ## Repo layout

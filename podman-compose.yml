@@ -1,0 +1,34 @@
+# floci-core (LocalStack-compatible) for floci-stack
+# Usage:
+#   podman-compose up -d    # start
+#   podman-compose down     # stop
+#   podman-compose ps       # status
+#
+# This file exists so the README Quick Start works out of the box.
+# floci-core emulates AWS services on localhost:4566 — no real AWS calls.
+# Image: ghcr.io/floci/floci (community edition, Apache-2.0)
+
+services:
+  floci-core:
+    container_name: floci-core
+    image: ghcr.io/floci/floci:latest
+    ports:
+      - "4566:4566"   # edge service (S3, IAM, EC2, …)
+      - "4569:4569"   # future use
+    environment:
+      SERVICES: s3,iam,ec2,sts,cloudformation,logs
+      DEBUG: "0"
+      DATA_DIR: /var/lib/floci
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - floci-data:/var/lib/floci
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  floci-data:

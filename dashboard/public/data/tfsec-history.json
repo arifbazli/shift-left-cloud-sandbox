@@ -990,5 +990,39 @@
         "line": 209
       }
     ]
+  },
+  {
+    "timestamp": "2026-08-03T05:46:59Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
   }
 ]
