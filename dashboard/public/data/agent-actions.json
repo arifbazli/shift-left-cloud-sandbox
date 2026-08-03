@@ -328,5 +328,23 @@
     "action": "apply_drift",
     "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
     "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T06:11:42Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 100,
+      "interval_seconds": 30
+    }
+  },
+  {
+    "timestamp": "2026-08-03T06:11:42Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 100",
+    "loop": 1,
+    "max": 100
   }
 ]

@@ -281,5 +281,51 @@
     "source": "scripts/deploy-dashboard.sh",
     "project": "shift-left-cloud-sandbox",
     "url": "https://2abfa45b.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T06:09:59Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://26d72be1.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "20260803T061134Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-76a988ac921c3f526"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-da9d63ed"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-c79552a2"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T061134Z"
+  },
+  {
+    "timestamp": "2026-08-03T06:12:05Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://53dd91ba.shift-left-cloud-sandbox.pages.dev"
   }
 ]

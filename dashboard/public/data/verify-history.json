@@ -306,5 +306,49 @@
         "evidence": "<GetRoleResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><GetRoleResult><Role><Path>/</Path><RoleName>floci-app-role</RoleName><RoleId>AROAI7E9YKYIFA8HJO61</RoleId><Arn>arn:aws:iam::00000000"
       }
     ]
+  },
+  {
+    "timestamp": "2026-08-03T06:11:34Z",
+    "endpoint": "http://localhost:4566",
+    "total": 5,
+    "passed": 5,
+    "all_passed": true,
+    "results": [
+      {
+        "resource": "aws_vpc.main",
+        "id": "vpc-c79552a2",
+        "found": true,
+        "http_status": 200,
+        "evidence": "<DescribeVpcsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>f6aac684-9bf3-4d0f-af8a-211315e11057</requestId><vpcSet><item><vpcId>vpc-c79552a2</vpcId><state>available</state><cidr"
+      },
+      {
+        "resource": "aws_subnet.private",
+        "id": "subnet-da9d63ed",
+        "found": true,
+        "http_status": 200,
+        "evidence": "<DescribeSubnetsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>1455edb6-9341-4864-8572-f6cb28472b99</requestId><subnetSet><item><subnetId>subnet-da9d63ed</subnetId><subnetArn>arn"
+      },
+      {
+        "resource": "aws_security_group.app",
+        "id": "sg-76a988ac921c3f526",
+        "found": true,
+        "http_status": 200,
+        "evidence": "<DescribeSecurityGroupsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>82753a3c-499a-4855-82ca-c3d60ed1264e</requestId><securityGroupInfo><item><ownerId>000000000000</ownerId><gro"
+      },
+      {
+        "resource": "aws_s3_bucket.artifacts",
+        "id": "floci-artifacts-sandbox",
+        "found": true,
+        "http_status": 200,
+        "evidence": ""
+      },
+      {
+        "resource": "aws_iam_role.app",
+        "id": "floci-app-role",
+        "found": true,
+        "http_status": 200,
+        "evidence": "<GetRoleResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><GetRoleResult><Role><Path>/</Path><RoleName>floci-app-role</RoleName><RoleId>AROAI7E9YKYIFA8HJO61</RoleId><Arn>arn:aws:iam::00000000"
+      }
+    ]
   }
 ]
