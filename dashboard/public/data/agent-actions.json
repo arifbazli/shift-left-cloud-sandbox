@@ -1,0 +1,267 @@
+[
+  {
+    "timestamp": "2026-08-03T01:58:22Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 2,
+      "interval_seconds": 3
+    }
+  },
+  {
+    "timestamp": "2026-08-03T01:58:22Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 2",
+    "loop": 1,
+    "max": 2
+  },
+  {
+    "timestamp": "2026-08-03T01:58:29Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T01:58:32Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 2 / 2",
+    "loop": 2,
+    "max": 2
+  },
+  {
+    "timestamp": "2026-08-03T01:58:38Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T01:58:41Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 2 iterations",
+    "max_loops": 2
+  },
+  {
+    "timestamp": "2026-08-03T01:58:59Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T01:58:59Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T01:59:06Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T01:59:08Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-03T01:59:30Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T01:59:30Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T01:59:36Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T01:59:38Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:00:12Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T02:00:12Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:00:12Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "tfsec gate is FAIL (expected PASS). FROZEN drift reconciliation — restart still allowed.",
+    "gate": "FAIL"
+  },
+  {
+    "timestamp": "2026-08-03T02:00:14Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:00:32Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T02:00:32Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:00:32Z",
+    "kind": "action",
+    "action": "apply_drift",
+    "reason": "drift is 'safe' and tfsec gate is PASS. Taking snapshot and applying.",
+    "state_snapshot": "/home/arif_debian/floci-stack/terraform/state-snapshots/terraform.tfstate.20260803T020032Z.agent",
+    "loop": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:00:40Z",
+    "kind": "action",
+    "action": "apply_drift",
+    "reason": "terraform apply -auto-approve succeeded",
+    "state_snapshot": "/home/arif_debian/floci-stack/terraform/state-snapshots/terraform.tfstate.20260803T020032Z.agent",
+    "log_file": "/tmp/tmp.8QXmz5jNDV",
+    "success": true
+  },
+  {
+    "timestamp": "2026-08-03T02:00:42Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:01:23Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T02:01:23Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:01:23Z",
+    "kind": "no_action",
+    "action": "restart_container",
+    "reason": "container floci-core exists but is not running. About to restart.",
+    "container": "floci-core"
+  },
+  {
+    "timestamp": "2026-08-03T02:01:24Z",
+    "kind": "action",
+    "action": "restart_container",
+    "reason": "container floci-core restarted successfully",
+    "container": "floci-core",
+    "state_snapshot": "/home/arif_debian/floci-stack/terraform/state-snapshots/terraform.tfstate.20260803T020123Z.agent",
+    "action_taken": "podman restart"
+  },
+  {
+    "timestamp": "2026-08-03T02:01:37Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T02:01:39Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:02:53Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 2
+    }
+  },
+  {
+    "timestamp": "2026-08-03T02:02:53Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-03T02:03:00Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift classification is 'destructive' (only 'safe' is in the allowlist). Operator must investigate.",
+    "classification": "destructive"
+  },
+  {
+    "timestamp": "2026-08-03T02:03:02Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop completed 1 iterations",
+    "max_loops": 1
+  }
+]

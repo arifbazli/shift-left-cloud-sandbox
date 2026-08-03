@@ -1,0 +1,2441 @@
+[
+  {
+    "timestamp": "2026-08-03T01:54:23Z",
+    "result": "drift",
+    "drift_detected": true,
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:54:34Z",
+    "result": "drift",
+    "drift_detected": true,
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:55:06Z",
+    "result": "drift",
+    "drift_detected": true,
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:55:19Z",
+    "result": "drift",
+    "drift_detected": true,
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "drift": true
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:56:38Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:57:02Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:58:22Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:58:32Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:58:59Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_policy.fixtures_admin",
+        "type": "aws_iam_policy",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy_attachment.fixtures_admin_attach",
+        "type": "aws_iam_role_policy_attachment",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:59:23Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_policy.fixtures_admin",
+        "type": "aws_iam_policy",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy_attachment.fixtures_admin_attach",
+        "type": "aws_iam_role_policy_attachment",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T01:59:30Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_policy.fixtures_admin",
+        "type": "aws_iam_policy",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy_attachment.fixtures_admin_attach",
+        "type": "aws_iam_role_policy_attachment",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T02:01:29Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "data.aws_iam_policy_document.app_inline",
+        "type": "aws_iam_policy_document",
+        "actions": [
+          "read"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "data.aws_iam_policy_document.flow_logs_write",
+        "type": "aws_iam_policy_document",
+        "actions": [
+          "read"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "create"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T02:02:46Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  },
+  {
+    "timestamp": "2026-08-03T02:02:53Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "aws_flow_log.main",
+        "type": "aws_flow_log",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_iam_role.app",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role.flow_logs",
+        "type": "aws_iam_role",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.app_inline",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_iam_role_policy.flow_logs_write",
+        "type": "aws_iam_role_policy",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket.artifacts",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket.flow_logs",
+        "type": "aws_s3_bucket",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.artifacts",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_public_access_block.flow_logs",
+        "type": "aws_s3_bucket_public_access_block",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.artifacts",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_server_side_encryption_configuration.flow_logs",
+        "type": "aws_s3_bucket_server_side_encryption_configuration",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_s3_bucket_versioning.artifacts",
+        "type": "aws_s3_bucket_versioning",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group.app",
+        "type": "aws_security_group",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_security_group_rule.app_internal",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_tcp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_dns_udp",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.egress_https",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_security_group_rule.ssh_admin",
+        "type": "aws_security_group_rule",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": true
+      },
+      {
+        "address": "aws_subnet.private",
+        "type": "aws_subnet",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      },
+      {
+        "address": "aws_vpc.main",
+        "type": "aws_vpc",
+        "actions": [
+          "no-op"
+        ],
+        "has_security_path": false
+      }
+    ],
+    "plan_text_path": "data/drift-history.json"
+  }
+]

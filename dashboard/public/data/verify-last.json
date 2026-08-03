@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-08-03T02:02:45Z",
+  "endpoint": "http://localhost:4566",
+  "total": 5,
+  "passed": 5,
+  "all_passed": true,
+  "results": [
+    {
+      "resource": "aws_vpc.main",
+      "id": "vpc-c79552a2",
+      "found": true,
+      "http_status": 200,
+      "evidence": "<DescribeVpcsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>b8c1bd1d-d92a-4073-a8ba-7b803b9b77e1</requestId><vpcSet><item><vpcId>vpc-c79552a2</vpcId><state>available</state><cidr"
+    },
+    {
+      "resource": "aws_subnet.private",
+      "id": "subnet-da9d63ed",
+      "found": true,
+      "http_status": 200,
+      "evidence": "<DescribeSubnetsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>6d349a6e-2459-41ef-afb1-620f04ab087e</requestId><subnetSet><item><subnetId>subnet-da9d63ed</subnetId><subnetArn>arn"
+    },
+    {
+      "resource": "aws_security_group.app",
+      "id": "sg-76a988ac921c3f526",
+      "found": true,
+      "http_status": 200,
+      "evidence": "<DescribeSecurityGroupsResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><requestId>f6955eff-85eb-41bf-9e8b-174b89428a19</requestId><securityGroupInfo><item><ownerId>000000000000</ownerId><gro"
+    },
+    {
+      "resource": "aws_s3_bucket.artifacts",
+      "id": "floci-artifacts-sandbox",
+      "found": true,
+      "http_status": 200,
+      "evidence": ""
+    },
+    {
+      "resource": "aws_iam_role.app",
+      "id": "floci-app-role",
+      "found": true,
+      "http_status": 200,
+      "evidence": "<GetRoleResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><GetRoleResult><Role><Path>/</Path><RoleName>floci-app-role</RoleName><RoleId>AROAI7E9YKYIFA8HJO61</RoleId><Arn>arn:aws:iam::00000000"
+    }
+  ]
+}

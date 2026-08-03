@@ -1,0 +1,994 @@
+[
+  {
+    "timestamp": "2026-08-03T01:24:55Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 294
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 294
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 211
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 211
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:27:22Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 294
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 294
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 211
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 211
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:29:26Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 211
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 211
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:32:06Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:32:17Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:32:25Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:32:28Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:36:47Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:37:12Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:37:32Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 291
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 291
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 203
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 203
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:40:50Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:40:58Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:41:22Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:41:25Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:43:20Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:43:23Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:43:25Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:43:33Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T01:58:58Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T02:00:32Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T02:02:17Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses wildcarded action '*'",
+        "line": 297
+      },
+      {
+        "severity": "HIGH",
+        "rule_id": "AVD-AWS-0057",
+        "resource": "aws_iam_policy.fixtures_admin",
+        "description": "IAM policy document uses sensitive action '*' on wildcarded resource '*'",
+        "line": 297
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T02:02:19Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-03T02:03:08Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 0,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.artifacts",
+        "description": "Bucket does not have logging enabled",
+        "line": 50
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0089",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have logging enabled",
+        "line": 209
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "aws_s3_bucket.flow_logs",
+        "description": "Bucket does not have versioning enabled",
+        "line": 209
+      }
+    ]
+  }
+]

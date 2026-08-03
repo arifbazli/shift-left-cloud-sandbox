@@ -1,0 +1,64 @@
+# ============================================================
+# floci-stack .gitignore
+# ============================================================
+# Local state and secrets. Anything in this file MUST NOT be
+# published to GitHub.
+
+# Terraform local state and provider cache
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfstate.d/
+terraform/state-snapshots/
+terraform/.drift.tfplan
+terraform/.drift.tfplan.json
+
+# tfsec output dir (config.yml IS committed; outputs are not)
+terraform/.tfsec/
+
+# User-provided tfvars (would override defaults — never commit)
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/*-tfvars
+terraform/*-override.tf
+
+# Cloudflare Pages / wrangler dev artifacts
+.wrangler/
+dashboard/.wrangler/
+dashboard/node_modules/
+dashboard/.cache/
+
+# Scripts runtime logs (debug output)
+scripts/*.log
+scripts/*.log.*
+
+# ============================================================
+# EXPLICITLY COMMITTED — do NOT add to .gitignore:
+# ============================================================
+# - terraform/main.tf
+# - terraform/main.tf.with-fixture
+# - terraform/main.tf.without-fixture
+#   toggle-fixture.sh swaps between these. Both must be in the
+#   repo so the toggle is reproducible. PR reviewers MUST check
+#   them on every change.
+# - terraform/providers.tf
+# - terraform/variables.tf
+# - terraform/outputs.tf
+# - terraform/.tfsec/config.json
+# - terraform/.tfsec/config.yml
+#   tfsec config in JSON form. Committed so the gate is
+#   reproducible. PR reviewers MUST check it.
+# - dashboard/public/index.html
+# - dashboard/public/style.css
+# - dashboard/public/app.js
+# - dashboard/public/data/*.json
+#   These are the DEMO OUTPUT. They get refreshed by the
+#   scripts (scan.sh, deploy.sh, etc.) and synced via
+#   scripts/sync-dashboard.sh. They are intentionally public —
+#   they are read by the wrangler Pages dev server.
+# - wrangler.toml
+#   Pages project config. Committed.
+# - podman-compose.yml
+# - README.md
+# - docs/*

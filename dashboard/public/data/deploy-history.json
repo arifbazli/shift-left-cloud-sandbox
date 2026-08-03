@@ -1,0 +1,162 @@
+[
+  {
+    "timestamp": "20260803T015031Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-43e04eef4dfe0379f"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-c4cc819c"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-fc4e851e"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T015031Z"
+  },
+  {
+    "timestamp": "20260803T015348Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-43e04eef4dfe0379f"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-c4cc819c"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-fc4e851e"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T015348Z"
+  },
+  {
+    "timestamp": "20260803T015506Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-43e04eef4dfe0379f"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-c4cc819c"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-fc4e851e"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T015506Z"
+  },
+  {
+    "timestamp": "20260803T015702Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-43e04eef4dfe0379f"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-c4cc819c"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-fc4e851e"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T015702Z"
+  },
+  {
+    "timestamp": "20260803T020245Z",
+    "endpoint": "http://localhost:4566",
+    "outputs": {
+      "app_role_arn": {
+        "sensitive": false,
+        "type": "string",
+        "value": "arn:aws:iam::000000000000:role/floci-app-role"
+      },
+      "app_security_group_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "sg-76a988ac921c3f526"
+      },
+      "artifacts_bucket": {
+        "sensitive": false,
+        "type": "string",
+        "value": "floci-artifacts-sandbox"
+      },
+      "private_subnet_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "subnet-da9d63ed"
+      },
+      "vpc_id": {
+        "sensitive": false,
+        "type": "string",
+        "value": "vpc-c79552a2"
+      }
+    },
+    "state_snapshot": "state-snapshots/terraform.tfstate.20260803T020245Z"
+  }
+]

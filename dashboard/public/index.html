@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<meta name="description" content="Shift-left cloud security sandbox — tfsec gate, floci-emulated AWS, bounded infra agent." />
+<title>Shift-Left Cloud Sandbox — Audit</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%2300d4aa'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<!-- Top status bar -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <div class="brand-text">
+      <div class="brand-name">shift-left cloud sandbox</div>
+      <div class="brand-sub">floci-emulated AWS · tfsec-gated · agent allowlisted</div>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <div class="meta-pair"><span class="meta-label">last refresh</span><span class="meta-value mono" id="meta-refresh">—</span></div>
+    <div class="meta-pair"><span class="meta-label">backend</span><span class="meta-value mono">localhost only</span></div>
+    <div class="meta-pair"><span class="meta-label">data plane</span><span class="meta-value mono">static json</span></div>
+  </div>
+</header>
+
+<!-- Bento grid -->
+<main class="bento">
+
+  <!-- TFSec gate — primary health signal -->
+  <section class="card card-gate" id="card-gate" data-state="unknown">
+    <div class="card-header">
+      <h2>tfsec gate</h2>
+      <span class="card-tag" id="gate-tag">—</span>
+    </div>
+    <div class="gate-big">
+      <span class="gate-verdict" id="gate-verdict">—</span>
+      <span class="gate-sub" id="gate-sub">awaiting scan</span>
+    </div>
+    <div class="counts">
+      <div class="count count-crit"><span class="count-num" id="count-critical">0</span><span class="count-lbl">critical</span></div>
+      <div class="count count-high"><span class="count-num" id="count-high">0</span><span class="count-lbl">high</span></div>
+      <div class="count count-med"><span class="count-num" id="count-medium">0</span><span class="count-lbl">medium</span></div>
+      <div class="count count-low"><span class="count-num" id="count-low">0</span><span class="count-lbl">low</span></div>
+      <div class="count count-ign"><span class="count-num" id="count-ignored">0</span><span class="count-lbl">ignored</span></div>
+    </div>
+    <div class="card-footer">
+      <span class="mono small" id="gate-ts">—</span>
+      <span class="mono small" id="gate-version">tfsec —</span>
+    </div>
+  </section>
+
+  <!-- Drift status — primary operational signal -->
+  <section class="card card-drift" id="card-drift" data-state="unknown">
+    <div class="card-header">
+      <h2>drift</h2>
+      <span class="card-tag" id="drift-tag">—</span>
+    </div>
+    <div class="drift-big">
+      <span class="drift-verdict" id="drift-verdict">—</span>
+      <span class="drift-sub" id="drift-sub">no drift check yet</span>
+    </div>
+    <div class="drift-class" id="drift-class">classification: —</div>
+    <ul class="drift-changes" id="drift-changes"></ul>
+    <div class="card-footer">
+      <span class="mono small" id="drift-ts">—</span>
+      <span class="mono small" id="drift-count">0 changes</span>
+    </div>
+  </section>
+
+  <!-- Agent allowlist status -->
+  <section class="card card-agent" id="card-agent">
+    <div class="card-header">
+      <h2>agent loop</h2>
+      <span class="card-tag" id="agent-tag">—</span>
+    </div>
+    <div class="agent-pulse">
+      <span class="pulse-dot" id="pulse-dot"></span>
+      <span class="agent-state" id="agent-state">unknown</span>
+    </div>
+    <div class="allowlist">
+      <div class="al-row"><span class="al-dot al-allow"></span>podman restart floci-core</div>
+      <div class="al-row"><span class="al-dot al-allow"></span>terraform apply -auto-approve <em>(only when drift=safe AND tfsec=PASS)</em></div>
+      <div class="al-row"><span class="al-dot al-deny"></span>any *.tf edit</div>
+      <div class="al-row"><span class="al-dot al-deny"></span>terraform destroy</div>
+      <div class="al-row"><span class="al-dot al-deny"></span>apply that touches security-tagged resources</div>
+    </div>
+    <div class="agent-stats">
+      <div><span class="stat-num" id="stat-actions">0</span><span class="stat-lbl">actions</span></div>
+      <div><span class="stat-num" id="stat-noactions">0</span><span class="stat-lbl">no_actions</span></div>
+      <div><span class="stat-num" id="stat-frozen">0</span><span class="stat-lbl">frozen</span></div>
+    </div>
+  </section>
+
+  <!-- Deploy status -->
+  <section class="card card-deploy" id="card-deploy">
+    <div class="card-header">
+      <h2>last deploy</h2>
+      <span class="card-tag" id="deploy-tag">—</span>
+    </div>
+    <div class="deploy-row"><span class="kv-key">endpoint</span><span class="kv-val mono" id="dep-endpoint">—</span></div>
+    <div class="deploy-row"><span class="kv-key">resources</span><span class="kv-val mono" id="dep-resources">—</span></div>
+    <div class="deploy-row"><span class="kv-key">timestamp</span><span class="kv-val mono" id="dep-ts">—</span></div>
+    <div class="deploy-row"><span class="kv-key">tfsec gate</span><span class="kv-val mono" id="dep-tfsec">—</span></div>
+    <div class="card-footer"><span class="mono small">next: scripts/verify.sh</span></div>
+  </section>
+
+  <!-- Verify status -->
+  <section class="card card-verify" id="card-verify">
+    <div class="card-header">
+      <h2>verify (api direct)</h2>
+      <span class="card-tag" id="verify-tag">—</span>
+    </div>
+    <div class="verify-big">
+      <span class="verify-verdict" id="verify-verdict">—</span>
+      <span class="verify-sub" id="verify-sub">no verify yet</span>
+    </div>
+    <ul class="verify-list" id="verify-list"></ul>
+  </section>
+
+  <!-- Recent findings -->
+  <section class="card card-findings" id="card-findings">
+    <div class="card-header">
+      <h2>recent findings</h2>
+      <span class="card-tag" id="findings-count">0</span>
+    </div>
+    <ul class="findings-list" id="findings-list"></ul>
+  </section>
+
+  <!-- Agent log tail (monospace) -->
+  <section class="card card-log">
+    <div class="card-header">
+      <h2>agent log (last 30 events)</h2>
+      <span class="card-tag" id="log-count">0</span>
+    </div>
+    <pre class="log-window mono" id="log-window">loading…</pre>
+  </section>
+
+  <!-- Architecture card -->
+  <section class="card card-arch">
+    <div class="card-header">
+      <h2>architecture</h2>
+      <span class="card-tag">static-only</span>
+    </div>
+    <div class="arch-row"><span class="arch-key">backend</span><span class="arch-val mono">localhost (podman + terraform)</span></div>
+    <div class="arch-row"><span class="arch-key">aws emulator</span><span class="arch-val mono">floci-core :4566</span></div>
+    <div class="arch-row"><span class="arch-key">published</span><span class="arch-val mono">3 json files (last+history)</span></div>
+    <div class="arch-row"><span class="arch-key">no kv</span><span class="arch-val mono">no d1</span></div>
+    <div class="arch-row"><span class="arch-key">no worker</span><span class="arch-val mono">no api</span></div>
+    <div class="arch-row arch-note">all real infra stays on the local box. only audit json ever leaves the machine.</div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span class="mono small">refresh: 10s · renders: client-only · secrets: none</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+# =============================================================================
+# main.tf (ON state — includes the deliberate misconfig fixture)
+# =============================================================================
+# This is the WITH-FIXTURE version. It is the source of truth for the
+# "blocked misconfig" demo state. The OFF version of main.tf is generated
+# by comment-out of the two fixture resources by scripts/toggle-fixture.sh.
+#
+# Bootsrap:
+#   cp main.tf.with-fixture main.tf
+#   ./scripts/toggle-fixture.sh off    # creates the OFF version
+#   ./scripts/toggle-fixture.sh on     # restores from this snapshot
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# VPC
+# SEC_INTENT: a real VPC with DNS support on. We do not enable
+# "map_public_ip_on_launch" by default; the public subnet exists but is
+# genuinely public only for resources that explicitly associate an EIP/IGW.
+# -----------------------------------------------------------------------------
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name        = "floci-vpc"
+    Environment = var.environment
+    Owner       = "shift-left-sandbox"
+  }
+}
+
+# SEC_INTENT: a private subnet (no route to IGW). Hosts would not be reachable
+# from the internet in a real deploy. floci will accept this fine.
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "floci-private"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# S3 Bucket
+# SEC_INTENT — RESOURCE 1 of 2: TIGHT BY DEFAULT.
+# Private bucket, encryption enforced, versioning on, public access blocked
+# at the account/bucket level. tfsec should be silent on this resource.
+# -----------------------------------------------------------------------------
+resource "aws_s3_bucket" "artifacts" {
+  # SEC_INTENT: name is suffixed to ensure uniqueness in any future test runs.
+  bucket = "floci-artifacts-${var.environment}"
+
+  tags = {
+    Name = "floci-artifacts"
+  }
+}
+
+# SEC_INTENT: explicit public-access block — defense in depth. AWS introduced
+# these to catch the recurring "I forgot and made it world-readable" bug.
+resource "aws_s3_bucket_public_access_block" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Sandbox runs against floci (local mock); a CMK adds no real security benefit
+# here and bloats the demo. Production would use a customer-managed KMS key
+# with rotation enabled.
+# tfsec:ignore:AVD-AWS-0132
+resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# SEC_INTENT: versioning for log file tidy-up. Low risk.
+resource "aws_s3_bucket_versioning" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Security Group
+# SEC_INTENT — RESOURCE 2 of 2: TIGHT BY DEFAULT.
+# tfsec will check the CIDR open-ness; 10.0.0.0/16 (our VPC) is acceptable
+# and 0.0.0.0/0 is NOT used here.
+# -----------------------------------------------------------------------------
+resource "aws_security_group" "app" {
+  name        = "floci-app-sg"
+  description = "App tier SG. SSH only from admin host."
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "floci-app-sg"
+  }
+}
+
+# SEC_INTENT: ingress is admin-IP-only on 22, app port 8080 from VPC only.
+resource "aws_security_group_rule" "ssh_admin" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.0.0/16"]   # admin VPC only
+  security_group_id = aws_security_group.app.id
+  description       = "SSH from inside the VPC"
+}
+
+resource "aws_security_group_rule" "app_internal" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.0.0/16"]   # app traffic from VPC
+  security_group_id = aws_security_group.app.id
+  description       = "App traffic from inside the VPC"
+}
+
+# SEC_INTENT: explicit egress restricted to https (443) only. tfsec flag
+# AVD-AWS-0104 would otherwise trigger on 0.0.0.0/0; we keep egress narrow
+# and add an explicit comment so a reviewer can see the intent.
+resource "aws_security_group_rule" "egress_https" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  # tfsec:ignore:AVD-AWS-0104 Sandbox needs outbound HTTPS to pull packages
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.app.id
+  description       = "Outbound HTTPS only (for package updates and API calls)"
+}
+resource "aws_security_group_rule" "egress_dns_tcp" {
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "tcp"
+  # tfsec:ignore:AVD-AWS-0104 DNS egress required for service discovery
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.app.id
+  description       = "DNS over TCP"
+}
+resource "aws_security_group_rule" "egress_dns_udp" {
+  type              = "egress"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "udp"
+  # tfsec:ignore:AVD-AWS-0104 DNS egress required for service discovery
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.app.id
+  description       = "DNS over UDP"
+}
+
+# -----------------------------------------------------------------------------
+# IAM Role for the app
+# SEC_INTENT: least-privilege starting point — read/write to ONE bucket on
+# specific prefixes only. tfsec should be silent here.
+# -----------------------------------------------------------------------------
+data "aws_iam_policy_document" "app_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "app" {
+  name               = "floci-app-role"
+  assume_role_policy = data.aws_iam_policy_document.app_assume.json
+}
+
+# SEC_INTENT: explicit, narrow actions + resources. No "Action": "*" here.
+data "aws_iam_policy_document" "app_inline" {
+  statement {
+    sid = "ArtifactsReadWrite"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      aws_s3_bucket.artifacts.arn,
+      "${aws_s3_bucket.artifacts.arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "app_inline" {
+  name   = "floci-app-inline"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_inline.json
+}
+
+# -----------------------------------------------------------------------------
+# VPC Flow Logs
+# SEC_INTENT: real VPC flow logs to a dedicated S3 bucket. A real org would
+# use CloudWatch or Kinesis; S3 is fine for the sandbox.
+# -----------------------------------------------------------------------------
+resource "aws_s3_bucket" "flow_logs" {
+  bucket = "floci-flow-logs-${var.environment}"
+  tags   = { Name = "floci-flow-logs" }
+}
+resource "aws_s3_bucket_public_access_block" "flow_logs" {
+  bucket                  = aws_s3_bucket.flow_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+# SEC_INTENT: server-side encryption on the flow-logs bucket. Same algorithm
+# as artifacts (AES256 managed). A real org would use a dedicated CMK with a
+# separate key policy for separation of duties.
+# tfsec:ignore:AVD-AWS-0132 floci has no KMS; same justification as artifacts.
+resource "aws_s3_bucket_server_side_encryption_configuration" "flow_logs" {
+  bucket = aws_s3_bucket.flow_logs.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_flow_log" "main" {
+  iam_role_arn    = aws_iam_role.flow_logs.arn
+  log_destination = aws_s3_bucket.flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.main.id
+}
+
+data "aws_iam_policy_document" "flow_logs_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+  }
+}
+resource "aws_iam_role" "flow_logs" {
+  name               = "floci-flow-logs-role"
+  assume_role_policy = data.aws_iam_policy_document.flow_logs_assume.json
+}
+data "aws_iam_policy_document" "flow_logs_write" {
+  statement {
+    # VPC Flow Logs can only write to the bucket-rooted prefix; tfsec cannot
+    # resolve the interpolation and flags it as a wildcard. Bucket-scoped,
+    # not account-wide.
+    # tfsec:ignore:AVD-AWS-0057
+    resources   = [aws_s3_bucket.flow_logs.arn, "${aws_s3_bucket.flow_logs.arn}/*"]
+    actions     = ["s3:PutObject", "s3:GetBucketAcl"]
+  }
+}
+resource "aws_iam_role_policy" "flow_logs_write" {
+  name   = "floci-flow-logs-write"
+  role   = aws_iam_role.flow_logs.id
+  policy = data.aws_iam_policy_document.flow_logs_write.json
+}
+
+# =============================================================================
+#  >>>>>>>>>>>>>>>>>  DELIBERATE MISCONFIGURATION  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+# =============================================================================
+# SEC_INTENT — FIXTURE, NOT ADVICE.
+#
+# This resource exists purely so scripts/scan.sh has a HIGH/CRITICAL to catch
+# in the demo. It models a textbook tfsec flag: an IAM policy with
+# "Action":"*" + "Resource":"*" (i.e. admin-everything). It is attached to
+# the app role so the impact is realistic.
+#
+# To "pass" the demo gate, comment out BOTH the `aws_iam_policy` and the
+# `aws_iam_role_policy_attachment` blocks below and re-run scripts/scan.sh.
+# The pipeline intentionally does NOT auto-fix — fixing security findings
+# is outside the agent's allowlist (see scripts/agent-loop.sh).
+#
+# Notes on what this does NOT include, by design:
+#   - We do NOT make an S3 bucket public. That would be a SECOND HIGH and
+#     the spec says ONE deliberate misconfig. We make the S3 side tight and
+#     the IAM side obviously wrong so the demo narrative is crisp.
+# =============================================================================
+# SEC_INTENT-FIXTURE: admin-everything policy. tfsec will flag this as
+# AVD-AWS-0057 (IAM policy with wildcarded action '*' and wildcarded
+# resource '*'). This is the ONE finding that will fail scripts/scan.sh.
+resource "aws_iam_policy" "fixtures_admin" {
+  name        = "floci-fixtures-admin"
+  description = "DELIBERATE BAD: admin-everything. Test fixture only."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "*"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "fixtures_admin_attach" {
+  role       = aws_iam_role.app.name
+  policy_arn = aws_iam_policy.fixtures_admin.arn
+}
+# =============================================================================
+#  <<<<<<<<<<<<<<<<<  END OF DELIBERATE MISCONFIGURATION  >>>>>>>>>>>>>>>>>>>>
+# =============================================================================

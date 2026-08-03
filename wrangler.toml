@@ -1,0 +1,23 @@
+# =============================================================================
+# wrangler.toml
+# =============================================================================
+# This file is for Cloudflare Pages. The dashboard is a static site served
+# from dashboard/public/. NO KV, NO D1, NO Workers scripts attached.
+#
+# To preview locally:
+#   wrangler pages dev dashboard/public
+#
+# Architecture note:
+#   The frontend fetches three JSON files from this same Pages project:
+#     - tfsec-last.json + tfsec-history.json
+#     - drift-last.json + drift-history.json
+#     - agent-actions.json
+#   All backend services (floci-core, podman, terraform.tfstate) live on
+#   the local machine. Nothing except these JSON files ever leaves it.
+# =============================================================================
+name = "shift-left-cloud-sandbox"
+pages_build_output_dir = "dashboard/public"
+compatibility_date = "2024-09-23"
+
+# No [vars], no [[kv_namespaces]], no [[d1_databases]], no [[r2_buckets]].
+# Keeping the project honest about "static assets only".
