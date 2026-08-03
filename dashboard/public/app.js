@@ -205,7 +205,6 @@ function renderScan(d) {
   animCount($('cnt-ignored'),  ign);
 
   $('scan-ts').textContent  = fmtTs(d.timestamp);
-  $('scan-ver').textContent = '';  // tfsec_version field doesn't exist in real JSON; keep row clean
 
   // findings list
   // JSON key is "findings" (not "results"); findings have no "ignored" field
@@ -405,10 +404,25 @@ async function fetchAll() {
     try { fn(data); }
     catch (e) {
       console.error(`render${name} failed:`, e);
-      // Fall back to error state so the card at least shows something useful
+      // On any renderer failure, force the card into a clean error state so
+      // partial DOM updates from earlier in the function don't leave stale
+      // text lying around.
       try {
         const pillEl = $(`pill-${name}`);
         if (pillEl) setPill(`pill-${name}`, 'fail', 'ERROR');
+        const cardId = `card-${name}`;
+        setCardState(cardId, 'fail');
+        // Reset all .list-mono / .stat-num / .act-kind values inside the card
+        const cardEl = $(cardId);
+        if (cardEl) {
+          cardEl.querySelectorAll('.list-mono').forEach(el => { el.textContent = '—'; });
+          cardEl.querySelectorAll('.stat-num').forEach(el => { el.textContent = '0'; el._lastVal = 0; });
+        }
+        // Special-case: reset the findings-list to the empty state
+        if (name === 'scan') {
+          $('findings-count').textContent = '0 total';
+          $('findings-list').innerHTML = '<div class="empty-state">No scan data yet.</div>';
+        }
       } catch {}
     }
   }
