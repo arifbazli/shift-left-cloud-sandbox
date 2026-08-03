@@ -333,14 +333,14 @@ html, body {
   max-height: calc(1.45em * 2 + 2px);
 }
 
-/* ── findings list (now a grid card next to agent loop) ──── */
+/* ── findings list (grid card next to agent loop) ──── */
 .findings-wrap {
   /* No margin-top: it's a grid item now, gap handles spacing */
   padding: 1.15rem 1.3rem;
-  /* Span 2 columns so findings is wider than agent (which is 1 col).
-     Combined with the 4-col grid (1240px container / 280px min), this
-     puts findings on the same row as agent loop, taking 2 of 4 cols. */
-  grid-column: span 2;
+  /* Span 3 columns so findings stretches from agent's column to the right
+     edge of the grid (drift + findings×3 fills the second row).
+     Agent loop gets bumped up to row 1 next to verify. */
+  grid-column: span 3;
 }
 .findings-wrap.is-empty { padding: 0.8rem 1.3rem; }
 .findings-header {
@@ -463,9 +463,10 @@ html, body {
 
 /* ── mobile ────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-  /* Below this width, the 4-col grid becomes 3-col. Findings spanning 2 of 4
-     would now take 2 of 3, leaving a 1/3 hole. Reset to span 1. */
-  .findings-wrap { grid-column: span 1; }
+  /* Below this width, the 4-col grid becomes 3-col. Findings spanning 3 of 4
+     would now take the entire row (full-width). Keep it as full-width — that's
+     the natural fallback at smaller breakpoints. */
+  .findings-wrap { grid-column: 1 / -1; }
 }
 @media (max-width: 900px) {
   .grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
