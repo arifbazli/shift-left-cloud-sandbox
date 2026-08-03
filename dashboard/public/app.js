@@ -29,10 +29,23 @@ async function safeFetch(path) {
   }
 }
 
+// Normalise any timestamp string to something Date() can parse.
+// Handles compact "20260803T020245Z" (no dashes/colons) that deploy.sh emits.
+function normaliseTs(ts) {
+  if (!ts) return null;
+  // Already valid ISO: contains dashes or is purely numeric milliseconds
+  if (ts.includes('-') || /^\d{13,}$/.test(ts)) return ts;
+  // Compact basic format YYYYMMDDTHHMMSS[Z] → YYYY-MM-DDTHH:MM:SS[Z]
+  const m = ts.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}${m[7]}`;
+  return ts;
+}
+
 function fmtTs(ts) {
   if (!ts) return '—';
   try {
-    const d = new Date(ts);
+    const d = new Date(normaliseTs(ts));
+    if (isNaN(d.getTime())) return ts;
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       + ' ' + d.toTimeString().slice(0, 5);
   } catch { return ts; }
@@ -122,7 +135,7 @@ function updateLatestTs(payloads) {
     const ts = d.timestamp
       || (Array.isArray(d) && d.length ? d[d.length - 1].timestamp : null);
     if (ts) {
-      const t = Date.parse(ts);
+      const t = Date.parse(normaliseTs(ts));
       if (!isNaN(t) && (latest === null || t > latest)) latest = t;
     }
   }
@@ -162,7 +175,8 @@ function renderScan(d) {
   $('scan-ver').textContent = `tfsec ${d.tfsec_version || '—'}`;
 
   // findings list
-  const results = (d.results || []).filter(r => !r.ignored);
+  // JSON key is "findings" (not "results"); findings have no "ignored" field
+  const results = d.findings || d.results || [];
   $('findings-count').textContent = `${results.length} total`;
   $('findings-list').innerHTML = results.length === 0
     ? '<div class="empty-state">No open findings — gate is clean.</div>'
@@ -186,15 +200,19 @@ function renderDeploy(d) {
     return;
   }
 
-  const ok = d.status === 'success';
+  // deploy-last.json schema: {timestamp, endpoint, outputs:{…}, state_snapshot,
+  // pages_url, pages_deploy_at}  — no "status" or "resources_created" fields.
+  // Infer success from presence of outputs keys.
+  const outputKeys = Object.keys(d.outputs || {});
+  const ok = outputKeys.length > 0;
   setPill('pill-deploy', ok ? 'pass' : 'fail', ok ? 'PASS' : 'FAIL');
   setCardState(cardId, ok ? 'pass' : 'fail');
   showCard(cardId, true, false);
 
   $('dep-endpoint').textContent  = d.endpoint || '—';
-  $('dep-resources').textContent = d.resources_created != null
-    ? `${d.resources_created} resources` : '—';
-  $('dep-gate').textContent = d.tfsec_gate || '—';
+  $('dep-resources').textContent = outputKeys.length
+    ? `${outputKeys.length} outputs` : '—';
+  $('dep-gate').textContent = d.pages_url ? 'synced' : 'local only';
   $('dep-ts').textContent   = fmtTs(d.timestamp);
 }
 
@@ -264,8 +282,13 @@ function renderAgent(d) {
   const cardId = 'card-agent';
   const arr = Array.isArray(d) ? d : [];
 
-  if (!d || d.__error || arr.length === 0) {
+  if (!d || d.__error || !Array.isArray(d)) {
     setPill('pill-agent', 'idle', 'IDLE');
+    // Show real error in empty-state instead of leaving skeleton up
+    const emptyEl = $('empty-agent');
+    if (emptyEl && d && d.__error) {
+      emptyEl.innerHTML = `Could not load agent-actions.json: <code>${escHtml(d.__error)}</code>`;
+    }
     showCard(cardId, true, true);
     return;
   }
