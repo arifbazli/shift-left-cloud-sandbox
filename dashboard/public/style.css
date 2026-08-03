@@ -60,7 +60,7 @@ html, body {
 
 /* ── layout wrapper ─────────────────────────────────────────── */
 .dash-wrap {
-  max-width: 1180px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 32px 24px 40px;
 }
@@ -120,9 +120,12 @@ html, body {
 }
 
 /* ── card grid ─────────────────────────────────────────────── */
+/* Use auto-fit so cards get evenly sized; with 5 cards on a wide screen
+   we get 3 columns and 2 cards wrap to a second row, which is more
+   balanced than 5-column grid where each card is too narrow. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
 }
 
@@ -131,7 +134,7 @@ html, body {
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.1rem 1.25rem 1rem;
+  padding: 1.15rem 1.3rem 1.1rem;
   transition: border-color .2s, transform .15s, box-shadow .2s;
   overflow: hidden;
   min-width: 0;
@@ -144,12 +147,18 @@ html, body {
 .card.state-fail { border-color: var(--red-border); }
 .card.state-warn { border-color: var(--amber-border); }
 
+/* Make all cards in the same row align to the tallest one */
+.grid > .card {
+  align-self: stretch;
+}
+
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
   min-height: 26px;
+  gap: 8px;
 }
 .card-label {
   font-size: 12px;
@@ -179,11 +188,11 @@ html, body {
 /* ── stat rows (tfsec counts) ─────────────────────────────── */
 .stat-row {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   font-family: var(--font-mono);
   flex-wrap: wrap;
 }
-.stat-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .stat-num  {
   font-size: 22px;
   font-weight: 600;
@@ -205,8 +214,8 @@ html, body {
 .list-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 9px 0;
   border-bottom: 0.5px solid var(--border);
   min-width: 0;
 }
@@ -215,7 +224,7 @@ html, body {
   font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
-  min-width: 72px;
+  min-width: 76px;
   text-transform: lowercase;
   letter-spacing: 0.02em;
 }
@@ -235,23 +244,48 @@ html, body {
   color: var(--text-muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+/* ── drift change rows (special layout for change address + action pill) ── */
+.drift-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  min-width: 0;
+}
+.drift-row:last-child { margin-bottom: 0; }
+.drift-row .pill { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.drift-address {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* ── agent action rows ─────────────────────────────────────── */
 .agent-row {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 0;
+  gap: 4px;
+  padding: 9px 0 9px 10px;
   border-bottom: 0.5px solid var(--border);
   min-width: 0;
   border-left: 2px solid transparent;
-  padding-left: 8px;
-  margin-left: -8px;
+  margin-left: 0;
 }
 .agent-row:last-child { border-bottom: none; }
 .agent-row.action    { border-left-color: var(--teal); }
-.agent-row.no_action { border-left-color: var(--text-muted); opacity: 0.75; }
+.agent-row.no_action { border-left-color: var(--text-muted); opacity: 0.85; }
 .agent-row.heartbeat { border-left-color: transparent; }
 .agent-row-head {
   display: flex;
@@ -267,6 +301,9 @@ html, body {
   letter-spacing: 0.04em;
   flex-shrink: 0;
   color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .act-kind.action    { color: var(--teal); }
 .act-kind.no_action { color: var(--text-muted); }
@@ -277,32 +314,34 @@ html, body {
   font-weight: 500;
   color: var(--text-muted);
   background: rgba(255,255,255,0.06);
-  padding: 0 5px;
+  padding: 1px 6px;
   border-radius: 3px;
-  margin-left: 4px;
   font-variant-numeric: tabular-nums;
 }
 .act-reason {
-  font-size: 11px;
+  font-size: 11.5px;
   font-family: var(--font-mono);
   color: var(--text-secondary);
+  /* Wrap to 2 lines so long reasons don't get cut off mid-word.
+     -webkit-line-clamp handles the ellipsis at the line limit. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  max-width: 100%;
-  line-height: 1.4;
+  word-break: break-word;
+  line-height: 1.45;
+  max-height: calc(1.45em * 2 + 2px);
 }
 
 /* ── findings list (full-width card) ───────────────────────── */
 .findings-wrap {
   margin-top: 14px;
-  padding: 1.1rem 1.25rem;
+  padding: 1.15rem 1.3rem;
 }
-.findings-wrap.is-empty { padding: 1rem 1.25rem; }
+.findings-wrap.is-empty { padding: 0.8rem 1.3rem; }
 .findings-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .findings-count {
   font-size: 11px;
@@ -324,20 +363,30 @@ html, body {
 .rule-id   {
   font-family: var(--font-mono); font-size: 11px;
   color: var(--text-secondary); white-space: nowrap;
-  padding: 1px 6px; background: rgba(255,255,255,0.04); border-radius: 3px;
+  padding: 2px 7px; background: rgba(255,255,255,0.04); border-radius: 3px;
+  border: 0.5px solid var(--border);
 }
 .rule-desc {
-  font-size: 12px; color: var(--text); flex: 1;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; color: var(--text); flex: 1;
+  /* Allow wrapping so long descriptions don't get truncated */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
   min-width: 0;
 }
 .rule-res  {
   font-size: 11px; font-family: var(--font-mono);
   color: var(--text-muted); white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  max-width: 35%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .empty-state {
-  padding: 12px 0;
+  padding: 14px 0;
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
@@ -377,10 +426,10 @@ html, body {
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.9rem 1.25rem;
+  padding: 0.9rem 1.3rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 28px;
+  gap: 12px 32px;
   font-size: 11px;
   font-family: var(--font-mono);
   color: var(--text-secondary);
@@ -409,6 +458,9 @@ html, body {
 }
 
 /* ── mobile ────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
 @media (max-width: 640px) {
   .grid { grid-template-columns: 1fr; gap: 10px; }
   .dash-wrap { padding: 18px 14px 24px; }
@@ -420,6 +472,7 @@ html, body {
   .meta-bar { gap: 8px 18px; }
   .rule-desc { white-space: normal; }
   .rule-id { display: none; }  /* hide on mobile to save space */
+  .rule-res { display: none; }
 }
 
 /* ── scrollbar ─────────────────────────────────────────────── */

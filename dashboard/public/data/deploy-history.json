@@ -327,5 +327,26 @@
     "source": "scripts/deploy-dashboard.sh",
     "project": "shift-left-cloud-sandbox",
     "url": "https://53dd91ba.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T06:19:46Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://4b389d5d.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T06:21:10Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://1d2099f0.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T06:24:54Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://f91626a5.shift-left-cloud-sandbox.pages.dev"
   }
 ]

@@ -304,17 +304,15 @@ function renderDrift(d) {
   $('drift-count').textContent = `${changes.length} change${changes.length === 1 ? '' : 's'}`;
 
   $('drift-changes').innerHTML = changes.length === 0
-    ? '<div class="list-row"><span class="list-mono" style="color:var(--text-muted)">no-op across all resources</span></div>'
+    ? '<div class="drift-row"><span class="drift-address" style="color:var(--text-muted);font-style:italic">no-op across all resources</span></div>'
     : changes.slice(0, 20).map(c => {
         const acts = (c.actions || []).join('|');
-        // Red only for actual delete/create (destructive change).
-        // Everything else is warn (in-place update) or idle (no-op).
+        // Amber/warn for delete/create (destructive change); idle for update/no-op.
         const aCls = acts.includes('delete') || acts.includes('create') ? 'warn'
-                  : acts.includes('update') ? 'idle'
                   : 'idle';
-        return `<div class="list-row">
-          <span class="pill ${aCls}" style="font-size:10px;padding:1px 7px;border-radius:5px;flex-shrink:0">${acts}</span>
-          <span class="list-mono" title="${escHtml(c.address)}">${escHtml(c.address)}</span>
+        return `<div class="drift-row">
+          <span class="pill ${aCls}">${escHtml(acts)}</span>
+          <span class="drift-address" title="${escHtml(c.address || '')}">${escHtml(c.address || '')}</span>
         </div>`;
       }).join('');
 }
