@@ -21,16 +21,24 @@
 <br>
 
 > [!NOTE]
-> **Diagram design language.** All three diagrams use a strict black‑and‑white palette with three node shapes: **black‑filled rectangles** are action nodes (scripts that *do* things), **white‑filled rectangles** are pass‑throughs (data flow), **black diamonds** are decisions (gates), and **white cylinders** are data stores (JSON). Cluster backgrounds are white with a thin black border, so the box outline is visible without dominating the design. Typography is the system font stack (`Inter`, `system-ui`, …) at 11px so the diagrams visually integrate with the surrounding README text.
+> **Diagram design language (2026).** The diagrams follow the current modern aesthetic: **black‑and‑white shape language** with **one restrained warm accent** (amber `#ff6b35`) reserved for the security choke‑point (the `GATE` diamond). Every node and cluster is rendered as a **frosted card** lifted off the canvas by a soft drop shadow with rounded corners (8px for nodes, 14px for clusters). Cluster labels are uppercase with wide letter‑spacing for visual hierarchy. Typography is the system font stack (`Inter`, `SF Pro Text`, `system-ui`, …) at 12px so the diagrams visually integrate with the surrounding README text. The shape vocabulary maps semantic role → shape:
+> - **black‑filled rectangle** = action node (scripts that *do* things)
+> - **white‑filled rectangle** = pass‑through (data flow)
+> - **amber‑filled diamond** = decision / security gate
+> - **white cylinder** = data store (JSON)
+> - **gray‑filled rectangle** = surface (output / runtime)
+> - **thick black arrows** with chunky markers = direction of flow
+>
+> Cluster backgrounds are white with a thin black border; the post‑process CSS injects the soft shadow and rounded corners so each cluster reads as a lifted card on the white canvas.
 
 <br>
 
 ## Developer-terminal dataflow
 
-<img src="dashboard/public/data/developer-dataflow.svg" width="900" alt="Developer-terminal dataflow in black and white. Six stages flow left-to-right: scan.sh (tfsec) and GATE (diamond) and deploy.sh (terraform apply) in the '① ② GATE & APPLY' cluster; verify.sh in '③ VERIFY'; drift-check.sh in '④ DRIFT'; and agent-loop.sh feeding the JSON data store, which branches to pages dev (local) and pages deploy (Cloudflare Pages) in '⑤ ⑥ RESPOND'. Black-filled rectangles are action nodes; white-filled are pass-through; the diamond is the decision; the cylinder is the JSON data store. Thick black arrows connect each stage."/>
+<img src="dashboard/public/data/developer-dataflow.svg" width="900" alt="Developer-terminal dataflow in 2026 modern style. Six stages flow left-to-right in frosted white cards with soft drop shadows and rounded corners: scan.sh and deploy.sh (black-filled action nodes) plus an amber GATE diamond in the '① ② GATE & APPLY' cluster; verify.sh (white pass-through) in '③ VERIFY'; drift-check.sh (white pass-through) in '④ DRIFT'; and agent-loop.sh (gray surface) feeding the JSON cylinder (white data store), which branches to pages dev and pages deploy (gray surface nodes) in '⑤ ⑥ RESPOND'. Thick black arrows with chunky markers connect each stage. The amber GATE diamond is the only color in the diagram."/>
 
 <br>
-<sub>Source: <a href="docs/diagrams/developer-dataflow.mmd">docs/diagrams/developer-dataflow.mmd</a> · rendered with <a href="scripts/render-mermaid.sh">scripts/render-mermaid.sh</a> · theme: <a href="docs/diagrams/mermaid-config.json">mermaid-config.json</a> (B&W, Inter / system-ui, 11px, htmlLabels, sharp arrow markers)</sub>
+<sub>Source: <a href="docs/diagrams/developer-dataflow.mmd">docs/diagrams/developer-dataflow.mmd</a> · rendered with <a href="scripts/render-mermaid.sh">scripts/render-mermaid.sh</a> · theme: <a href="docs/diagrams/mermaid-config.json">mermaid-config.json</a> (2026 modern: frosted cards, soft drop shadows, 8px/14px rounded corners, Inter at 12px, amber '#ff6b35' accent on GATE only)</sub>
 
 <br>
 
@@ -233,7 +241,7 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 
 ### Local sandbox (offline)
 
-<img src="dashboard/public/data/local-sandbox.svg" width="900" alt="Local sandbox architecture in black and white. Three clusters: LOCAL SANDBOX contains Terraform + tfsec → Floci Podman → Checks → Bounded agent → Snapshot + act. SYNC contains the Credential gate (black diamond). PUBLIC contains the GitHub repo (cylindrical data store) and Cloudflare Pages. The snapshot feeds the credential gate, which pushes via git push to the GitHub repo, which auto-builds Cloudflare Pages. Black-filled rectangles are action nodes; the diamond is the security choke-point."/>
+<img src="dashboard/public/data/local-sandbox.svg" width="900" alt="Local sandbox architecture in 2026 modern style. Three frosted white cluster cards with soft drop shadows and rounded corners: LOCAL SANDBOX contains five black-filled action nodes (Terraform + tfsec, Floci Podman, Checks, Bounded agent, Snapshot + act). SYNC contains the amber Credential gate (security choke-point — the only color). PUBLIC contains the GitHub repo (white cylinder data store) and Cloudflare Pages (white pass-through). The snapshot feeds the credential gate, which pushes via git push to the GitHub repo, which auto-builds Cloudflare Pages. Thick black arrows with chunky markers show the flow."/>
 
 <br>
 <sub>Source: <a href="docs/diagrams/local-sandbox.mmd">docs/diagrams/local-sandbox.mmd</a></sub>
@@ -242,7 +250,7 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 
 ### GitHub cloud loop (online)
 
-<img src="dashboard/public/data/github-loop.svg" width="224" alt="GitHub cloud loop in black and white. A single vertical cluster GITHUB CLOUD LOOP containing five black-filled action nodes: Push → CI pipeline → Triage agent → Harness → Human review. The Human review is the final gate before the merged PR triggers a redeploy of the local sandbox's Floci Podman (described in the local-sandbox diagram above)."/>
+<img src="dashboard/public/data/github-loop.svg" width="224" alt="GitHub cloud loop in 2026 modern style. A single vertical frosted white cluster card with soft drop shadow and rounded corners: GITHUB CLOUD LOOP containing five black-filled action nodes: Push → CI pipeline → Triage agent → Harness → Human review. The Human review is the final gate before the merged PR triggers a redeploy of the local sandbox's Floci Podman (described in the local-sandbox diagram above). Pure black-and-white — no amber accent, since the cross-diagram gate is the Human review node."/>
 
 <br>
 <sub>Source: <a href="docs/diagrams/github-loop.mmd">docs/diagrams/github-loop.mmd</a> · All five nodes are black-filled action nodes; the dotted <code>Human review → Floci Podman</code> edge returns to the local sandbox, shown in the diagram above.</sub>

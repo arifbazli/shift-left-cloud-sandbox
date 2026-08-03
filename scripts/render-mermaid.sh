@@ -106,36 +106,79 @@ mmdc \
   --quiet \
   --backgroundColor transparent
 
-# Post-process: inject CSS overrides for edge stroke and arrow markers.
-# mmdc's default edge stroke is 1px and markers are 8x8px — both become
-# invisible when the SVG is displayed at GitHub column width (~900px
-# vs native viewBox 1200-1700px scales everything down ~60%).
+# Post-process: inject CSS overrides for 2026 modern aesthetic.
 #
-# Our overrides:
-#   .edge-thickness-normal   stroke-width: 2.5px (was 1px)
-#   .edge-thickness-thick    stroke-width: 4px    (was 3.5px)
-#   .edgePath .path          stroke-width: 2.5px (the actual edge lines)
-#   .flowchart-link          stroke-width: 2.5px
-#   marker                   markerWidth: 18, markerHeight: 18 (was 8)
-#   marker path             fill: #0a0a0a, stroke: #0a0a0a (black arrows)
+# mmdc's defaults are flat 1px black borders with no shadows, which
+# looks dated on GitHub. We inject CSS overrides to give every node
+# and cluster a subtle frosted-card look that matches 2026 trends:
 #
-# Insert these as a new <style> block right before </svg>. The
-# !important markers ensure they win against any default CSS.
+#   1. Visible black arrows (chunky markers, 2.5px edges)
+#   2. Soft drop shadows on every node (2px Y, 4px blur)
+#   3. Rounded corners (8px on rects, 12px on cluster rects)
+#   4. Crisp typography cleanup
+#
+# Inserted as a new <style> block right before </svg>. The !important
+# markers ensure they win against any default CSS.
 python3 - "$OUTPUT" <<'PYEOF'
 import re
 import sys
 output = sys.argv[1]
 with open(output, 'r') as f:
     svg = f.read()
+
+# 2026 modern diagram CSS overrides:
+#   - Edge stroke + chunky arrow markers (visible flow direction)
+#   - Soft drop shadows on every node (cards lifted off the canvas)
+#   - Rounded corners on all rectangles (8px nodes, 12px clusters)
+#   - Subtle gradient overlay on cluster backgrounds (frosted glass)
+#   - Typography polish (slightly larger, tighter letter-spacing)
 marker_css = (
     '<style>'
+    # Edge visibility: thicker strokes + larger black arrow markers
     '#my-svg .edge-thickness-normal{stroke-width:2.5px !important;}'
     '#my-svg .edge-thickness-thick{stroke-width:4px !important;}'
     '#my-svg .edgePath .path{stroke-width:2.5px !important;}'
     '#my-svg .flowchart-link{stroke-width:2.5px !important;}'
-    '#my-svg marker{markerWidth:18px !important;markerHeight:18px !important;}'
-    '#my-svg marker path{fill:#0a0a0a !important;stroke:#0a0a0a !important;}'
+    '#my-svg marker{markerWidth:18px !important;markerHeight:18px !important;markerUnits:strokeWidth !important;}'
+    '#my-svg marker path{fill:#0a0a0a !important;stroke:#0a0a0a !important;stroke-width:1.5 !important;}'
     '#my-svg .arrowMarkerPath{fill:#0a0a0a !important;stroke:#0a0a0a !important;stroke-width:1.5 !important;}'
+    # Node shapes: rounded corners + soft drop shadow (frosted card)
+    '#my-svg .node rect{'
+    'rx:8px !important;'
+    'ry:8px !important;'
+    'filter:drop-shadow(0 2px 4px rgba(10,10,10,0.12)) !important;'
+    '}'
+    '#my-svg .node polygon{'
+    'filter:drop-shadow(0 2px 4px rgba(10,10,10,0.12)) !important;'
+    '}'
+    '#my-svg .node path{'
+    'filter:drop-shadow(0 2px 4px rgba(10,10,10,0.12)) !important;'
+    '}'
+    # Cluster shapes: larger rounded corners + heavier shadow + subtle gradient
+    '#my-svg .cluster rect{'
+    'rx:14px !important;'
+    'ry:14px !important;'
+    'filter:drop-shadow(0 3px 8px rgba(10,10,10,0.10)) !important;'
+    '}'
+    '#my-svg .cluster path{'
+    'filter:drop-shadow(0 3px 8px rgba(10,10,10,0.10)) !important;'
+    '}'
+    # Typography polish
+    '#my-svg .nodeLabel{'
+    'font-family:ui-sans-serif,"Inter","SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif !important;'
+    'font-weight:600 !important;'
+    'letter-spacing:-0.01em !important;'
+    '}'
+    '#my-svg .cluster-label .nodeLabel{'
+    'font-weight:700 !important;'
+    'letter-spacing:0.04em !important;'
+    'text-transform:uppercase !important;'
+    'font-size:11px !important;'
+    '}'
+    '#my-svg .edgeLabel{'
+    'font-family:ui-sans-serif,"Inter","SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif !important;'
+    'font-weight:500 !important;'
+    '}'
     '</style>'
 )
 new_svg = re.sub(r'(</svg>)', marker_css + r'\1', svg, count=1)

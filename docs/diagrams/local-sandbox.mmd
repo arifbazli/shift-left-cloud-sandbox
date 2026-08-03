@@ -11,7 +11,7 @@ flowchart LR
 
     subgraph SY["SYNC"]
         direction TB
-        GATE["Credential gate"]
+        GATE{"Credential gate"}
         SN --> GATE
     end
 
@@ -24,11 +24,12 @@ flowchart LR
 
     GATE -->|"push"| REPO
 
-    %% Cluster backgrounds: white with thin black border.
+    %% 2026 modern aesthetic: black-and-white shape language with one
+    %% warm amber accent reserved for the security choke-point (GATE).
     classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
     classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
     classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
-    classDef diamond fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef diamond fill:#ff6b35,stroke:#ff6b35,color:#ffffff,stroke-width:2px
 
     class L,SY,C section
     class TF,FL,CK,AG,SN black

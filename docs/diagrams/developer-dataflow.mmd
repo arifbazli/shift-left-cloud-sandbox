@@ -30,17 +30,21 @@ flowchart LR
 
     APPLY --> V1 --> D1 -->|"drift"| AG
 
-    %% Cluster backgrounds: white with thin black border (so the box is
-    %% visible against the canvas without dominating the design).
+    %% 2026 modern aesthetic: black-and-white shape language with one
+    %% warm amber accent reserved for the security choke-point (GATE).
+    %% Cluster backgrounds: white with a thin black border; the post-
+    %% process CSS injects a soft drop shadow and rounded corners so
+    %% each cluster reads as a frosted card lifted off the canvas.
     classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
-    %% Action nodes (the scripts that do things): black-filled, white text.
+    %% Action nodes (scripts that do things): black-filled, white text.
     classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
     %% Pass-through nodes: white with black border.
     classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
     %% Surface nodes: light gray with black border.
     classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
-    %% Decision node: black diamond with white text.
-    classDef diamond fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    %% Decision node: amber (#ff6b35) diamond with white text.
+    %% The only color in the diagram, reserved for the security gate.
+    classDef diamond fill:#ff6b35,stroke:#ff6b35,color:#ffffff,stroke-width:2px
     %% Data store: white with black border (cylinder).
     classDef store fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
 

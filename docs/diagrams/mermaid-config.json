@@ -1,8 +1,8 @@
 {
   "theme": "base",
   "themeVariables": {
-    "fontSize": "11px",
-    "fontFamily": "ui-sans-serif, 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    "fontSize": "12px",
+    "fontFamily": "ui-sans-serif, 'Inter', 'SF Pro Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     "fontWeight": "500",
     "primaryColor": "#ffffff",
     "primaryBorderColor": "#0a0a0a",
@@ -20,10 +20,10 @@
   "flowchart": {
     "htmlLabels": true,
     "curve": "linear",
-    "nodeSpacing": 0,
-    "rankSpacing": 8,
-    "wrappingWidth": 80,
-    "padding": 4,
+    "nodeSpacing": 14,
+    "rankSpacing": 24,
+    "wrappingWidth": 96,
+    "padding": 8,
     "defaultRenderer": "elk"
   }
 }
