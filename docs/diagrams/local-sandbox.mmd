@@ -1,0 +1,31 @@
+flowchart LR
+    subgraph L["🖥️ Local Sandbox"]
+        direction TB
+        TF["<b>Terraform + tfsec</b>"]
+        FL["<b>Floci Podman</b>"]
+        CK["<b>Checks</b>"]
+        AG["<b>Bounded agent</b>"]
+        SN["<b>Snapshot + act</b>"]
+        TF --> FL --> CK --> AG --> SN
+    end
+
+    subgraph SY["🔒 Sync"]
+        direction TB
+        GATE["<b>Credential gate</b>"]
+        SN --> GATE
+    end
+
+    subgraph C["☁️ Public"]
+        direction TB
+        REPO[("<b>GitHub repo</b>")]
+        PAGES["<b>Cloudflare Pages</b>"]
+        REPO --> PAGES
+    end
+
+    GATE -->|"push"| REPO
+
+    style L fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style SY fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
+    style C fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
+    style GATE fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
+    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px

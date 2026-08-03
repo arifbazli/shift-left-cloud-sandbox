@@ -1,0 +1,13 @@
+flowchart LR
+    subgraph GH["🤖 GitHub cloud loop"]
+        direction TB
+        PUSH["<b>Push</b>"]
+        CI["<b>CI</b><br/><i>scan+verify</i>"]
+        TRI["<b>Triage</b>"]
+        PI["<b>Harness</b>"]
+        HR["<b>Human review</b>"]
+        PUSH --> CI --> TRI --> PI --> HR
+    end
+
+    style GH fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
+    style HR fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:3px

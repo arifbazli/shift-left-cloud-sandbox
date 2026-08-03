@@ -1,0 +1,37 @@
+flowchart LR
+    subgraph P["① ② Plan"]
+        direction LR
+        SCAN["<b>scan.sh</b>"]
+        GATE{"<b>gate</b>"}
+        DEP["<b>deploy.sh</b>"]
+        SCAN --> GATE -->|"PASS"| DEP
+    end
+
+    subgraph V["③ Verify"]
+        direction LR
+        V1["<b>verify.sh</b>"]
+    end
+
+    subgraph D["④ Drift"]
+        direction LR
+        D1["<b>drift-check.sh</b>"]
+    end
+
+    subgraph R["⑤ ⑥ Respond"]
+        direction LR
+        AG["<b>agent-loop.sh</b>"]
+        DA[("<b>JSON</b>")]
+        LOC["<b>pages dev</b>"]
+        LIVE["<b>pages deploy</b>"]
+        AG --> DA --> LOC
+        DA --> LIVE
+    end
+
+    DEP --> V1 --> D1 -->|"exit 2"| AG
+    GATE -. "blocks" .-> DEP
+
+    style P fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style V fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style D fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style R fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
+    style GATE fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px

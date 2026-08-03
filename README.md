@@ -22,88 +22,12 @@
 
 ## Developer-terminal dataflow
 
-```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "fontSize": "20px",
-    "fontFamily": "ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace",
-    "primaryColor": "#0d1b1e",
-    "primaryBorderColor": "#00d4aa",
-    "primaryTextColor": "#e6f7f4",
-    "lineColor": "#00d4aa",
-    "secondaryColor": "#1a1a1a",
-    "tertiaryColor": "#1a1a1a",
-    "clusterBkg": "#0d1b1e",
-    "clusterBorder": "#00d4aa",
-    "titleColor": "#e6f7f4",
-    "edgeLabelBackground": "#0d1b1e",
-    "nodeBorder": "#00d4aa",
-    "mainBkg": "#0d1b1e"
-  },
-  "flowchart": {
-    "htmlLabels": true,
-    "curve": "linear",
-    "nodeSpacing": 60,
-    "rankSpacing": 80,
-    "wrappingWidth": 280,
-    "padding": 18
-  }
-}}%%
-flowchart LR
-    subgraph S1["① Gate"]
-        SCAN["<b>scripts/scan.sh</b><br/><i>tfsec terraform/</i>"]
-        GATE{"<b>gate</b><br/>PASS or FAIL"}
-        SCAN --> GATE
-    end
+<img src="dashboard/public/data/developer-dataflow.svg" width="900" alt="Developer-terminal dataflow: scan → deploy → verify → drift → remediate → surface, with the agent reading gate state and writing JSON to the dashboard, and the dashboard surfaced via wrangler pages dev (local) or wrangler pages deploy (Cloudflare Pages)."/>
 
-    subgraph S2["② Apply"]
-        DEPLOY["<b>scripts/deploy.sh</b><br/><i>terraform apply → floci</i>"]
-    end
+<br>
+<sub>Source: <a href="docs/diagrams/developer-dataflow.mmd">docs/diagrams/developer-dataflow.mmd</a> · rendered with <a href="scripts/render-mermaid.sh">scripts/render-mermaid.sh</a> · theme: <a href="docs/diagrams/mermaid-config.json">mermaid-config.json</a> (fontSize 11px, htmlLabels, max-width friendly)</sub>
 
-    subgraph S3["③ Verify"]
-        VERIFY["<b>scripts/verify.sh</b><br/><i>curl floci-core / floci-ui</i>"]
-    end
-
-    subgraph S4["④ Detect drift"]
-        DRIFT["<b>scripts/drift-check.sh</b><br/><i>terraform plan -detailed-exitcode</i>"]
-    end
-
-    subgraph S5["⑤ Remediate (bounded allowlist)"]
-        AGENT["<b>scripts/agent-loop.sh</b><br/><i>podman restart · terraform apply drift</i>"]
-    end
-
-    subgraph S6["⑥ Surface"]
-        DASH[("<b>dashboard/public/</b><br/><i>JSON outputs</i>")]
-        LOCAL["<b>wrangler pages dev</b><br/><i>local preview</i>"]
-        LIVE["<b>🌐 wrangler pages deploy</b><br/><i>Cloudflare Pages</i>"]
-        DASH --> LOCAL
-        DASH --> LIVE
-    end
-
-    GATE -->|"<b>PASS</b>"| DEPLOY --> VERIFY --> DRIFT -->|"<b>exit 2 (drift)</b>"| AGENT
-
-    GATE -. "<b>blocks deploy</b>" .-> DEPLOY
-    AGENT -. "<b>reads gate</b>" .-> GATE
-    AGENT -. "<b>reads drift JSON</b>" .-> DRIFT
-
-    SCAN -. "<b>writes JSON</b>" .-> DASH
-    DEPLOY -. "<b>writes JSON</b>" .-> DASH
-    VERIFY -. "<b>writes JSON</b>" .-> DASH
-    DRIFT  -. "<b>writes JSON</b>" .-> DASH
-    AGENT  -. "<b>writes JSON</b>" .-> DASH
-
-    style S1 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style S2 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style S3 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style S4 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style S5 fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
-    style S6 fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
-    style LIVE  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style DASH  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-```
+<br>
 
 <br>
 
@@ -302,78 +226,21 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 
 ## Architecture
 
-```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "fontSize": "20px",
-    "fontFamily": "ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace",
-    "primaryColor": "#0d1b1e",
-    "primaryBorderColor": "#00d4aa",
-    "primaryTextColor": "#e6f7f4",
-    "lineColor": "#00d4aa",
-    "secondaryColor": "#1a1a1a",
-    "tertiaryColor": "#1a1a1a",
-    "clusterBkg": "#0d1b1e",
-    "clusterBorder": "#00d4aa",
-    "titleColor": "#e6f7f4",
-    "edgeLabelBackground": "#0d1b1e",
-    "nodeBorder": "#00d4aa",
-    "mainBkg": "#0d1b1e"
-  },
-  "flowchart": {
-    "htmlLabels": true,
-    "curve": "linear",
-    "nodeSpacing": 60,
-    "rankSpacing": 80,
-    "wrappingWidth": 280,
-    "padding": 18
-  }
-}}%%
-flowchart LR
-    subgraph LOCAL["🖥️ Local Sandbox — never internet-reachable"]
-        direction LR
-        TF["<b>Terraform + tfsec</b><br/><i>scan.sh gate</i>"]
-        FL["<b>Floci Podman</b><br/><i>deploy.sh</i>"]
-        CK["<b>Continuous checks</b><br/><i>drift + verify + health</i>"]
-        AG["<b>Bounded agent</b><br/><i>checks scan.sh first</i>"]
-        SN["<b>Snapshot + act</b><br/><i>backup tfstate before any change</i>"]
-        TF --> FL --> CK --> AG --> SN
-    end
+### Local sandbox (offline)
 
-    subgraph SYNC["🔒 Sync (outbound only)"]
-        direction LR
-        GATE["<b>Credential scan gate</b><br/><i>refuses on any secret/ARN match</i>"]
-        SN -->|"<b>JSON snapshots only</b>"| GATE
-    end
+<img src="dashboard/public/data/local-sandbox.svg" width="900" alt="Local sandbox: Terraform + tfsec (scan.sh gate) → Floci Podman (deploy.sh) → Continuous checks (drift + verify + health) → Bounded agent (checks scan.sh first) → Snapshot + act (backup tfstate). The snapshot feeds the Sync (outbound only) which contains the Credential scan gate that refuses on any secret/ARN match. The gate pushes JSON to GitHub repo, which auto-builds Cloudflare Pages (live dashboard)."/>
 
-    subgraph CLOUD["☁️ Public surface"]
-        direction LR
-        REPO[("<b>GitHub repo</b><br/>arifbazli/<br/>shift-left-cloud-sandbox")]
-        PAGES["<b>🌐 Cloudflare Pages</b><br/>shift-left-cloud-sandbox.pages.dev"]
-        REPO -->|"<b>auto-build</b>"| PAGES
-    end
+<br>
+<sub>Source: <a href="docs/diagrams/local-sandbox.mmd">docs/diagrams/local-sandbox.mmd</a></sub>
 
-    subgraph GH["🤖 GitHub cloud loop"]
-        direction LR
-        PUSH["<b>Push to GitHub</b>"] --> CI["<b>CI pipeline</b><br/><i>scan+deploy+verify</i>"]
-        CI --> TRI["<b>Triage agent</b><br/><i>gh-aw → issue</i>"]
-        TRI --> PI["<b>Local harness → PR</b><br/><i>minimax-m3, verify gate</i>"]
-        PI --> HR["<b>Human review + merge</b><br/><i>cannot self-approve</i>"]
-    end
+<br>
 
-    GATE -->|"<b>git push</b>"| REPO
-    TF -. "<b>push</b>" .-> PUSH
-    HR -. "<b>merged → redeploy</b>" .-> FL
+### GitHub cloud loop (online)
 
-    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style SYNC  fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-    style CLOUD fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-    style GH    fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
-    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
-    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
-    style REPO  fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
-```
+<img src="dashboard/public/data/github-loop.svg" width="224" alt="GitHub cloud loop: Push to GitHub → CI pipeline (scan+deploy+verify) → Triage agent (gh-aw → issue) → Local harness → PR (minimax-m3, verify gate) → Human review + merge (cannot self-approve). The merged PR triggers a redeploy of floci."/>
+
+<br>
+<sub>Source: <a href="docs/diagrams/github-loop.mmd">docs/diagrams/github-loop.mmd</a> · Rectangular subgraph is GitHub-side; the dotted <code>merged → redeploy</code> arrow returns to the local sandbox's <code>Floci Podman</code>.</sub>
 
 <br>
 
