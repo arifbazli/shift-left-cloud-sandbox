@@ -23,59 +23,86 @@
 ## Developer-terminal dataflow
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "20px",
+    "fontFamily": "ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace",
+    "primaryColor": "#0d1b1e",
+    "primaryBorderColor": "#00d4aa",
+    "primaryTextColor": "#e6f7f4",
+    "lineColor": "#00d4aa",
+    "secondaryColor": "#1a1a1a",
+    "tertiaryColor": "#1a1a1a",
+    "clusterBkg": "#0d1b1e",
+    "clusterBorder": "#00d4aa",
+    "titleColor": "#e6f7f4",
+    "edgeLabelBackground": "#0d1b1e",
+    "nodeBorder": "#00d4aa",
+    "mainBkg": "#0d1b1e"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "linear",
+    "nodeSpacing": 60,
+    "rankSpacing": 80,
+    "wrappingWidth": 280,
+    "padding": 18
+  }
+}}%%
 flowchart LR
     subgraph S1["① Gate"]
-        SCAN["scripts/scan.sh<br/><i>tfsec terraform/</i>"]
-        GATE{"gate<br/>PASS or FAIL"}
+        SCAN["<b>scripts/scan.sh</b><br/><i>tfsec terraform/</i>"]
+        GATE{"<b>gate</b><br/>PASS or FAIL"}
         SCAN --> GATE
     end
 
     subgraph S2["② Apply"]
-        DEPLOY["scripts/deploy.sh<br/><i>terraform apply → floci</i>"]
+        DEPLOY["<b>scripts/deploy.sh</b><br/><i>terraform apply → floci</i>"]
     end
 
     subgraph S3["③ Verify"]
-        VERIFY["scripts/verify.sh<br/><i>curl floci-core / floci-ui</i>"]
+        VERIFY["<b>scripts/verify.sh</b><br/><i>curl floci-core / floci-ui</i>"]
     end
 
     subgraph S4["④ Detect drift"]
-        DRIFT["scripts/drift-check.sh<br/><i>terraform plan -detailed-exitcode</i>"]
+        DRIFT["<b>scripts/drift-check.sh</b><br/><i>terraform plan -detailed-exitcode</i>"]
     end
 
     subgraph S5["⑤ Remediate (bounded allowlist)"]
-        AGENT["scripts/agent-loop.sh<br/><i>podman restart · terraform apply drift</i>"]
+        AGENT["<b>scripts/agent-loop.sh</b><br/><i>podman restart · terraform apply drift</i>"]
     end
 
     subgraph S6["⑥ Surface"]
-        DASH[("dashboard/public/<br/><i>JSON outputs</i>")]
-        LOCAL["wrangler pages dev<br/><i>local preview</i>"]
-        LIVE["🌐 wrangler pages deploy<br/><i>Cloudflare Pages</i>"]
+        DASH[("<b>dashboard/public/</b><br/><i>JSON outputs</i>")]
+        LOCAL["<b>wrangler pages dev</b><br/><i>local preview</i>"]
+        LIVE["<b>🌐 wrangler pages deploy</b><br/><i>Cloudflare Pages</i>"]
         DASH --> LOCAL
         DASH --> LIVE
     end
 
-    GATE -->|"PASS"| DEPLOY --> VERIFY --> DRIFT -->|"exit 2 (drift)"| AGENT
+    GATE -->|"<b>PASS</b>"| DEPLOY --> VERIFY --> DRIFT -->|"<b>exit 2 (drift)</b>"| AGENT
 
-    GATE -. "blocks deploy" .-> DEPLOY
-    AGENT -. "reads gate" .-> GATE
-    AGENT -. "reads drift JSON" .-> DRIFT
+    GATE -. "<b>blocks deploy</b>" .-> DEPLOY
+    AGENT -. "<b>reads gate</b>" .-> GATE
+    AGENT -. "<b>reads drift JSON</b>" .-> DRIFT
 
-    SCAN -. "writes JSON" .-> DASH
-    DEPLOY -. "writes JSON" .-> DASH
-    VERIFY -. "writes JSON" .-> DASH
-    DRIFT  -. "writes JSON" .-> DASH
-    AGENT  -. "writes JSON" .-> DASH
+    SCAN -. "<b>writes JSON</b>" .-> DASH
+    DEPLOY -. "<b>writes JSON</b>" .-> DASH
+    VERIFY -. "<b>writes JSON</b>" .-> DASH
+    DRIFT  -. "<b>writes JSON</b>" .-> DASH
+    AGENT  -. "<b>writes JSON</b>" .-> DASH
 
-    style S1 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style S2 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style S3 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style S4 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style S5 fill:#1a1030,stroke:#a855f7,color:#f0e6ff
-    style S6 fill:#1a1a1a,stroke:#888888,color:#dddddd
-    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
-    style LIVE  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style DASH  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style S1 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style S2 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style S3 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style S4 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style S5 fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
+    style S6 fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
+    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
+    style LIVE  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style DASH  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
 ```
 
 <br>
@@ -276,49 +303,76 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 ## Architecture
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "20px",
+    "fontFamily": "ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace",
+    "primaryColor": "#0d1b1e",
+    "primaryBorderColor": "#00d4aa",
+    "primaryTextColor": "#e6f7f4",
+    "lineColor": "#00d4aa",
+    "secondaryColor": "#1a1a1a",
+    "tertiaryColor": "#1a1a1a",
+    "clusterBkg": "#0d1b1e",
+    "clusterBorder": "#00d4aa",
+    "titleColor": "#e6f7f4",
+    "edgeLabelBackground": "#0d1b1e",
+    "nodeBorder": "#00d4aa",
+    "mainBkg": "#0d1b1e"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "linear",
+    "nodeSpacing": 60,
+    "rankSpacing": 80,
+    "wrappingWidth": 280,
+    "padding": 18
+  }
+}}%%
 flowchart LR
     subgraph LOCAL["🖥️ Local Sandbox — never internet-reachable"]
         direction LR
-        TF["Terraform + tfsec<br/><i>scan.sh gate</i>"]
-        FL["Floci Podman<br/><i>deploy.sh</i>"]
-        CK["Continuous checks<br/><i>drift + verify + health</i>"]
-        AG["Bounded agent<br/><i>checks scan.sh first</i>"]
-        SN["Snapshot + act<br/><i>backup tfstate before any change</i>"]
+        TF["<b>Terraform + tfsec</b><br/><i>scan.sh gate</i>"]
+        FL["<b>Floci Podman</b><br/><i>deploy.sh</i>"]
+        CK["<b>Continuous checks</b><br/><i>drift + verify + health</i>"]
+        AG["<b>Bounded agent</b><br/><i>checks scan.sh first</i>"]
+        SN["<b>Snapshot + act</b><br/><i>backup tfstate before any change</i>"]
         TF --> FL --> CK --> AG --> SN
     end
 
     subgraph SYNC["🔒 Sync (outbound only)"]
         direction LR
-        GATE["Credential scan gate<br/><i>refuses on any secret/ARN match</i>"]
-        SN -->|"JSON snapshots only"| GATE
+        GATE["<b>Credential scan gate</b><br/><i>refuses on any secret/ARN match</i>"]
+        SN -->|"<b>JSON snapshots only</b>"| GATE
     end
 
     subgraph CLOUD["☁️ Public surface"]
         direction LR
-        REPO[("GitHub repo<br/>arifbazli/<br/>shift-left-cloud-sandbox")]
-        PAGES["🌐 Cloudflare Pages<br/>shift-left-cloud-sandbox.pages.dev"]
-        REPO -->|"auto-build"| PAGES
+        REPO[("<b>GitHub repo</b><br/>arifbazli/<br/>shift-left-cloud-sandbox")]
+        PAGES["<b>🌐 Cloudflare Pages</b><br/>shift-left-cloud-sandbox.pages.dev"]
+        REPO -->|"<b>auto-build</b>"| PAGES
     end
 
     subgraph GH["🤖 GitHub cloud loop"]
         direction LR
-        PUSH["Push to GitHub"] --> CI["CI pipeline<br/><i>scan+deploy+verify</i>"]
-        CI --> TRI["Triage agent<br/><i>gh-aw → issue</i>"]
-        TRI --> PI["Local harness → PR<br/><i>minimax-m3, verify gate</i>"]
-        PI --> HR["Human review + merge<br/><i>cannot self-approve</i>"]
+        PUSH["<b>Push to GitHub</b>"] --> CI["<b>CI pipeline</b><br/><i>scan+deploy+verify</i>"]
+        CI --> TRI["<b>Triage agent</b><br/><i>gh-aw → issue</i>"]
+        TRI --> PI["<b>Local harness → PR</b><br/><i>minimax-m3, verify gate</i>"]
+        PI --> HR["<b>Human review + merge</b><br/><i>cannot self-approve</i>"]
     end
 
-    GATE -->|"git push"| REPO
-    TF -. "push" .-> PUSH
-    HR -. "merged → redeploy" .-> FL
+    GATE -->|"<b>git push</b>"| REPO
+    TF -. "<b>push</b>" .-> PUSH
+    HR -. "<b>merged → redeploy</b>" .-> FL
 
-    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style SYNC  fill:#1a1a1a,stroke:#888888,color:#dddddd
-    style CLOUD fill:#1a1a1a,stroke:#888888,color:#dddddd
-    style GH    fill:#1a1030,stroke:#a855f7,color:#f0e6ff
-    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
-    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style REPO  fill:#1a1a1a,stroke:#888888,color:#dddddd
+    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style SYNC  fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
+    style CLOUD fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
+    style GH    fill:#1a1030,stroke:#a855f7,color:#f0e6ff,stroke-width:2px
+    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff,stroke-width:3px
+    style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4,stroke-width:2px
+    style REPO  fill:#1a1a1a,stroke:#888888,color:#dddddd,stroke-width:2px
 ```
 
 <br>
