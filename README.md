@@ -20,12 +20,17 @@
 
 <br>
 
-## Developer-terminal dataflow
-
-<img src="dashboard/public/data/developer-dataflow.svg" width="900" alt="Developer-terminal dataflow: scan → deploy → verify → drift → remediate → surface, with the agent reading gate state and writing JSON to the dashboard, and the dashboard surfaced via wrangler pages dev (local) or wrangler pages deploy (Cloudflare Pages)."/>
+> [!NOTE]
+> **Diagram design language.** All three diagrams use a strict black‑and‑white palette with three node shapes: **black‑filled rectangles** are action nodes (scripts that *do* things), **white‑filled rectangles** are pass‑throughs (data flow), **black diamonds** are decisions (gates), and **white cylinders** are data stores (JSON). Cluster backgrounds are white with a thin black border, so the box outline is visible without dominating the design. Typography is the system font stack (`Inter`, `system-ui`, …) at 11px so the diagrams visually integrate with the surrounding README text.
 
 <br>
-<sub>Source: <a href="docs/diagrams/developer-dataflow.mmd">docs/diagrams/developer-dataflow.mmd</a> · rendered with <a href="scripts/render-mermaid.sh">scripts/render-mermaid.sh</a> · theme: <a href="docs/diagrams/mermaid-config.json">mermaid-config.json</a> (fontSize 11px, htmlLabels, max-width friendly)</sub>
+
+## Developer-terminal dataflow
+
+<img src="dashboard/public/data/developer-dataflow.svg" width="900" alt="Developer-terminal dataflow in black and white. Six stages flow left-to-right: scan.sh (tfsec) and GATE (diamond) and deploy.sh (terraform apply) in the '① ② GATE & APPLY' cluster; verify.sh in '③ VERIFY'; drift-check.sh in '④ DRIFT'; and agent-loop.sh feeding the JSON data store, which branches to pages dev (local) and pages deploy (Cloudflare Pages) in '⑤ ⑥ RESPOND'. Black-filled rectangles are action nodes; white-filled are pass-through; the diamond is the decision; the cylinder is the JSON data store. Thick black arrows connect each stage."/>
+
+<br>
+<sub>Source: <a href="docs/diagrams/developer-dataflow.mmd">docs/diagrams/developer-dataflow.mmd</a> · rendered with <a href="scripts/render-mermaid.sh">scripts/render-mermaid.sh</a> · theme: <a href="docs/diagrams/mermaid-config.json">mermaid-config.json</a> (B&W, Inter / system-ui, 11px, htmlLabels, sharp arrow markers)</sub>
 
 <br>
 
@@ -228,7 +233,7 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 
 ### Local sandbox (offline)
 
-<img src="dashboard/public/data/local-sandbox.svg" width="900" alt="Local sandbox: Terraform + tfsec (scan.sh gate) → Floci Podman (deploy.sh) → Continuous checks (drift + verify + health) → Bounded agent (checks scan.sh first) → Snapshot + act (backup tfstate). The snapshot feeds the Sync (outbound only) which contains the Credential scan gate that refuses on any secret/ARN match. The gate pushes JSON to GitHub repo, which auto-builds Cloudflare Pages (live dashboard)."/>
+<img src="dashboard/public/data/local-sandbox.svg" width="900" alt="Local sandbox architecture in black and white. Three clusters: LOCAL SANDBOX contains Terraform + tfsec → Floci Podman → Checks → Bounded agent → Snapshot + act. SYNC contains the Credential gate (black diamond). PUBLIC contains the GitHub repo (cylindrical data store) and Cloudflare Pages. The snapshot feeds the credential gate, which pushes via git push to the GitHub repo, which auto-builds Cloudflare Pages. Black-filled rectangles are action nodes; the diamond is the security choke-point."/>
 
 <br>
 <sub>Source: <a href="docs/diagrams/local-sandbox.mmd">docs/diagrams/local-sandbox.mmd</a></sub>
@@ -237,10 +242,10 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 
 ### GitHub cloud loop (online)
 
-<img src="dashboard/public/data/github-loop.svg" width="224" alt="GitHub cloud loop: Push to GitHub → CI pipeline (scan+deploy+verify) → Triage agent (gh-aw → issue) → Local harness → PR (minimax-m3, verify gate) → Human review + merge (cannot self-approve). The merged PR triggers a redeploy of floci."/>
+<img src="dashboard/public/data/github-loop.svg" width="224" alt="GitHub cloud loop in black and white. A single vertical cluster GITHUB CLOUD LOOP containing five black-filled action nodes: Push → CI pipeline → Triage agent → Harness → Human review. The Human review is the final gate before the merged PR triggers a redeploy of the local sandbox's Floci Podman (described in the local-sandbox diagram above)."/>
 
 <br>
-<sub>Source: <a href="docs/diagrams/github-loop.mmd">docs/diagrams/github-loop.mmd</a> · Rectangular subgraph is GitHub-side; the dotted <code>merged → redeploy</code> arrow returns to the local sandbox's <code>Floci Podman</code>.</sub>
+<sub>Source: <a href="docs/diagrams/github-loop.mmd">docs/diagrams/github-loop.mmd</a> · All five nodes are black-filled action nodes; the dotted <code>Human review → Floci Podman</code> edge returns to the local sandbox, shown in the diagram above.</sub>
 
 <br>
 
