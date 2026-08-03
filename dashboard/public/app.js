@@ -78,20 +78,34 @@ function setCardState(id, state) {
 function animCount(el, target, ms = 600) {
   // Respect prefers-reduced-motion: skip tween entirely.
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) { el.textContent = target; return; }
-  const start = parseInt(el.textContent, 10) || 0;
-  if (start === target) return;
-  const t0 = performance.now();
-  const tick = now => {
-    // If tab is hidden, skip tween and just show final value.
-    if (document.hidden) { el.textContent = target; return; }
-    const p = Math.min(1, (now - t0) / ms);
+  if (reduce) { el.textContent = target; el._lastVal = target; return; }
+  // Clamp target to safe integer range — never let a corrupted cache make us
+  // display a negative billion.
+  const safeTarget = Math.max(0, Math.min(999, target | 0));
+  // Read from cached previous value, not live textContent, so stale values
+  // from interrupted tweens don't pollute the start.
+  const start = (typeof el._lastVal === 'number') ? el._lastVal
+              : Math.max(0, Math.min(999, parseInt(el.textContent, 10) || 0));
+  el._lastVal = start;
+  if (start === safeTarget) { el.textContent = safeTarget; return; }
+  // Cancel any in-flight tween on this element before starting a new one.
+  if (el._rafId) cancelAnimationFrame(el._rafId);
+  const t0 = Date.now();
+  const tick = () => {
+    if (document.hidden) { el.textContent = safeTarget; el._lastVal = safeTarget; el._rafId = null; return; }
+    const p = Math.min(1, Math.max(0, (Date.now() - t0) / ms));
     const e = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(start + (target - start) * e);
-    if (p < 1) requestAnimationFrame(tick);
-    else el.textContent = target;  // ensure final value on completion
+    const v = Math.round(start + (safeTarget - start) * e);
+    el.textContent = v;
+    if (p < 1) {
+      el._rafId = requestAnimationFrame(tick);
+    } else {
+      el.textContent = safeTarget;
+      el._lastVal = safeTarget;
+      el._rafId = null;
+    }
   };
-  requestAnimationFrame(tick);
+  el._rafId = requestAnimationFrame(tick);
 }
 
 // Hide skeleton, show body or empty-state
