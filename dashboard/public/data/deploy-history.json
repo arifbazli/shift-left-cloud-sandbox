@@ -267,5 +267,19 @@
     "source": "scripts/deploy-dashboard.sh",
     "project": "shift-left-cloud-sandbox",
     "url": "https://2259eb46.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T05:50:32Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://82b38068.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T05:52:18Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://2abfa45b.shift-left-cloud-sandbox.pages.dev"
   }
 ]

@@ -19,7 +19,7 @@
       <div class="dash-title">shift-left cloud sandbox</div>
       <div class="dash-sub">floci-emulated AWS · tfsec-gated · agent allowlisted</div>
     </div>
-    <div class="sync-status">
+    <div class="sync-status" id="sync-status">
       <span class="dot" id="sync-dot"></span>
       <span id="sync-text">loading…</span>
     </div>
@@ -72,7 +72,6 @@
       <div class="list-row" style="margin-top:10px;padding-top:10px">
         <span class="list-key">last run</span>
         <span class="list-mono" id="scan-ts">—</span>
-        <span class="list-ts" id="scan-ver">tfsec —</span>
       </div>
     </div>
 
@@ -223,13 +222,16 @@
 
   <!-- ── meta bar ──────────────────────────────────────── -->
   <div class="meta-bar">
-    <span>backend: localhost only</span>
-    <span>data plane: static json · 5 files</span>
-    <span>refresh: 10s</span>
-    <span>no kv · no d1 · no workers</span>
+    <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
+    <span><span class="meta-key">data plane</span><span class="meta-val">static json · 5 files</span></span>
+    <span><span class="meta-key">refresh</span><span class="meta-val">10s <span class="meta-hint">click sync dot</span></span></span>
+    <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
   </div>
 
 </div><!-- /dash-wrap -->
+
+<!-- visually hidden ARIA live region for screen readers -->
+<div id="aria-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
 <script src="app.js"></script>
 </body>

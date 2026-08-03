@@ -76,13 +76,20 @@ function setCardState(id, state) {
 }
 
 function animCount(el, target, ms = 600) {
+  // Respect prefers-reduced-motion: skip tween entirely.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { el.textContent = target; return; }
   const start = parseInt(el.textContent, 10) || 0;
+  if (start === target) return;
   const t0 = performance.now();
   const tick = now => {
+    // If tab is hidden, skip tween and just show final value.
+    if (document.hidden) { el.textContent = target; return; }
     const p = Math.min(1, (now - t0) / ms);
     const e = 1 - Math.pow(1 - p, 3);
     el.textContent = Math.round(start + (target - start) * e);
     if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = target;  // ensure final value on completion
   };
   requestAnimationFrame(tick);
 }
@@ -161,7 +168,19 @@ function renderScan(d) {
   const gate = d.gate || 'UNKNOWN';
   const pass = gate === 'PASS';
 
-  setPill('pill-scan', pass ? 'pass' : 'fail', gate);
+  // Pill shows gate + finding count so PASS is honest about what’s underneath.
+  // PASS · 3 medium  >  PASS  (when medium findings exist)
+  // PASS · clean     >  PASS  (when zero findings)
+  const findings = d.findings || d.results || [];
+  const nonLow = findings.filter(r => {
+    const s = (r.severity || '').toUpperCase();
+    return s !== 'LOW' && s !== 'INFO' && s !== 'IGNORED';
+  }).length;
+  const pillLabel = pass
+    ? (nonLow > 0 ? `PASS · ${nonLow}` : 'PASS · clean')
+    : gate;
+
+  setPill('pill-scan', pass ? 'pass' : 'fail', pillLabel);
   setCardState(cardId, pass ? 'pass' : 'fail');
   showCard(cardId, true, false);
 
@@ -172,15 +191,16 @@ function renderScan(d) {
   animCount($('cnt-ignored'),  ign);
 
   $('scan-ts').textContent  = fmtTs(d.timestamp);
-  $('scan-ver').textContent = `tfsec ${d.tfsec_version || '—'}`;
+  $('scan-ver').textContent = '';  // tfsec_version field doesn't exist in real JSON; keep row clean
 
   // findings list
   // JSON key is "findings" (not "results"); findings have no "ignored" field
-  const results = d.findings || d.results || [];
-  $('findings-count').textContent = `${results.length} total`;
-  $('findings-list').innerHTML = results.length === 0
+  $('findings-count').textContent = `${findings.length} total`;
+  const findingsWrap = document.querySelector('.findings-wrap');
+  if (findingsWrap) findingsWrap.classList.toggle('is-empty', findings.length === 0);
+  $('findings-list').innerHTML = findings.length === 0
     ? '<div class="empty-state">No open findings — gate is clean.</div>'
-    : results.slice(0, 30).map(r => {
+    : findings.slice(0, 30).map(r => {
         const sev  = (r.severity || 'low').toLowerCase();
         const bCls = sev === 'critical' ? 'crit' : sev;
         return `<div class="list-row">
@@ -210,9 +230,11 @@ function renderDeploy(d) {
   showCard(cardId, true, false);
 
   $('dep-endpoint').textContent  = d.endpoint || '—';
+  $('dep-endpoint').title        = d.endpoint || '';  // hover shows full URL
   $('dep-resources').textContent = outputKeys.length
     ? `${outputKeys.length} outputs` : '—';
   $('dep-gate').textContent = d.pages_url ? 'synced' : 'local only';
+  $('dep-gate').title = d.pages_url || '';
   $('dep-ts').textContent   = fmtTs(d.timestamp);
 }
 
@@ -246,18 +268,20 @@ function renderDrift(d) {
 
   const cls   = d.classification || 'unknown';
   const clean = d.result === 'no_drift';
-  const pillCls = clean ? 'pass'
-    : cls === 'safe' ? 'warn'
-    : cls === 'destructive' || cls === 'security_only' ? 'fail'
-    : 'warn';
+  // Color logic:
+  //   pass  - clean / no drift (green)
+  //   warn  - drift detected but agent is still able to reason about it
+  //           (safe = could auto-fix, destructive = held back, security_only = blocked)
+  //   fail  - reserved for HTTP-level failures, not policy decisions
+  const pillCls = clean ? 'pass' : 'warn';
   const pillLabel = clean ? 'CLEAN'
-    : cls === 'destructive'   ? 'DESTRUCTIVE'
-    : cls === 'security_only' ? 'FROZEN'
+    : cls === 'safe'           ? 'DRIFT · safe'
+    : cls === 'destructive'    ? 'HELD · destructive'
+    : cls === 'security_only'  ? 'FROZEN · security'
     : 'DRIFT';
 
   setPill('pill-drift', pillCls, pillLabel);
-  setCardState(cardId, clean ? 'pass'
-    : cls === 'destructive' || cls === 'security_only' ? 'fail' : 'warn');
+  setCardState(cardId, clean ? 'pass' : 'warn');
   showCard(cardId, true, false);
 
   $('drift-class').textContent = `classification: ${cls}`;
@@ -270,10 +294,14 @@ function renderDrift(d) {
     ? '<div class="list-row"><span class="list-mono" style="color:var(--text-muted)">no-op across all resources</span></div>'
     : changes.slice(0, 20).map(c => {
         const acts = (c.actions || []).join('|');
-        const aCls = acts.includes('delete') ? 'fail' : acts.includes('create') ? 'pass' : 'idle';
+        // Red only for actual delete/create (destructive change).
+        // Everything else is warn (in-place update) or idle (no-op).
+        const aCls = acts.includes('delete') || acts.includes('create') ? 'warn'
+                  : acts.includes('update') ? 'idle'
+                  : 'idle';
         return `<div class="list-row">
           <span class="pill ${aCls}" style="font-size:10px;padding:1px 7px;border-radius:5px;flex-shrink:0">${acts}</span>
-          <span class="list-mono">${escHtml(c.address)}</span>
+          <span class="list-mono" title="${escHtml(c.address)}">${escHtml(c.address)}</span>
         </div>`;
       }).join('');
 }
@@ -293,28 +321,49 @@ function renderAgent(d) {
     return;
   }
 
+  // Deduplicate consecutive identical reasons so <n> identical rows don't
+  // visually flood the card. Keep the most recent; collapse the rest into one
+  // summary row.
   const events  = arr.filter(e => e.kind !== 'heartbeat').slice(-5).reverse();
+  const deduped = [];
+  for (const e of events) {
+    const prev = deduped[deduped.length - 1];
+    if (prev && prev.kind === e.kind && prev.action === e.action
+             && prev.reason === e.reason) {
+      prev._count = (prev._count || 1) + 1;
+    } else {
+      deduped.push({ ...e, _count: 1 });
+    }
+  }
   const lastHb  = arr.filter(e => e.kind === 'heartbeat').pop() || null;
   const lastEvt = arr.slice().reverse().find(e => e.kind !== 'heartbeat');
 
+  // Distinguish 3 states:
+  //   IDLE     — no events at all (loop never started)
+  //   WATCHING — loop is running but last event was no_action (the common case
+  //             when the agent decides to stand down)
+  //   ACTIVE   — last event was a real action (restart / apply_drift)
+  //   FROZEN   — tfsec gate is holding the agent back
   let pillCls = 'idle', pillLabel = 'IDLE';
   if (lastEvt) {
     if ((lastEvt.reason || '').includes('FROZEN')) { pillCls = 'warn'; pillLabel = 'FROZEN'; }
     else if (lastEvt.kind === 'action')             { pillCls = 'pass'; pillLabel = 'ACTIVE'; }
+    else if (lastEvt.kind === 'no_action')          { pillCls = 'idle'; pillLabel = 'WATCHING'; }
   }
 
   setPill('pill-agent', pillCls, pillLabel);
   setCardState(cardId, pillCls === 'fail' ? 'fail' : pillCls === 'warn' ? 'warn' : 'pass');
   showCard(cardId, true, false);
 
-  $('agent-list').innerHTML = events.map(e => {
+  $('agent-list').innerHTML = deduped.map(e => {
     const kindCls = (e.reason || '').includes('FROZEN') ? 'frozen' : (e.kind || 'no_action');
+    const countTxt = e._count > 1 ? ` <span class="act-count">×${e._count}</span>` : '';
     const reasonHtml = e.reason
       ? `<div class="act-reason" title="${escHtml(e.reason)}">${escHtml(e.reason)}</div>`
       : '';
-    return `<div class="agent-row">
+    return `<div class="agent-row ${e.kind}">
       <div class="agent-row-head">
-        <span class="act-kind ${kindCls}">${e.kind}.${e.action || '—'}</span>
+        <span class="act-kind ${kindCls}">${e.kind}.${e.action || '—'}${countTxt}</span>
         <span class="list-ts">${fmtTs(e.timestamp)}</span>
       </div>
       ${reasonHtml}
@@ -337,11 +386,25 @@ async function fetchAll() {
   updateLatestTs([tfsec, deploy, verify, drift, agent]);
 }
 
-fetchAll();
-setInterval(fetchAll, REFRESH_MS);
+// Announce refreshes to screen readers via a polite live region.
+const liveEl = $('aria-live');
+async function fetchAllAndAnnounce() {
+  await fetchAll();
+  if (liveEl) liveEl.textContent = `Dashboard refreshed at ${fmtTs(new Date().toISOString())}`;
+}
+
+fetchAllAndAnnounce();
+setInterval(fetchAllAndAnnounce, REFRESH_MS);
 setInterval(paintStale, 1000);
 
-// clicking the sync dot triggers an immediate refresh
-document.addEventListener('click', e => {
-  if (e.target.id === 'sync-dot' || e.target.id === 'sync-text') fetchAll();
-});
+// Sync dot is a click-to-refresh affordance. Make it accessible.
+const syncEl = $('sync-status');
+if (syncEl) {
+  syncEl.setAttribute('role', 'button');
+  syncEl.setAttribute('tabindex', '0');
+  syncEl.setAttribute('aria-label', 'Refresh dashboard');
+  syncEl.addEventListener('click', e => { e.preventDefault(); fetchAllAndAnnounce(); });
+  syncEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fetchAllAndAnnounce(); }
+  });
+}
