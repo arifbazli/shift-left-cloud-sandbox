@@ -309,10 +309,15 @@ function renderAgent(d) {
 
   $('agent-list').innerHTML = events.map(e => {
     const kindCls = (e.reason || '').includes('FROZEN') ? 'frozen' : (e.kind || 'no_action');
-    return `<div class="list-row">
-      <span class="act-kind ${kindCls}">${e.kind}.${e.action || '—'}</span>
-      <span class="act-reason">${escHtml(e.reason || '')}</span>
-      <span class="list-ts">${fmtTs(e.timestamp)}</span>
+    const reasonHtml = e.reason
+      ? `<div class="act-reason" title="${escHtml(e.reason)}">${escHtml(e.reason)}</div>`
+      : '';
+    return `<div class="agent-row">
+      <div class="agent-row-head">
+        <span class="act-kind ${kindCls}">${e.kind}.${e.action || '—'}</span>
+        <span class="list-ts">${fmtTs(e.timestamp)}</span>
+      </div>
+      ${reasonHtml}
     </div>`;
   }).join('');
 
