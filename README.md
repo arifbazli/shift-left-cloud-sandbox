@@ -45,6 +45,69 @@
 
 <br>
 
+## Developer-terminal dataflow
+
+```mermaid
+flowchart TD
+    subgraph SCAN["① Gate"]
+        S1["scripts/scan.sh<br/><i>tfsec terraform/</i>"]
+        G{"gate<br/>PASS or FAIL"}
+        S1 --> G
+    end
+
+    subgraph DEPLOY["② Apply"]
+        D1["scripts/deploy.sh<br/><i>terraform apply → floci</i>"]
+    end
+
+    subgraph VERIFY["③ Verify"]
+        V1["scripts/verify.sh<br/><i>curl floci-core / floci-ui</i>"]
+    end
+
+    subgraph DRIFT["④ Detect drift"]
+        DC1["scripts/drift-check.sh<br/><i>terraform plan -detailed-exitcode</i>"]
+    end
+
+    subgraph AGENT["⑤ Remediate (bounded allowlist)"]
+        A1["scripts/agent-loop.sh<br/><i>podman restart · terraform apply drift</i>"]
+        A1 -->|"refuses if gate FAIL"| A1
+    end
+
+    subgraph DASH["⑥ Surface"]
+        DB[("dashboard/public/<br/><i>JSON outputs</i>")]
+        WR["wrangler pages dev<br/><i>local preview</i>"]
+        WRD["wrangler pages deploy<br/><i>Cloudflare Pages</i>"]
+        DB --> WR
+        DB --> WRD
+    end
+
+    G -->|"PASS"| D1
+    D1 --> V1
+    V1 --> DC1
+    DC1 -->|"exit 2 (drift)"| A1
+    G -. "blocks deploy" .-> D1
+    A1 -. "reads gate + JSON" .-> G
+    A1 -. "reads JSON" .-> DC1
+
+    S1 -. "writes" .-> DB
+    D1  -. "writes" .-> DB
+    V1  -. "writes" .-> DB
+    DC1 -. "writes" .-> DB
+    A1  -. "writes" .-> DB
+
+    style SCAN  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style DEPLOY fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style VERIFY fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style DRIFT  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style AGENT  fill:#1a1030,stroke:#a855f7,color:#f0e6ff
+    style DASH   fill:#1a1a1a,stroke:#888888,color:#dddddd
+    style G      fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
+    style DB     fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style WR     fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style WRD    fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+```
+
+<br>
+
 ## Contents
 
 - [TL;DR demo](#tldr-demo)
