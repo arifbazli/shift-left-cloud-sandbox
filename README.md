@@ -20,90 +20,62 @@
 
 <br>
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  developer terminal                                                         │
-│                                                                             │
-│  scripts/scan.sh         ─►  tfsec (terraform/)  ─►  gate  ─►  dashboard JSON│
-│            │                                                                  │
-│            ▼ passes                                                           │
-│  scripts/deploy.sh       ─►  terraform apply (endpoints → floci)              │
-│            │                                                                  │
-│            ▼                                                                   │
-│  scripts/verify.sh       ─►  curl floci-core / floci-ui  ─►  dashboard JSON  │
-│            │                                                                  │
-│            ▼                                                                   │
-│  scripts/drift-check.sh  ─►  terraform plan -detailed-exitcode  ─► JSON      │
-│            │                                                                  │
-│            ▼                                                                   │
-│  scripts/agent-loop.sh   ─►  bounded allowlist (restart / apply drift)        │
-│                                                                               │
-│  dashboard/public/      ─►  wrangler pages dev (local)  /  deploy (Cloudflare)│
-│                            reads the JSON files as static assets              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-<br>
-
 ## Developer-terminal dataflow
 
 ```mermaid
-flowchart TD
-    subgraph SCAN["① Gate"]
-        S1["scripts/scan.sh<br/><i>tfsec terraform/</i>"]
-        G{"gate<br/>PASS or FAIL"}
-        S1 --> G
+flowchart LR
+    subgraph S1["① Gate"]
+        SCAN["scripts/scan.sh<br/><i>tfsec terraform/</i>"]
+        GATE{"gate<br/>PASS or FAIL"}
+        SCAN --> GATE
     end
 
-    subgraph DEPLOY["② Apply"]
-        D1["scripts/deploy.sh<br/><i>terraform apply → floci</i>"]
+    subgraph S2["② Apply"]
+        DEPLOY["scripts/deploy.sh<br/><i>terraform apply → floci</i>"]
     end
 
-    subgraph VERIFY["③ Verify"]
-        V1["scripts/verify.sh<br/><i>curl floci-core / floci-ui</i>"]
+    subgraph S3["③ Verify"]
+        VERIFY["scripts/verify.sh<br/><i>curl floci-core / floci-ui</i>"]
     end
 
-    subgraph DRIFT["④ Detect drift"]
-        DC1["scripts/drift-check.sh<br/><i>terraform plan -detailed-exitcode</i>"]
+    subgraph S4["④ Detect drift"]
+        DRIFT["scripts/drift-check.sh<br/><i>terraform plan -detailed-exitcode</i>"]
     end
 
-    subgraph AGENT["⑤ Remediate (bounded allowlist)"]
-        A1["scripts/agent-loop.sh<br/><i>podman restart · terraform apply drift</i>"]
-        A1 -->|"refuses if gate FAIL"| A1
+    subgraph S5["⑤ Remediate (bounded allowlist)"]
+        AGENT["scripts/agent-loop.sh<br/><i>podman restart · terraform apply drift</i>"]
     end
 
-    subgraph DASH["⑥ Surface"]
-        DB[("dashboard/public/<br/><i>JSON outputs</i>")]
-        WR["wrangler pages dev<br/><i>local preview</i>"]
-        WRD["wrangler pages deploy<br/><i>Cloudflare Pages</i>"]
-        DB --> WR
-        DB --> WRD
+    subgraph S6["⑥ Surface"]
+        DASH[("dashboard/public/<br/><i>JSON outputs</i>")]
+        LOCAL["wrangler pages dev<br/><i>local preview</i>"]
+        LIVE["🌐 wrangler pages deploy<br/><i>Cloudflare Pages</i>"]
+        DASH --> LOCAL
+        DASH --> LIVE
     end
 
-    G -->|"PASS"| D1
-    D1 --> V1
-    V1 --> DC1
-    DC1 -->|"exit 2 (drift)"| A1
-    G -. "blocks deploy" .-> D1
-    A1 -. "reads gate + JSON" .-> G
-    A1 -. "reads JSON" .-> DC1
+    GATE -->|"PASS"| DEPLOY --> VERIFY --> DRIFT -->|"exit 2 (drift)"| AGENT
 
-    S1 -. "writes" .-> DB
-    D1  -. "writes" .-> DB
-    V1  -. "writes" .-> DB
-    DC1 -. "writes" .-> DB
-    A1  -. "writes" .-> DB
+    GATE -. "blocks deploy" .-> DEPLOY
+    AGENT -. "reads gate" .-> GATE
+    AGENT -. "reads drift JSON" .-> DRIFT
 
-    style SCAN  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style DEPLOY fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style VERIFY fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style DRIFT  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style AGENT  fill:#1a1030,stroke:#a855f7,color:#f0e6ff
-    style DASH   fill:#1a1a1a,stroke:#888888,color:#dddddd
-    style G      fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
-    style DB     fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style WR     fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style WRD    fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    SCAN -. "writes JSON" .-> DASH
+    DEPLOY -. "writes JSON" .-> DASH
+    VERIFY -. "writes JSON" .-> DASH
+    DRIFT  -. "writes JSON" .-> DASH
+    AGENT  -. "writes JSON" .-> DASH
+
+    style S1 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style S2 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style S3 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style S4 fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style S5 fill:#1a1030,stroke:#a855f7,color:#f0e6ff
+    style S6 fill:#1a1a1a,stroke:#888888,color:#dddddd
+    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
+    style LIVE  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style DASH  fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
+    style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
 ```
 
 <br>
@@ -304,11 +276,11 @@ tfsec --version 2>&1 | grep -E "^v1\.28\.5$" || echo "WRONG VERSION"
 ## Architecture
 
 ```mermaid
-flowchart TB
-    subgraph LOCAL["🖥️ Local Sandbox (WSL, Podman) — never internet-reachable"]
-        direction TB
+flowchart LR
+    subgraph LOCAL["🖥️ Local Sandbox — never internet-reachable"]
+        direction LR
         TF["Terraform + tfsec<br/><i>scan.sh gate</i>"]
-        FL["Floci (Podman)<br/><i>deploy.sh</i>"]
+        FL["Floci Podman<br/><i>deploy.sh</i>"]
         CK["Continuous checks<br/><i>drift + verify + health</i>"]
         AG["Bounded agent<br/><i>checks scan.sh first</i>"]
         SN["Snapshot + act<br/><i>backup tfstate before any change</i>"]
@@ -316,64 +288,68 @@ flowchart TB
     end
 
     subgraph SYNC["🔒 Sync (outbound only)"]
+        direction LR
         GATE["Credential scan gate<br/><i>refuses on any secret/ARN match</i>"]
         SN -->|"JSON snapshots only"| GATE
     end
 
-    GATE -->|"git push"| REPO[("GitHub repo<br/>arifbazli/shift-left-cloud-sandbox")]
-    REPO -->|"auto-build"| PAGES["🌐 Cloudflare Pages<br/>shift-left-cloud-sandbox.pages.dev"]
+    subgraph CLOUD["☁️ Public surface"]
+        direction LR
+        REPO[("GitHub repo<br/>arifbazli/<br/>shift-left-cloud-sandbox")]
+        PAGES["🌐 Cloudflare Pages<br/>shift-left-cloud-sandbox.pages.dev"]
+        REPO -->|"auto-build"| PAGES
+    end
 
-    subgraph GH["☁️ GitHub cloud loop"]
-        direction TB
+    subgraph GH["🤖 GitHub cloud loop"]
+        direction LR
         PUSH["Push to GitHub"] --> CI["CI pipeline<br/><i>scan+deploy+verify</i>"]
         CI --> TRI["Triage agent<br/><i>gh-aw → issue</i>"]
         TRI --> PI["Local harness → PR<br/><i>minimax-m3, verify gate</i>"]
         PI --> HR["Human review + merge<br/><i>cannot self-approve</i>"]
     end
 
-    TF -.->|"push"| PUSH
-    HR -.->|"merged → redeploy"| FL
+    GATE -->|"git push"| REPO
+    TF -. "push" .-> PUSH
+    HR -. "merged → redeploy" .-> FL
 
     style LOCAL fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style GH fill:#1a1030,stroke:#a855f7,color:#f0e6ff
-    style SYNC fill:#1a1a1a,stroke:#888,color:#ddd
+    style SYNC  fill:#1a1a1a,stroke:#888888,color:#dddddd
+    style CLOUD fill:#1a1a1a,stroke:#888888,color:#dddddd
+    style GH    fill:#1a1030,stroke:#a855f7,color:#f0e6ff
+    style GATE  fill:#1a1a1a,stroke:#f6c54b,color:#ffffff
     style PAGES fill:#0d1b1e,stroke:#00d4aa,color:#e6f7f4
-    style REPO fill:#1a1a1a,stroke:#888,color:#ddd
+    style REPO  fill:#1a1a1a,stroke:#888888,color:#dddddd
 ```
 
 <br>
 
 ## Repo layout
 
-```
-floci-stack/
-├── terraform/                       VPC + S3 + IAM + SG + flow logs. Endpoint-overridable.
-│   ├── main.tf                      The "shape" + one deliberate fixture
-│   ├── main.tf.with-fixture         Snapshot used by toggle-fixture.sh (committed)
-│   ├── main.tf.without-fixture      Snapshot used by toggle-fixture.sh (committed)
-│   ├── providers.tf                 AWS provider with floci endpoint overrides
-│   ├── variables.tf                 localstack_enabled = true (default)
-│   └── outputs.tf                   vpc_id, bucket name, role ARN, SG ID
-├── scripts/
-│   ├── scan.sh                      tfsec gate → dashboard JSON
-│   ├── toggle-fixture.sh            comment/uncomment the deliberate misconfig
-│   ├── bootstrap-fixture-snapshots.sh  regenerate the two main.tf.* files
-│   ├── deploy.sh                    terraform apply against floci (4 hard guards)
-│   ├── verify.sh                    curl floci directly, confirm resources exist
-│   ├── drift-check.sh               terraform plan -detailed-exitcode → dashboard JSON
-│   ├── agent-loop.sh                bounded remediation loop (allowlist only)
-│   ├── deploy-dashboard.sh          wrangler pages deploy dashboard/public
-│   └── sync-dashboard.sh            hard-gated publish of dashboard JSON + redeploy
-├── dashboard/
-│   └── public/
-│       ├── index.html               ← JSON files as static assets, no KV/D1
-│       ├── app.js
-│       ├── style.css
-│       └── data/                    (10 JSON files, written by the scripts above)
-├── wrangler.toml                    Cloudflare Pages project config (no KV/D1/Workers)
-├── podman-compose.yml               floci-core + floci-ui only
-└── README.md                        (this file)
-```
+| Path | Purpose |
+|---|---|
+| `terraform/` | VPC + S3 + IAM + SG + flow logs. Endpoint-overridable. |
+| `terraform/main.tf` | The "shape" + one deliberate fixture |
+| `terraform/main.tf.with-fixture` | Snapshot used by `toggle-fixture.sh` (committed) |
+| `terraform/main.tf.without-fixture` | Snapshot used by `toggle-fixture.sh` (committed) |
+| `terraform/providers.tf` | AWS provider with floci endpoint overrides |
+| `terraform/variables.tf` | `localstack_enabled = true` (default) |
+| `terraform/outputs.tf` | `vpc_id`, bucket name, role ARN, SG ID |
+| `scripts/scan.sh` | tfsec gate → dashboard JSON |
+| `scripts/toggle-fixture.sh` | comment/uncomment the deliberate misconfig |
+| `scripts/bootstrap-fixture-snapshots.sh` | regenerate the two `main.tf.*` files |
+| `scripts/deploy.sh` | terraform apply against floci (4 hard guards) |
+| `scripts/verify.sh` | curl floci directly, confirm resources exist |
+| `scripts/drift-check.sh` | terraform plan `-detailed-exitcode` → dashboard JSON |
+| `scripts/agent-loop.sh` | bounded remediation loop (allowlist only) |
+| `scripts/deploy-dashboard.sh` | wrangler pages deploy `dashboard/public` |
+| `scripts/sync-dashboard.sh` | hard-gated publish of dashboard JSON + redeploy |
+| `dashboard/public/index.html` | Dashboard markup — JSON as static assets, no KV/D1 |
+| `dashboard/public/app.js` | Client-side fetcher + renderer |
+| `dashboard/public/style.css` | Dark-mode-first design system |
+| `dashboard/public/data/` | 10 JSON files, written by the scripts above |
+| `wrangler.toml` | Cloudflare Pages project config (no KV/D1/Workers) |
+| `podman-compose.yml` | floci-core + floci-ui only |
+| `README.md` | this file |
 
 <br>
 
