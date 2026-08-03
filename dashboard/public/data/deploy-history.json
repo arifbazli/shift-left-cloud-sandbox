@@ -348,5 +348,12 @@
     "source": "scripts/deploy-dashboard.sh",
     "project": "shift-left-cloud-sandbox",
     "url": "https://f91626a5.shift-left-cloud-sandbox.pages.dev"
+  },
+  {
+    "timestamp": "2026-08-03T06:33:24Z",
+    "kind": "pages_deploy",
+    "source": "scripts/deploy-dashboard.sh",
+    "project": "shift-left-cloud-sandbox",
+    "url": "https://aa6c160e.shift-left-cloud-sandbox.pages.dev"
   }
 ]
