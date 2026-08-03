@@ -1,5 +1,5 @@
 flowchart LR
-    subgraph S1["① ② GATE &amp; APPLY"]
+    subgraph S1["① ② GATE & APPLY"]
         direction TB
         SCAN["scan.sh"]
         GATE{"GATE"}
@@ -30,11 +30,18 @@ flowchart LR
 
     APPLY --> V1 --> D1 -->|"drift"| AG
 
-    classDef section fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:1px
+    %% Cluster backgrounds: white with thin black border (so the box is
+    %% visible against the canvas without dominating the design).
+    classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
+    %% Action nodes (the scripts that do things): black-filled, white text.
     classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    %% Pass-through nodes: white with black border.
     classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    %% Surface nodes: light gray with black border.
     classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    %% Decision node: black diamond with white text.
     classDef diamond fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    %% Data store: white with black border (cylinder).
     classDef store fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
 
     class S1,S2,S3,S4 section

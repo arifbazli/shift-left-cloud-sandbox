@@ -9,7 +9,9 @@ flowchart LR
         PUSH --> CI --> TRI --> PI --> HR
     end
 
-    classDef section fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:1px
+    %% Cluster background: white with thin black border.
+    classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
     classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+
     class GH section
     class PUSH,CI,TRI,PI,HR black
