@@ -96,6 +96,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Start floci-core
+        run: |
+          podman-compose -f podman-compose.yml up -d
+          echo "Waiting for floci-core at $FLOCI_ENDPOINT ..."
+          for i in $(seq 1 30); do
+            if curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/health" 2>/dev/null \
+               || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/" 2>/dev/null; then
+              echo "floci-core is up."
+              break
+            fi
+            sleep 2
+          done
 
       - name: Download scan result
         uses: actions/download-artifact@v4
