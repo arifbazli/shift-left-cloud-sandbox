@@ -60,7 +60,7 @@ check_tool() {
     return 1
   fi
   local ver
-  ver="$("$cmd" $version_flag 2>&1 | head -1)"
+  ver="$("$cmd" $version_flag 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
   if [[ -n "$expected" ]] && [[ "$ver" != *"$expected"* ]]; then
     echo "  VERSION WARN: $cmd — got '$ver', expected pattern '$expected'"
   else
