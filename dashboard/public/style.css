@@ -355,6 +355,21 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+/* Module group header inside the findings card */
+.findings-module-group {
+  margin-bottom: 6px;
+}
+.findings-module-label {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--teal);
+  opacity: 0.7;
+  padding: 4px 0 2px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 3px;
+}
 .sev-badge {
   display: inline-block;
   font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;

@@ -211,18 +211,60 @@ function renderScan(d) {
   $('findings-count').textContent = `${findings.length} total`;
   const findingsWrap = document.querySelector('.findings-wrap');
   if (findingsWrap) findingsWrap.classList.toggle('is-empty', findings.length === 0);
-  $('findings-list').innerHTML = findings.length === 0
-    ? '<div class="empty-state">No open findings — gate is clean.</div>'
-    : findings.slice(0, 30).map(r => {
-        const sev  = (r.severity || 'low').toLowerCase();
-        const bCls = sev === 'critical' ? 'crit' : sev;
-        return `<div class="list-row">
+
+  if (findings.length === 0) {
+    $('findings-list').innerHTML = '<div class="empty-state">No open findings \u2014 gate is clean.</div>';
+    return;
+  }
+
+  // ---- Group findings by module ----------------------------------------
+  // Map resource-type prefix → module name for grouping the findings list.
+  const MODULE_MAP = [
+    ['aws_vpc', 'network'],       ['aws_subnet', 'network'],
+    ['aws_security_group', 'network'], ['aws_flow_log', 'network'],
+    ['aws_s3_bucket', 'storage'], ['aws_dynamodb', 'storage'],
+    ['aws_instance', 'compute'],  ['aws_launch', 'compute'],
+    ['aws_lambda', 'compute'],    ['aws_ecs', 'compute'],    ['aws_eks', 'compute'],
+    ['aws_sqs', 'messaging'],     ['aws_sns', 'messaging'],
+    ['aws_cloudwatch_event', 'messaging'], ['aws_sfn', 'messaging'],
+    ['aws_db_', 'data'],          ['aws_rds', 'data'],
+    ['aws_elasticache', 'data'],  ['aws_msk', 'data'],       ['aws_opensearch', 'data'],
+    ['aws_iam', 'security'],      ['aws_kms', 'security'],
+    ['aws_secretsmanager', 'security'], ['aws_acm', 'security'],
+    ['aws_api_gateway', 'api'],   ['aws_cloudwatch_log', 'api'],
+    ['aws_cloudwatch_metric', 'api'],
+  ];
+  function getModule(resource) {
+    if (!resource) return 'other';
+    const entry = MODULE_MAP.find(([prefix]) => resource.startsWith(prefix));
+    return entry ? entry[1] : 'other';
+  }
+
+  // Build ordered groups (preserve first-seen order per module).
+  const groupOrder = [];
+  const groups = {};
+  findings.slice(0, 30).forEach(r => {
+    const mod = getModule(r.resource || '');
+    if (!groups[mod]) { groups[mod] = []; groupOrder.push(mod); }
+    groups[mod].push(r);
+  });
+
+  $('findings-list').innerHTML = groupOrder.map(mod => {
+    const rows = groups[mod].map(r => {
+      const sev  = (r.severity || 'low').toLowerCase();
+      const bCls = sev === 'critical' ? 'crit' : sev;
+      return `<div class="list-row">
           <span class="sev-badge ${bCls}">${r.severity}</span>
           <span class="rule-id">${escHtml(r.rule_id || '')}</span>
           <span class="rule-desc">${escHtml(r.description || '')}</span>
           <span class="rule-res">${escHtml(r.resource || '')}</span>
         </div>`;
-      }).join('');
+    }).join('');
+    return `<div class="findings-module-group">
+        <div class="findings-module-label">${mod}</div>
+        ${rows}
+      </div>`;
+  }).join('');
 }
 
 function renderDeploy(d) {

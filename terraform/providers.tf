@@ -1,20 +1,19 @@
 # =============================================================================
-# Shift-Left Cloud Security Sandbox - floci-stack/terraform/
+# Shift-Left Cloud Security Sandbox - floci-stack/terraform/providers.tf
 # =============================================================================
 # PURPOSE
-#   A minimal but realistic VPC+S3+IAM+SG shape. Applied against localstack-style
-#   floci (localhost:4566) ONLY. The "AWS" provider here is just a target; no real
-#   AWS account is ever contacted.
+#   Provider configuration for the expanded 7-module terraform layout.
+#   Applied against floci-core (localhost:4566) ONLY — no real AWS contact.
 #
 # WHY THIS EXISTS
-#   Each resource carries a security-intent comment. Most are intentionally
-#   tight-by-default. ONE resource (see main.tf) carries a deliberate bad
-#   config so the tfsec gate in scripts/scan.sh has something real to catch.
-#   That bad config is TEST FIXTURE, not advice — do not copy it elsewhere.
+#   Each module carries security-intent comments. Most resources are
+#   intentionally tight-by-default. ONE resource in modules/security/ carries
+#   a deliberate bad config (the fixture) so the tfsec gate has something
+#   real to catch. That bad config is TEST FIXTURE, not advice.
 #
 # STATE + SECRETS
 #   Backend: local (terraform.tfstate in this dir, gitignored).
-#   Credentials: floci accepts anything; we use `test`/`test` in scripts/deploy.sh.
+#   Credentials: floci accepts anything; scripts use `test`/`test`.
 #   Real AWS keys are never read.
 # =============================================================================
 
@@ -28,10 +27,7 @@ terraform {
     }
   }
 
-  # SEC_INTENT: local-only backend. State never leaves the sandbox. In a real
-  # project this would be S3+DynamoDB or Terraform Cloud with encryption-at-rest
-  # and access logging — we deliberately avoid that here to keep the R&D
-  # sandbox fully offline.
+  # SEC_INTENT: local-only backend. State never leaves the sandbox.
   backend "local" {
     path = "terraform.tfstate"
   }
@@ -39,8 +35,7 @@ terraform {
 
 # SEC_INTENT: endpoint is floci at localhost:4566, NOT real AWS.
 # skip_credentials_validation + skip_metadata_api_check are required because
-# floci does not implement IAM. We also force path-style addressing and
-# disable S3 region checks — floci returns a placeholder region.
+# floci does not implement IAM. path-style addressing required for S3.
 provider "aws" {
   region                      = "us-east-1"
   access_key                  = "test"
@@ -50,15 +45,50 @@ provider "aws" {
   skip_region_validation      = true
   s3_use_path_style           = true
 
-  # Override endpoints only when the TF_ENDPOINT env vars are set
-  # (scripts/deploy.sh sets them to http://localhost:4566).
+  # Override ALL service endpoints to floci when localstack_enabled = true.
+  # New services added for the 7-module layout (storage, compute, messaging,
+  # data, security, api modules each add endpoint entries here).
   dynamic "endpoints" {
     for_each = var.localstack_enabled ? [1] : []
     content {
+      # ── existing ──────────────────────────────────────────────────────────
       s3  = var.localstack_endpoint
       ec2 = var.localstack_endpoint
       iam = var.localstack_endpoint
       sts = var.localstack_endpoint
+
+      # ── storage ───────────────────────────────────────────────────────────
+      dynamodb = var.localstack_endpoint
+
+      # ── compute ───────────────────────────────────────────────────────────
+      lambda = var.localstack_endpoint
+      ecs    = var.localstack_endpoint
+      eks    = var.localstack_endpoint
+
+      # ── messaging ─────────────────────────────────────────────────────────
+      sqs = var.localstack_endpoint
+      sns = var.localstack_endpoint
+      sfn = var.localstack_endpoint # Step Functions
+
+      # ── data ──────────────────────────────────────────────────────────────
+      rds         = var.localstack_endpoint
+      elasticache = var.localstack_endpoint
+      kafka       = var.localstack_endpoint # MSK
+      opensearch  = var.localstack_endpoint
+      es          = var.localstack_endpoint # OpenSearch legacy alias
+
+      # ── security ──────────────────────────────────────────────────────────
+      kms            = var.localstack_endpoint
+      secretsmanager = var.localstack_endpoint
+      acm            = var.localstack_endpoint
+
+      # ── api ───────────────────────────────────────────────────────────────
+      apigateway   = var.localstack_endpoint
+      cloudwatch   = var.localstack_endpoint
+      cloudwatchlogs = var.localstack_endpoint
+
+      # ── shared/events ─────────────────────────────────────────────────────
+      eventbridge = var.localstack_endpoint
     }
   }
 }

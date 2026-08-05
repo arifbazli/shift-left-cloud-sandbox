@@ -120,11 +120,28 @@ export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 # Per-service endpoint overrides — Terraform's AWS provider picks these up.
 export TF_VAR_localstack_enabled=true
 export TF_VAR_localstack_endpoint="$FLOCI_ENDPOINT"
-# The AWS provider also accepts TF_*_ENDPOINT env vars directly.
+# Per-service endpoint overrides for all 7 modules.
 export TF_S3_ENDPOINT="$FLOCI_ENDPOINT"
 export TF_EC2_ENDPOINT="$FLOCI_ENDPOINT"
 export TF_IAM_ENDPOINT="$FLOCI_ENDPOINT"
 export TF_STS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_DYNAMODB_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_LAMBDA_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_SQS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_SNS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_SFN_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_KMS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_SECRETSMANAGER_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_ACM_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_APIGATEWAY_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_CLOUDWATCH_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_CLOUDWATCHLOGS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_RDS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_ELASTICACHE_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_KAFKA_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_OPENSEARCH_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_EKS_ENDPOINT="$FLOCI_ENDPOINT"
+export TF_ECS_ENDPOINT="$FLOCI_ENDPOINT"
 set -u
 
 # ---- terraform init (idempotent) -------------------------------------------

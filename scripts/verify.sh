@@ -7,9 +7,16 @@
 #   actually exist in floci-core. This is NOT a trust of terraform's state
 #   file — it hits the AWS-shaped API directly via Sigv4-signed requests.
 #
-# What we check (per resource type)
-#   VPC:        EC2 DescribeVpcs
-#   Subnet:     EC2 DescribeSubnets
+# What we check (per resource type — extended for 7-module layout)
+#   VPC:            EC2 DescribeVpcs
+#   Subnet:         EC2 DescribeSubnets
+#   SG:             EC2 DescribeSecurityGroups
+#   Bucket:         S3 HEAD bucket
+#   IAM role:       IAM GetRole
+#   DynamoDB table: DynamoDB DescribeTable     (storage module)
+#   Lambda fn:      Lambda GetFunction         (compute module)
+#   SQS queue:      SQS GetQueueAttributes     (messaging module)
+#   KMS key:        KMS DescribeKey            (security module)
 #   SG:         EC2 DescribeSecurityGroups
 #   Bucket:     S3 HEAD bucket
 #   IAM role:   IAM GetRole
@@ -131,11 +138,20 @@ with open(sys.argv[1]) as f:
     pending = json.load(f)
 expected_out = pending.get('outputs', {})
 expected = {
+    # ── network (existing — backward-compatible keys) ──────────────────────
     "vpc_id":                expected_out.get('vpc_id', {}).get('value', ''),
     "private_subnet_id":     expected_out.get('private_subnet_id', {}).get('value', ''),
     "artifacts_bucket":      expected_out.get('artifacts_bucket', {}).get('value', ''),
     "app_security_group_id": expected_out.get('app_security_group_id', {}).get('value', ''),
     "app_role_arn":          expected_out.get('app_role_arn', {}).get('value', ''),
+    # ── storage (new) ──────────────────────────────────────────────────────
+    "dynamodb_table_name":   expected_out.get('dynamodb_table_name', {}).get('value', ''),
+    # ── compute (new) ──────────────────────────────────────────────────────
+    "lambda_arn":            expected_out.get('lambda_arn', {}).get('value', ''),
+    # ── messaging (new) ────────────────────────────────────────────────────
+    "sqs_queue_url":         expected_out.get('sqs_queue_url', {}).get('value', ''),
+    # ── security (new) ─────────────────────────────────────────────────────
+    "kms_key_id":            expected_out.get('kms_key_id', {}).get('value', ''),
 }
 results = []
 
@@ -205,6 +221,55 @@ if role_name:
     results.append({
         "resource": "aws_iam_role.app", "id": role_name, "found": found,
         "http_status": j.get('status'), "evidence": body_text[:200]
+    })
+
+# --- DynamoDB Table (storage module) ---
+table_name = expected.get('dynamodb_table_name', '')
+if table_name:
+    body = f"Action=DescribeTable&Version=2012-08-10&TableName={table_name}"
+    j = call('POST', 'us-east-1', 'dynamodb', '/', '', body, 'localhost')
+    body_text = j.get('body', '')
+    found = table_name in body_text or 200 <= j.get('status', 0) < 300
+    results.append({
+        "resource": "aws_dynamodb_table.main", "id": table_name, "found": found,
+        "http_status": j.get('status'), "evidence": body_text[:200], "module": "storage"
+    })
+
+# --- Lambda Function (compute module) ---
+lambda_arn = expected.get('lambda_arn', '')
+lambda_name = lambda_arn.split(':')[-1] if lambda_arn else ''
+if lambda_name:
+    j = call('GET', 'us-east-1', 'lambda', f'/2015-03-31/functions/{lambda_name}', '', '', 'localhost')
+    status = j.get('status', 0)
+    found = 200 <= status < 300
+    results.append({
+        "resource": "aws_lambda_function.main", "id": lambda_name, "found": found,
+        "http_status": status, "evidence": j.get('body', '')[:200], "module": "compute"
+    })
+
+# --- SQS Queue (messaging module) ---
+sqs_url = expected.get('sqs_queue_url', '')
+if sqs_url:
+    queue_name = sqs_url.rstrip('/').split('/')[-1]
+    body = f"Action=GetQueueAttributes&Version=2012-11-05&QueueUrl={sqs_url}&AttributeName.1=All"
+    j = call('POST', 'us-east-1', 'sqs', '/', '', body, 'localhost')
+    body_text = j.get('body', '')
+    found = queue_name in body_text or 200 <= j.get('status', 0) < 300
+    results.append({
+        "resource": "aws_sqs_queue.main", "id": queue_name, "found": found,
+        "http_status": j.get('status'), "evidence": body_text[:200], "module": "messaging"
+    })
+
+# --- KMS Key (security module) ---
+kms_key_id = expected.get('kms_key_id', '')
+if kms_key_id:
+    body = f"Action=DescribeKey&Version=2014-11-01&KeyId={kms_key_id}"
+    j = call('POST', 'us-east-1', 'kms', '/', '', body, 'localhost')
+    body_text = j.get('body', '')
+    found = kms_key_id in body_text or 200 <= j.get('status', 0) < 300
+    results.append({
+        "resource": "aws_kms_key.main", "id": kms_key_id, "found": found,
+        "http_status": j.get('status'), "evidence": body_text[:200], "module": "security"
     })
 
 print(json.dumps(results))

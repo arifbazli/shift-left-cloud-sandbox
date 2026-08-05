@@ -16,7 +16,7 @@ services:
       - "4566:4566"   # edge service (S3, IAM, EC2, …)
       - "4569:4569"   # future use
     environment:
-      SERVICES: s3,iam,ec2,sts,cloudformation,logs
+      SERVICES: s3,iam,ec2,sts,cloudformation,logs,dynamodb,lambda,sqs,sns,sfn,events,kms,secretsmanager,acm,apigateway,cloudwatch,rds,elasticache,kafka,es,eks,ecs
       DEBUG: "0"
       DATA_DIR: /var/lib/floci
       DOCKER_HOST: unix:///var/run/docker.sock

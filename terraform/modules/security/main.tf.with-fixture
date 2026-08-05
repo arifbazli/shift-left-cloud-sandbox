@@ -1,0 +1,171 @@
+# =============================================================================
+# modules/security/main.tf  (ON state — fixture uncommented)
+# =============================================================================
+# Resources: IAM app role + policy (relocated), KMS, Secrets Manager, ACM.
+# The deliberate misconfig FIXTURE lives at the bottom of this file, exactly
+# as it was in terraform/main.tf. Use scripts/toggle-fixture.sh to switch
+# between ON (fixture uncommented) and OFF (fixture commented).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# IAM Role for the app
+# SEC_INTENT: least-privilege starting point — read/write to ONE bucket on
+# specific prefixes only. tfsec should be silent here.
+# -----------------------------------------------------------------------------
+data "aws_iam_policy_document" "app_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "app" {
+  name               = "floci-app-role"
+  assume_role_policy = data.aws_iam_policy_document.app_assume.json
+}
+
+# SEC_INTENT: explicit, narrow actions + resources. No "Action": "*" here.
+data "aws_iam_policy_document" "app_inline" {
+  statement {
+    sid = "ArtifactsReadWrite"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      var.artifacts_bucket_arn,
+      "${var.artifacts_bucket_arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "app_inline" {
+  name   = "floci-app-inline"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_inline.json
+}
+
+# SEC_INTENT: EC2 instance profile so the app role can be attached to an
+# EC2 instance via IAM instance profile. Without this, the aws_iam_role
+# cannot be directly associated with an EC2 instance.
+resource "aws_iam_instance_profile" "app" {
+  name = "floci-app-profile"
+  role = aws_iam_role.app.name
+}
+
+# -----------------------------------------------------------------------------
+# KMS Key
+# SEC_INTENT: customer-managed key for sandbox encryption use-cases.
+# Key rotation is mandatory — tfsec AVD-AWS-0030 requires this.
+# Deletion window set to 7 days (minimum) since this is a sandbox; production
+# would use 30 days to allow for accidental-delete recovery.
+# -----------------------------------------------------------------------------
+resource "aws_kms_key" "main" {
+  description             = "floci sandbox CMK — not for production use"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true # SEC_INTENT: automatic annual rotation (AVD-AWS-0030)
+
+  tags = {
+    Name        = "floci-cmk"
+    Environment = var.environment
+  }
+}
+
+resource "aws_kms_alias" "main" {
+  name          = "alias/floci-${var.environment}"
+  target_key_id = aws_kms_key.main.key_id
+}
+
+# -----------------------------------------------------------------------------
+# Secrets Manager
+# SEC_INTENT: application config secrets stored in Secrets Manager rather
+# than environment variables or plain SSM. recovery_window_in_days = 0 is
+# sandbox-only (immediate delete). Production must use >= 7.
+# tfsec:ignore:AVD-AWS-0098 floci KMS integration is limited; production
+# would set kms_key_id = aws_kms_key.main.arn.
+# -----------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "main" {
+  name                    = "floci/${var.environment}/app-config"
+  description             = "Application configuration secrets (sandbox)"
+  recovery_window_in_days = 0
+
+  # tfsec:ignore:AVD-AWS-0098 See above.
+
+  tags = {
+    Name        = "floci-app-config"
+    Environment = var.environment
+  }
+}
+
+# -----------------------------------------------------------------------------
+# ACM Certificate
+# SEC_INTENT: DNS-validated certificate for the internal service domain.
+# create_before_destroy ensures zero-downtime rotation. In a real org this
+# would be a real public domain; here it is an example.internal placeholder.
+# floci does not perform actual ACME/DV validation — the cert object is
+# created in state but the DNS validation record would be unresolvable.
+# -----------------------------------------------------------------------------
+resource "aws_acm_certificate" "main" {
+  domain_name       = "floci-${var.environment}.example.internal"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name        = "floci-cert"
+    Environment = var.environment
+  }
+}
+
+# =============================================================================
+#  >>>>>>>>>>>>>>>>>  DELIBERATE MISCONFIGURATION  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+# =============================================================================
+# SEC_INTENT — FIXTURE, NOT ADVICE.
+#
+# This resource exists purely so scripts/scan.sh has a HIGH/CRITICAL to catch
+# in the demo. It models a textbook tfsec flag: an IAM policy with
+# "Action":"*" + "Resource":"*" (i.e. admin-everything). It is attached to
+# the app role so the impact is realistic.
+#
+# To "pass" the demo gate, comment out BOTH the `aws_iam_policy` and the
+# `aws_iam_role_policy_attachment` blocks below and re-run scripts/scan.sh.
+# The pipeline intentionally does NOT auto-fix — fixing security findings
+# is outside the agent's allowlist (see scripts/agent-loop.sh).
+#
+# Notes on what this does NOT include, by design:
+#   - We do NOT make an S3 bucket public. That would be a SECOND HIGH and
+#     the spec says ONE deliberate misconfig. We make the S3 side tight and
+#     the IAM side obviously wrong so the demo narrative is crisp.
+# =============================================================================
+# SEC_INTENT-FIXTURE: admin-everything policy. tfsec will flag this as
+# AVD-AWS-0057 (IAM policy with wildcarded action '*' and wildcarded
+# resource '*'). This is the ONE finding that will fail scripts/scan.sh.
+resource "aws_iam_policy" "fixtures_admin" {
+  name        = "floci-fixtures-admin"
+  description = "DELIBERATE BAD: admin-everything. Test fixture only."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "*"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "fixtures_admin_attach" {
+  role       = aws_iam_role.app.name
+  policy_arn = aws_iam_policy.fixtures_admin.arn
+}
+# =============================================================================
+#  <<<<<<<<<<<<<<<<<  END OF DELIBERATE MISCONFIGURATION  >>>>>>>>>>>>>>>>>>>>
+# =============================================================================

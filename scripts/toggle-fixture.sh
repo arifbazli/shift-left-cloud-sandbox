@@ -33,9 +33,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TF_DIR="$SCRIPT_DIR/../terraform"
-TARGET="$TF_DIR/main.tf"
-SNAPSHOT_ON="$TF_DIR/main.tf.with-fixture"
-SNAPSHOT_OFF="$TF_DIR/main.tf.without-fixture"
+# After the 7-module refactor, the fixture lives in modules/security/.
+# The root-level main.tf.{with,without}-fixture snapshots are kept for
+# historical reference but are no longer the toggle targets.
+TARGET="$TF_DIR/modules/security/main.tf"
+SNAPSHOT_ON="$TF_DIR/modules/security/main.tf.with-fixture"
+SNAPSHOT_OFF="$TF_DIR/modules/security/main.tf.without-fixture"
 TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 # --- Refuse to run if any required file is missing ---------------------------
