@@ -212,7 +212,16 @@ jobs:
           cd terraform
           terraform init -no-color -input=false
           terraform validate -no-color
-          echo "terraform validate: PASS ✓"
+          echo "terraform validate: PASS \u2713"
+
+      # Upload ALL data files so publish-dashboard can serve fresh data on Pages.
+      - name: Upload all dashboard data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-data
+          path: dashboard/public/data/
+          retention-days: 7
 
   # ---------------------------------------------------------------------------
   # JOB 3 — publish-dashboard
@@ -239,11 +248,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download scan result
+      - name: Download all dashboard data
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-data
+          path: dashboard/public/data/
+        continue-on-error: true
+
+      # Fallback: at minimum grab the scan result
+      - name: Download scan result (fallback)
         uses: actions/download-artifact@v4
         with:
           name: scan-result
           path: dashboard/public/data/
+        continue-on-error: true
+
+      - name: Show data files being deployed
+        run: |
+          echo "=== dashboard/public/data/ ==="
+          ls -lh dashboard/public/data/ 2>/dev/null || echo "(empty)"
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1

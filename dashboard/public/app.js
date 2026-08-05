@@ -618,10 +618,31 @@ document.querySelectorAll('[data-run]').forEach(btn => {
 });
 
 // ── Boot sequence ─────────────────────────────────────────
-// 1. Attempt SSE (will fall back to polling on error)
-// 2. Initial file-based fetch while SSE is connecting
+// On Cloudflare Pages (HTTPS) the browser blocks HTTP localhost
+// as mixed content — EventSource never fires onerror cleanly,
+// so the fallback never starts. Gate SSE on hostname.
+const IS_LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+
+// Hide localhost-only controls on remote (Pages) deployments
+if (!IS_LOCAL) {
+  document.querySelectorAll('[data-run], #pipeline-trigger-btn').forEach(el => {
+    el.style.display = 'none';
+  });
+}
+
+// Always do an immediate file fetch so the dashboard isn't blank.
 fetchAllAndAnnounce();
-startSSE();
+
+if (IS_LOCAL) {
+  // Local dev: use SSE for 1s live updates.
+  startSSE();
+} else {
+  // Cloudflare Pages / any remote host: pure file polling.
+  // No localhost server is reachable; mixed-content blocks HTTP anyway.
+  startPolling();
+  if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
+}
+
 setInterval(paintStale, 1000);
 
 // Sync dot is a click-to-refresh affordance. Make it accessible.
