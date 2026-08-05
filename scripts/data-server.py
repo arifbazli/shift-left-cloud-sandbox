@@ -71,6 +71,16 @@ DATA_FILES: dict[str, Path] = {
 }
 
 # ---------------------------------------------------------------------------
+# Auto-refresh schedule — how often each script re-runs automatically
+# ---------------------------------------------------------------------------
+AUTO_REFRESH: dict[str, int] = {
+    "scan":   60,   # tfsec: 60s  (fast, pure static analysis)
+    "verify": 30,   # verify: 30s (direct API call to moto)
+    "drift":  45,   # drift-check: 45s (terraform plan)
+    # deploy is NOT auto-scheduled — only runs on explicit /run/deploy
+}
+
+# ---------------------------------------------------------------------------
 # Script runner — runs in a background thread so /run/ returns immediately
 # ---------------------------------------------------------------------------
 _running: dict[str, bool] = {}
@@ -114,6 +124,36 @@ def run_script(name: str) -> dict[str, Any]:
     t.start()
     return {"started": True, "script": name}
 
+
+# ---------------------------------------------------------------------------
+# Scheduler — auto-runs scripts on their configured intervals
+# ---------------------------------------------------------------------------
+def _scheduler():
+    """Background thread: runs each auto-scheduled script on its interval.
+    Also fires all scripts once immediately at startup so data is never stale.
+    """
+    # Track when each script last ran (epoch seconds)
+    last_run: dict[str, float] = {}
+
+    # Stagger initial runs by 2 s each so they don\'t all hammer the
+    # endpoint simultaneously at startup.
+    for i, name in enumerate(AUTO_REFRESH):
+        time.sleep(i * 2)
+        print(f"[data-server] auto-run startup: {name}")
+        run_script(name)
+        last_run[name] = time.time()
+
+    while True:
+        time.sleep(5)   # check every 5 s; actual fire depends on interval
+        now = time.time()
+        for name, interval in AUTO_REFRESH.items():
+            if now - last_run.get(name, 0) >= interval:
+                with _lock:
+                    already = _running.get(name, False)
+                if not already:
+                    run_script(name)
+                    last_run[name] = now
+
 # ---------------------------------------------------------------------------
 # Read all data files into one snapshot dict
 # ---------------------------------------------------------------------------
@@ -133,6 +173,13 @@ def read_snapshot() -> dict[str, Any]:
     # Inject running state so the dashboard can show a spinner
     snapshot["_running"] = {k: v for k, v in _running.items() if v}
     snapshot["_ts"] = time.time()
+    # Inject file mtimes so dashboard can show true data freshness
+    snapshot["_mtimes"] = {}
+    for key, path in DATA_FILES.items():
+        try:
+            snapshot["_mtimes"][key] = path.stat().st_mtime
+        except FileNotFoundError:
+            snapshot["_mtimes"][key] = None
     return snapshot
 
 # ---------------------------------------------------------------------------
@@ -238,6 +285,10 @@ def main():
     args = parser.parse_args()
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Start auto-refresh scheduler
+    sched = threading.Thread(target=_scheduler, daemon=True, name="scheduler")
+    sched.start()
 
     server = HTTPServer((args.host, args.port), Handler)
     print(f"data-server listening on http://{args.host}:{args.port}")

@@ -146,6 +146,13 @@ html, body {
 }
 .run-btn:hover  { color: var(--teal); border-color: var(--teal); background: rgba(0,212,170,0.08); }
 .run-btn:active { transform: scale(0.92); }
+/* Live data-age ticker beside timestamps */
+.data-age {
+  font-size: 10px; font-family: var(--font-mono);
+  color: var(--teal); opacity: 0.75;
+  margin-left: 6px; min-width: 56px;
+  display: inline-block;
+}
 /* Spinning pill when a script is running */
 @keyframes spin { to { transform: rotate(360deg); } }
 .pill.pill-running::after {

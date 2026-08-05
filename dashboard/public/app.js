@@ -20,8 +20,24 @@ const FETCH_TARGETS = [
   'data/agent-actions.json',
 ];
 
-// ── utils ──────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
+// fmtDataAge: given epoch seconds (file mtime), return e.g. "3s ago" / "2m ago"
+function fmtDataAge(epochSec) {
+  if (!epochSec) return '—';
+  const diff = Math.floor(Date.now() / 1000 - epochSec);
+  if (diff < 5)   return 'just now';
+  if (diff < 60)  return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  return `${Math.floor(diff/3600)}h ago`;
+}
+
+// Store latest mtimes from SSE snapshot for the live age ticker
+const _cardMtimes = {};
+setInterval(() => {
+  ['scan','deploy','verify','drift','agent'].forEach(name => {
+    const el = $(`${name}-age`);
+    if (el && _cardMtimes[name]) el.textContent = fmtDataAge(_cardMtimes[name]);
+  });
+}, 1000);
 
 async function safeFetch(path) {
   try {
@@ -453,6 +469,12 @@ let _pollTimer   = null;
 let _modeEl      = $('live-mode-badge'); // optional badge element
 
 function applySnapshot(snap) {
+  // Update mtimes for the live age ticker
+  const mtimes = snap._mtimes || {};
+  ['scan','deploy','verify','drift','agent'].forEach(name => {
+    if (mtimes[name]) _cardMtimes[name] = mtimes[name];
+  });
+
   // snap = { scan, deploy, verify, drift, agent, _running, _ts }
   const renderers = [
     ['scan',   renderScan,   snap.scan],
