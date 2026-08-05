@@ -10,6 +10,16 @@
 # SEC_INTENT: scan is the single chokepoint. deploy-local and publish-dashboard
 # only run after scan exits 0. A HIGH or CRITICAL tfsec finding blocks all
 # downstream jobs and posts a failing status on the PR/commit.
+#
+# Runner environment notes (self-hosted, Debian WSL):
+#   PATH:            ~/.local/bin must be prepended — tfsec is installed there,
+#                    not in /usr/local/bin. The systemd user service PATH does
+#                    not include ~/.local/bin by default.
+#   XDG_RUNTIME_DIR: must be set explicitly for rootless Podman. The runner
+#                    service inherits it from systemd --user, but GitHub
+#                    Actions step environments do not always propagate it.
+#   DOCKER_HOST:     set to the podman socket as a fallback for tools that
+#                    prefer DOCKER_HOST over XDG_RUNTIME_DIR auto-detection.
 # =============================================================================
 
 name: Shift-Left Security Pipeline
@@ -32,6 +42,15 @@ concurrency:
 permissions:
   contents: read
 
+# ---------------------------------------------------------------------------
+# Shared env block for all self-hosted runner jobs.
+# Injected at workflow level; jobs may override individual keys.
+# ---------------------------------------------------------------------------
+env:
+  # Prepend ~/.local/bin so tfsec (1.28.5) and other user-installed tools
+  # are found before the system PATH entries.
+  PATH_PREFIX: /home/arif_debian/.local/bin
+
 jobs:
   # ---------------------------------------------------------------------------
   # JOB 1 — scan
@@ -43,6 +62,9 @@ jobs:
     name: "tfsec gate"
     runs-on: floci-self-hosted
 
+    env:
+      PATH: /home/arif_debian/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,9 +74,11 @@ jobs:
       # the fixture depends on AVD-AWS-0057 being present in 1.28.5.
       - name: Verify tfsec version
         run: |
-          VERSION=$(tfsec --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)
+          VERSION=$(tfsec --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+          echo "Detected tfsec version: $VERSION"
           if [[ "$VERSION" != "1.28.5" ]]; then
-            echo "::error::tfsec version mismatch: got $VERSION, expected 1.28.5"
+            echo "::error::tfsec version mismatch: got '$VERSION', expected 1.28.5"
+            echo "::error::tfsec must be installed at /home/arif_debian/.local/bin/tfsec"
             exit 1
           fi
           echo "tfsec $VERSION ✓"
@@ -87,6 +111,11 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     env:
+      # Prepend ~/.local/bin for user-installed tools (terraform, tfsec, etc.)
+      PATH: /home/arif_debian/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # Rootless Podman socket — must be explicit; not inherited from systemd service env.
+      XDG_RUNTIME_DIR: /run/user/1000
+      DOCKER_HOST: unix:///run/user/1000/podman/podman.sock
       # LocalStack dummy credentials — not real AWS.
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
@@ -96,16 +125,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Verify rootless Podman is accessible before attempting compose.
+      - name: Check Podman socket
+        run: |
+          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+          echo "DOCKER_HOST=$DOCKER_HOST"
+          podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null \
+            && echo "Podman socket: OK" \
+            || { echo "::warning::podman info failed — socket may not be ready"; }
+          podman ps --format '{{.Names}}' 2>/dev/null \
+            && echo "podman ps: OK" \
+            || { echo "::error::podman ps failed — rootless Podman not accessible"; exit 1; }
+
       - name: Start floci-core
         run: |
           podman-compose -f podman-compose.yml up -d
           echo "Waiting for floci-core at $FLOCI_ENDPOINT ..."
           for i in $(seq 1 30); do
             if curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/health" 2>/dev/null \
+               || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/_localstack/health" 2>/dev/null \
                || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/" 2>/dev/null; then
-              echo "floci-core is up."
+              echo "floci-core is up (attempt $i)."
               break
             fi
+            echo "  attempt $i/30 — waiting 2s ..."
             sleep 2
           done
 
@@ -203,8 +247,8 @@ jobs:
           lines = [
               f"## {icon} tfsec Gate: **{gate}**",
               "",
-              f"| Severity | Count |",
-              f"|----------|-------|",
+              "| Severity | Count |",
+              "|----------|-------|",
               f"| 🔴 CRITICAL | {crit} |",
               f"| 🟠 HIGH     | {high} |",
               f"| 🟡 MEDIUM   | {med}  |",
@@ -224,7 +268,6 @@ jobs:
                   lines.append(f"| {r['severity']} | `{r.get('rule_id','')}` | `{r.get('resource','')}` | {r.get('description','')[:80]} |")
 
           body = "\n".join(lines)
-          # Write to GITHUB_OUTPUT as multiline
           delim = "EOF_BODY"
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"body<<{delim}\n{body}\n{delim}\n")
