@@ -1,0 +1,70 @@
+# =============================================================================
+# .github/workflows/deploy-dashboard.yml
+# =============================================================================
+# Standalone dashboard publish workflow.
+# Triggered manually (workflow_dispatch) or when dashboard files change
+# without needing a full pipeline run.
+#
+# Use case: iterate on dashboard/public/ (HTML/CSS/JS) without re-running
+# tfsec or terraform.
+# SEC_INTENT: dashboard is read-only (no infra changes) so it is safe to
+# deploy independently. The Cloudflare API token is scoped to Pages only.
+# =============================================================================
+
+name: Deploy Dashboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: false
+        default: "production"
+        type: choice
+        options:
+          - production
+          - preview
+  push:
+    branches:
+      - main
+    paths:
+      - "dashboard/public/**"
+
+concurrency:
+  group: deploy-dashboard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  publish:
+    name: "publish dashboard"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pull the latest scan data from the most recent pipeline run so the
+      # dashboard always shows current gate status even on a CSS-only push.
+      - name: Download latest scan artifact (best-effort)
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: pipeline.yml
+          name: scan-result
+          path: dashboard/public/data/
+          if_no_artifact_found: warn
+        continue-on-error: true
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: shift-left-cloud-sandbox
+          directory: dashboard/public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Use preview deployments for manual workflow_dispatch non-production runs.
+          branch: ${{ github.event.inputs.environment == 'preview' && 'preview' || 'main' }}

@@ -1,0 +1,40 @@
+# =============================================================================
+# .github/labels.yml
+# =============================================================================
+# Repository label definitions.
+# Apply with: gh label import .github/labels.yml
+#
+# Labels used by the pipeline:
+#   auto-fix   → triggers auto-fix.yml agent loop
+#   gate-pass  → applied by pipeline when scan exits 0
+#   gate-fail  → applied by pipeline when scan exits 1
+#   fixture    → marks PRs that touch modules/security/ (fixture area)
+# =============================================================================
+
+- name: "auto-fix"
+  color: "0075ca"
+  description: "Apply to a PR to trigger the agent-loop auto-remediation"
+
+- name: "gate-pass"
+  color: "2ea44f"
+  description: "tfsec gate PASS — no HIGH/CRITICAL findings"
+
+- name: "gate-fail"
+  color: "d73a49"
+  description: "tfsec gate FAIL — blocking HIGH/CRITICAL findings present"
+
+- name: "fixture"
+  color: "e4e669"
+  description: "PR touches the deliberate misconfig fixture in modules/security/"
+
+- name: "infra"
+  color: "0e8a16"
+  description: "Terraform infrastructure change"
+
+- name: "dashboard"
+  color: "5319e7"
+  description: "Dashboard (HTML/CSS/JS) change only"
+
+- name: "scripts"
+  color: "f9d0c4"
+  description: "Shell scripts or Python tooling change"

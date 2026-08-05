@@ -1,34 +1,111 @@
 {
-  "timestamp": "2026-08-03T06:11:23Z",
+  "timestamp": "2026-08-05T05:45:28Z",
   "tfsec_exit": 1,
   "counts": {
     "critical": 0,
     "high": 0,
-    "medium": 3,
-    "low": 0,
+    "medium": 8,
+    "low": 6,
     "ignored": 0
   },
   "findings": [
     {
-      "severity": "MEDIUM",
-      "rule_id": "AVD-AWS-0089",
-      "resource": "aws_s3_bucket.artifacts",
-      "description": "Bucket does not have logging enabled",
-      "line": 50
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0025",
+      "resource": "module.storage",
+      "description": "Table encryption explicitly uses the default KMS key.",
+      "line": 74
     },
     {
       "severity": "MEDIUM",
-      "rule_id": "AVD-AWS-0089",
-      "resource": "aws_s3_bucket.flow_logs",
-      "description": "Bucket does not have logging enabled",
-      "line": 209
+      "rule_id": "AVD-AWS-0074",
+      "resource": "module.data",
+      "description": "Cluster does not ship logs to any service.",
+      "line": 114
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0177",
+      "resource": "aws_db_instance.main.deletion_protection",
+      "description": "Instance does not have Deletion Protection enabled",
+      "line": 68
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0176",
+      "resource": "aws_db_instance.main",
+      "description": "Instance does not have IAM Authentication enabled",
+      "line": 44
+    },
+    {
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0133",
+      "resource": "module.data",
+      "description": "Instance does not have performance insights enabled.",
+      "line": 44
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0090",
+      "resource": "module.network",
+      "description": "Bucket does not have versioning enabled",
+      "line": 114
+    },
+    {
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0098",
+      "resource": "module.security",
+      "description": "Secret explicitly uses the default key.",
+      "line": 91
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0074",
+      "resource": "aws_msk_cluster.main",
+      "description": "Cluster does not ship logs to any service.",
+      "line": 114
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0177",
+      "resource": "aws_db_instance.main.deletion_protection",
+      "description": "Instance does not have Deletion Protection enabled",
+      "line": 68
+    },
+    {
+      "severity": "MEDIUM",
+      "rule_id": "AVD-AWS-0176",
+      "resource": "aws_db_instance.main",
+      "description": "Instance does not have IAM Authentication enabled",
+      "line": 44
+    },
+    {
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0133",
+      "resource": "aws_db_instance.main",
+      "description": "Instance does not have performance insights enabled.",
+      "line": 44
     },
     {
       "severity": "MEDIUM",
       "rule_id": "AVD-AWS-0090",
       "resource": "aws_s3_bucket.flow_logs",
       "description": "Bucket does not have versioning enabled",
-      "line": 209
+      "line": 114
+    },
+    {
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0098",
+      "resource": "aws_secretsmanager_secret.main",
+      "description": "Secret explicitly uses the default key.",
+      "line": 91
+    },
+    {
+      "severity": "LOW",
+      "rule_id": "AVD-AWS-0025",
+      "resource": "aws_dynamodb_table.main",
+      "description": "Table encryption explicitly uses the default KMS key.",
+      "line": 74
     }
   ],
   "gate": "PASS"

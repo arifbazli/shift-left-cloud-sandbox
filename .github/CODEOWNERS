@@ -1,0 +1,38 @@
+# =============================================================================
+# .github/CODEOWNERS
+# =============================================================================
+# Defines required reviewers for sensitive paths.
+#
+# SEC_INTENT: gate script, fixture, and workflow changes require an explicit
+# human review. The agent-loop (auto-fix) is explicitly EXCLUDED from owning
+# these paths — it runs as a bot account (floci-agent-loop) and can never
+# approve its own PRs.
+#
+# Coverage:
+#   *              → default reviewer for any unmatched path
+#   terraform/     → infra changes reviewed by security lead
+#   scripts/scan.sh, toggle-fixture.sh → gate integrity — requires review
+#   .github/       → workflow changes — prevents privilege escalation
+#   modules/security/ → misconfig fixture lives here — requires review
+# =============================================================================
+
+# Default: all files need review
+*                                     @arifbazli
+
+# Terraform infra
+/terraform/                           @arifbazli
+
+# Security module (contains the deliberate misconfig fixture)
+/terraform/modules/security/          @arifbazli
+
+# Gate scripts — any change here must be manually reviewed
+/scripts/scan.sh                      @arifbazli
+/scripts/toggle-fixture.sh            @arifbazli
+/scripts/deploy.sh                    @arifbazli
+/scripts/agent-loop.sh                @arifbazli
+
+# AI triage (agent allowlist)
+/scripts/ai/                          @arifbazli
+
+# Workflow definitions — prevent privilege escalation via workflow edits
+/.github/                             @arifbazli
