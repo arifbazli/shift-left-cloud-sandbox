@@ -9,6 +9,9 @@
 
 'use strict';
 
+// ── utils ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
 const REFRESH_MS    = 10_000;   // fallback poll interval
 const DATA_SERVER   = 'http://localhost:7788';  // local data-server
 
