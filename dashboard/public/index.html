@@ -22,6 +22,7 @@
     <div class="sync-status" id="sync-status">
       <span class="dot" id="sync-dot"></span>
       <span id="sync-text">loading…</span>
+      <span class="live-mode-badge" id="live-mode-badge">POLLING</span>
     </div>
   </div>
 
@@ -33,6 +34,7 @@
       <div class="card-head">
         <span class="card-label">tfsec gate</span>
         <span class="pill idle" id="pill-scan">—</span>
+        <button class="run-btn" data-run="scan" title="Run scan now">&#9654;</button>
       </div>
 
       <div id="skel-scan" class="skeleton-wrap">
@@ -80,6 +82,7 @@
       <div class="card-head">
         <span class="card-label">last deploy</span>
         <span class="pill idle" id="pill-deploy">—</span>
+        <button class="run-btn" data-run="deploy" title="Run deploy now">&#9654;</button>
       </div>
 
       <div id="skel-deploy" class="skeleton-wrap">
@@ -117,6 +120,7 @@
       <div class="card-head">
         <span class="card-label">verify (api direct)</span>
         <span class="pill idle" id="pill-verify">—</span>
+        <button class="run-btn" data-run="verify" title="Run verify now">&#9654;</button>
       </div>
 
       <div id="skel-verify" class="skeleton-wrap">
@@ -154,6 +158,7 @@
       <div class="card-head">
         <span class="card-label">drift</span>
         <span class="pill idle" id="pill-drift">—</span>
+        <button class="run-btn" data-run="drift" title="Run drift-check now">&#9654;</button>
       </div>
 
       <div id="skel-drift" class="skeleton-wrap">

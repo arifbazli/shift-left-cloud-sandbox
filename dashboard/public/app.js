@@ -1,12 +1,16 @@
 /* ============================================================
    Salus · Shift-Left Sandbox — dashboard renderer
-   Static-only. Fetches JSON files from data/. No KV, no D1,
-   no Workers, no external calls beyond these files.
+
+   Live mode  : connects to data-server.py SSE stream at
+                http://localhost:7788/live  (1-second updates)
+   Fallback   : fetches JSON files from data/ every 10 s
+                (works on Cloudflare Pages with no server)
    ============================================================ */
 
 'use strict';
 
-const REFRESH_MS = 10_000;
+const REFRESH_MS    = 10_000;   // fallback poll interval
+const DATA_SERVER   = 'http://localhost:7788';  // local data-server
 
 const FETCH_TARGETS = [
   'data/tfsec-last.json',
@@ -428,45 +432,10 @@ function renderAgent(d) {
 
 // ── refresh ────────────────────────────────────────────────
 async function fetchAll() {
-  const [tfsec, deploy, verify, drift, agent] = await Promise.all(
+  const [scan, deploy, verify, drift, agent] = await Promise.all(
     FETCH_TARGETS.map(safeFetch)
   );
-  // Wrap each renderer in try/catch so one bad JSON can't prevent the others
-  // from rendering. Surfaces errors in console instead of leaving cards blank.
-  const renderers = [
-    ['scan',   renderScan,   tfsec],
-    ['deploy', renderDeploy, deploy],
-    ['verify', renderVerify, verify],
-    ['drift',  renderDrift,  drift],
-    ['agent',  renderAgent,  agent],
-  ];
-  for (const [name, fn, data] of renderers) {
-    try { fn(data); }
-    catch (e) {
-      console.error(`render${name} failed:`, e);
-      // On any renderer failure, force the card into a clean error state so
-      // partial DOM updates from earlier in the function don't leave stale
-      // text lying around.
-      try {
-        const pillEl = $(`pill-${name}`);
-        if (pillEl) setPill(`pill-${name}`, 'fail', 'ERROR');
-        const cardId = `card-${name}`;
-        setCardState(cardId, 'fail');
-        // Reset all .list-mono / .stat-num / .act-kind values inside the card
-        const cardEl = $(cardId);
-        if (cardEl) {
-          cardEl.querySelectorAll('.list-mono').forEach(el => { el.textContent = '—'; });
-          cardEl.querySelectorAll('.stat-num').forEach(el => { el.textContent = '0'; el._lastVal = 0; });
-        }
-        // Special-case: reset the findings-list to the empty state
-        if (name === 'scan') {
-          $('findings-count').textContent = '0 total';
-          $('findings-list').innerHTML = '<div class="empty-state">No scan data yet.</div>';
-        }
-      } catch {}
-    }
-  }
-  updateLatestTs([tfsec, deploy, verify, drift, agent]);
+  applySnapshot({ scan, deploy, verify, drift, agent, _running: {}, _ts: Date.now() });
 }
 
 // Announce refreshes to screen readers via a polite live region.
@@ -476,8 +445,131 @@ async function fetchAllAndAnnounce() {
   if (liveEl) liveEl.textContent = `Dashboard refreshed at ${fmtTs(new Date().toISOString())}`;
 }
 
+// ── Live mode via SSE (data-server.py) ────────────────────
+// Tries to connect to the local data-server SSE endpoint.
+// If the server is not running, falls back to file polling.
+let _sseActive   = false;
+let _pollTimer   = null;
+let _modeEl      = $('live-mode-badge'); // optional badge element
+
+function applySnapshot(snap) {
+  // snap = { scan, deploy, verify, drift, agent, _running, _ts }
+  const renderers = [
+    ['scan',   renderScan,   snap.scan],
+    ['deploy', renderDeploy, snap.deploy],
+    ['verify', renderVerify, snap.verify],
+    ['drift',  renderDrift,  snap.drift],
+    ['agent',  renderAgent,  snap.agent],
+  ];
+  for (const [name, fn, data] of renderers) {
+    try { fn(data); }
+    catch (e) {
+      console.error(`render${name} failed:`, e);
+      try {
+        const pillEl = $(`pill-${name}`);
+        if (pillEl) setPill(`pill-${name}`, 'fail', 'ERROR');
+        const cardId = `card-${name}`;
+        setCardState(cardId, 'fail');
+        const cardEl = $(cardId);
+        if (cardEl) {
+          cardEl.querySelectorAll('.list-mono').forEach(el => { el.textContent = '\u2014'; });
+          cardEl.querySelectorAll('.stat-num').forEach(el => { el.textContent = '0'; el._lastVal = 0; });
+        }
+        if (name === 'scan') {
+          $('findings-count').textContent = '0 total';
+          $('findings-list').innerHTML = '<div class="empty-state">No scan data yet.</div>';
+        }
+      } catch {}
+    }
+  }
+  updateLatestTs([snap.scan, snap.deploy, snap.verify, snap.drift, snap.agent]);
+
+  // Show spinner on cards whose script is currently running
+  const running = snap._running || {};
+  Object.keys(running).forEach(name => {
+    const pill = $(`pill-${name}`);
+    if (pill && running[name]) pill.classList.add('pill-running');
+  });
+  // Clear spinners for completed scripts
+  ['scan','deploy','verify','drift'].forEach(name => {
+    if (!running[name]) $(`pill-${name}`)?.classList.remove('pill-running');
+  });
+}
+
+function startSSE() {
+  const es = new EventSource(`${DATA_SERVER}/live`);
+
+  es.onopen = () => {
+    _sseActive = true;
+    clearInterval(_pollTimer);
+    _pollTimer = null;
+    if (_modeEl) { _modeEl.textContent = 'LIVE ●'; _modeEl.classList.add('live'); }
+    if (liveEl) liveEl.textContent = 'Live data stream connected.';
+    console.log('[dashboard] SSE connected — 1s live mode');
+  };
+
+  es.onmessage = e => {
+    try {
+      const snap = JSON.parse(e.data);
+      applySnapshot(snap);
+      if (liveEl) liveEl.textContent = `Live — ${fmtTs(new Date().toISOString())}`;
+    } catch (err) {
+      console.warn('[dashboard] SSE parse error:', err);
+    }
+  };
+
+  es.onerror = () => {
+    if (_sseActive) {
+      _sseActive = false;
+      if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
+      console.warn('[dashboard] SSE disconnected — falling back to polling');
+    }
+    es.close();
+    // Retry SSE after 5 s, in case the server was restarted
+    setTimeout(startSSE, 5_000);
+    // Start polling immediately so the UI doesn't go stale
+    if (!_pollTimer) startPolling();
+  };
+}
+
+function startPolling() {
+  if (_pollTimer) return;
+  fetchAllAndAnnounce();
+  _pollTimer = setInterval(fetchAllAndAnnounce, REFRESH_MS);
+  if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
+}
+
+// ── Run-button wiring ─────────────────────────────────────
+// Any element with data-run="scan|verify|drift|deploy" calls
+// the data-server /run/<script> endpoint on click.
+document.querySelectorAll('[data-run]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const name = btn.dataset.run;
+    if (!name) return;
+    try {
+      const r = await fetch(`${DATA_SERVER}/run/${name}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      if (j.already_running) {
+        console.log(`[dashboard] ${name} already running`);
+      } else if (j.started) {
+        const pill = $(`pill-${name}`);
+        if (pill) pill.classList.add('pill-running');
+        console.log(`[dashboard] ${name} started`);
+      } else {
+        console.warn(`[dashboard] /run/${name} failed:`, j);
+      }
+    } catch (e) {
+      console.warn(`[dashboard] run button (${name}) failed — server not running?`, e);
+    }
+  });
+});
+
+// ── Boot sequence ─────────────────────────────────────────
+// 1. Attempt SSE (will fall back to polling on error)
+// 2. Initial file-based fetch while SSE is connecting
 fetchAllAndAnnounce();
-setInterval(fetchAllAndAnnounce, REFRESH_MS);
+startSSE();
 setInterval(paintStale, 1000);
 
 // Sync dot is a click-to-refresh affordance. Make it accessible.
