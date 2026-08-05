@@ -561,6 +561,36 @@ function startPolling() {
   if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
 }
 
+// ── Pipeline trigger button ─────────────────────────────────
+const pipelineBtn = $('pipeline-trigger-btn');
+if (pipelineBtn) {
+  pipelineBtn.addEventListener('click', async () => {
+    pipelineBtn.disabled = true;
+    pipelineBtn.textContent = '\u23f3 triggering\u2026';
+    try {
+      const r = await fetch(`${DATA_SERVER}/trigger`);
+      const j = await r.json();
+      if (j.triggered) {
+        pipelineBtn.textContent = '\u2713 triggered';
+        pipelineBtn.classList.add('triggered');
+        setTimeout(() => {
+          pipelineBtn.textContent = '\u25ba Pipeline';
+          pipelineBtn.classList.remove('triggered');
+          pipelineBtn.disabled = false;
+        }, 4000);
+      } else {
+        pipelineBtn.textContent = '\u26a0 failed';
+        console.warn('[dashboard] pipeline trigger failed:', j);
+        setTimeout(() => { pipelineBtn.textContent = '\u25ba Pipeline'; pipelineBtn.disabled = false; }, 3000);
+      }
+    } catch (e) {
+      pipelineBtn.textContent = '\u26a0 server offline';
+      console.warn('[dashboard] /trigger failed:', e);
+      setTimeout(() => { pipelineBtn.textContent = '\u25ba Pipeline'; pipelineBtn.disabled = false; }, 3000);
+    }
+  });
+}
+
 // ── Run-button wiring ─────────────────────────────────────
 // Any element with data-run="scan|verify|drift|deploy" calls
 // the data-server /run/<script> endpoint on click.

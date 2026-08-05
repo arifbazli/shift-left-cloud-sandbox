@@ -37,6 +37,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
@@ -69,6 +70,54 @@ DATA_FILES: dict[str, Path] = {
     "drift":  DATA_DIR / "drift-last.json",
     "agent":  DATA_DIR / "agent-actions.json",
 }
+
+# ---------------------------------------------------------------------------
+# GitHub pipeline trigger — fires repository_dispatch on the repo
+# Requires GH_TOKEN env var (gh auth token) with repo scope.
+# ---------------------------------------------------------------------------
+GH_REPO = "arifbazli/shift-left-cloud-sandbox"
+
+def trigger_pipeline() -> dict[str, Any]:
+    """POST a repository_dispatch event to trigger the GitHub Actions pipeline."""
+    token = os.environ.get("GH_TOKEN") or _read_gh_token()
+    if not token:
+        return {"error": "GH_TOKEN not set and gh CLI token not found"}
+
+    url = f"https://api.github.com/repos/{GH_REPO}/dispatches"
+    payload = json.dumps({"event_type": "dashboard-refresh"}).encode()
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept":        "application/vnd.github+json",
+            "Content-Type":  "application/json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            # 204 No Content = success
+            return {"triggered": True, "http_status": resp.status}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")[:200]
+        return {"triggered": False, "http_status": e.code, "error": body}
+    except Exception as e:
+        return {"triggered": False, "error": str(e)}
+
+
+def _read_gh_token() -> str:
+    """Read token from gh CLI credential store (best-effort)."""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "token"],
+            capture_output=True, text=True, timeout=5
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
+
 
 # ---------------------------------------------------------------------------
 # Auto-refresh schedule — how often each script re-runs automatically
@@ -134,6 +183,7 @@ def _scheduler():
     """
     # Track when each script last ran (epoch seconds)
     last_run: dict[str, float] = {}
+    last_pipeline_trigger: float = 0
 
     # Stagger initial runs by 2 s each so they don\'t all hammer the
     # endpoint simultaneously at startup.
@@ -153,6 +203,12 @@ def _scheduler():
                 if not already:
                     run_script(name)
                     last_run[name] = now
+        # Auto-trigger GitHub Actions pipeline every 10 min
+        if now - last_pipeline_trigger >= 600:
+            result = trigger_pipeline()
+            status = "OK" if result.get("triggered") else result.get("error", "?")
+            print(f"[data-server] pipeline trigger: {status}")
+            last_pipeline_trigger = now
 
 # ---------------------------------------------------------------------------
 # Read all data files into one snapshot dict
@@ -229,6 +285,11 @@ class Handler(BaseHTTPRequestHandler):
             result = run_script(name)
             self._json(result)
 
+        # ── /trigger  (fire GitHub Actions pipeline) ───────────────────────
+        elif path == "/trigger":
+            result = trigger_pipeline()
+            self._json(result)
+
         # ── /live  (SSE) ───────────────────────────────────────────────────
         elif path == "/live":
             self._sse()
@@ -296,6 +357,7 @@ def main():
     print(f"  /live          — SSE stream (1s updates)")
     print(f"  /data/<f>.json — serve data file")
     print(f"  /run/<script>  — trigger script (allowed: {', '.join(ALLOWED_SCRIPTS)})")
+    print(f"  /trigger       — fire GitHub Actions pipeline (repository_dispatch)")
     print(f"  root: {ROOT_DIR}")
     try:
         server.serve_forever()

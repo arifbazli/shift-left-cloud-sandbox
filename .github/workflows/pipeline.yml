@@ -32,11 +32,31 @@ on:
   pull_request:
     branches:
       - main
+  # ── Scheduled auto-run ──────────────────────────────────────────
+  # Runs every 10 minutes so the live dashboard always has fresh data.
+  # SEC_INTENT: scheduled runs are gated by the same tfsec scan as push runs.
+  schedule:
+    - cron: '*/10 * * * *'
+  # ── Manual trigger (UI button or API call) ──────────────────────
+  # Triggered by: gh workflow run pipeline.yml
+  # or:           data-server.py  /trigger  endpoint (via GitHub API)
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'manual'
+  # ── API trigger from data-server ───────────────────────────────
+  # Triggered by POST /repos/{owner}/{repo}/dispatches with
+  # event_type: 'dashboard-refresh'
+  repository_dispatch:
+    types: [dashboard-refresh]
 
-# Cancel stale runs on the same ref to avoid queue buildup.
+# Scheduled/dispatch runs get their own concurrency slot so they don't cancel
+# push-triggered runs (and vice versa). PR runs are isolated per branch.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'schedule' || github.event_name == 'repository_dispatch' && 'dispatch' || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' && github.event_name != 'repository_dispatch' }}
 
 # Minimal default permissions; jobs escalate only what they need.
 permissions:
@@ -108,7 +128,11 @@ jobs:
     name: "terraform apply (LocalStack)"
     runs-on: floci-self-hosted
     needs: scan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch'
 
     env:
       # Prepend ~/.local/bin for user-installed tools (terraform, tfsec, etc.)
@@ -201,7 +225,11 @@ jobs:
     name: "publish to Cloudflare Pages"
     runs-on: ubuntu-latest
     needs: deploy-local
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch'
 
     permissions:
       contents: read

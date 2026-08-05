@@ -153,6 +153,19 @@ html, body {
   margin-left: 6px; min-width: 56px;
   display: inline-block;
 }
+/* Pipeline trigger button in header */
+.pipeline-btn {
+  margin-left: 8px;
+  background: rgba(0,212,170,0.1); border: 0.5px solid rgba(0,212,170,0.4);
+  color: var(--teal); border-radius: 5px;
+  padding: 3px 10px; font-size: 10px; font-family: var(--font-mono);
+  letter-spacing: 0.06em; cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.pipeline-btn:hover    { background: rgba(0,212,170,0.2); }
+.pipeline-btn:active   { transform: scale(0.95); }
+.pipeline-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pipeline-btn.triggered { background: rgba(62,207,142,0.2); color: var(--green); border-color: var(--green); }
 /* Spinning pill when a script is running */
 @keyframes spin { to { transform: rotate(360deg); } }
 .pill.pill-running::after {
