@@ -36,6 +36,32 @@
   /* shadows */
   --shadow-card:   0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.18);
   --shadow-hover:  0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 12px rgba(0,0,0,0.28);
+
+  /* spacing scale — new components (pill states, sparklines, toast) below
+     consume these; existing rules are left as-is to avoid a risky mass
+     find-replace across an already-shipped dark theme. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
+  --radius-xs:   4px;
+  --radius-pill: 999px;
+
+  /* status color scale — extends pass/fail/warn/idle with the 3 states
+     the drift card needs to express as distinct pills, not text tricks */
+  --status-clean:              var(--green);
+  --status-clean-bg:           var(--green-bg);
+  --status-clean-border:       var(--green-border);
+  --status-drift:              var(--amber);
+  --status-drift-bg:           var(--amber-bg);
+  --status-drift-border:       var(--amber-border);
+  --status-destructive:        #ff5470;
+  --status-destructive-bg:     rgba(255,84,112,0.16);
+  --status-destructive-border: rgba(255,84,112,0.4);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -240,6 +266,36 @@ html, body {
 .pill.fail { background: var(--red-bg);   color: var(--red);   border: 0.5px solid var(--red-border);   }
 .pill.warn { background: var(--amber-bg); color: var(--amber); border: 0.5px solid var(--amber-border); }
 .pill.idle { background: rgba(0,212,170,0.10); color: var(--teal); border: 0.5px solid var(--border); }
+
+/* CLEAN/DRIFT/DESTRUCTIVE — distinct states so drift no longer borrows
+   pass/warn purely by text label. DESTRUCTIVE gets a hazard-stripe fill
+   so it reads as "blocked, stronger than a plain fail" at a glance. */
+.pill.clean {
+  background: var(--status-clean-bg); color: var(--status-clean);
+  border: 0.5px solid var(--status-clean-border);
+}
+.pill.drift {
+  background: var(--status-drift-bg); color: var(--status-drift);
+  border: 0.5px solid var(--status-drift-border);
+}
+.pill.destructive {
+  background: var(--status-destructive-bg); color: var(--status-destructive);
+  border: 1px solid var(--status-destructive-border);
+  background-image: repeating-linear-gradient(135deg,
+    var(--status-destructive-bg) 0 6px, rgba(255,84,112,0.28) 6px 12px);
+}
+
+/* ── sparklines (per-panel trend, reads *-history.json) ─────────────── */
+.sparkline-wrap { margin: 0 0 var(--space-3); height: 28px; }
+.sparkline { width: 100%; height: 28px; display: block; overflow: visible; }
+.sparkline .spark-line {
+  fill: none; stroke: var(--teal); stroke-width: 1.5;
+  stroke-linejoin: round; stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.sparkline .spark-fill { fill: var(--teal); opacity: 0.08; stroke: none; }
+.card.state-fail .sparkline .spark-line, .card.state-fail .sparkline .spark-fill { stroke: var(--red);   fill: var(--red);   }
+.card.state-warn .sparkline .spark-line, .card.state-warn .sparkline .spark-fill { stroke: var(--amber); fill: var(--amber); }
 
 /* ── stat rows (tfsec counts) ─────────────────────────────── */
 .stat-row {
@@ -532,6 +588,28 @@ html, body {
   opacity: 0.7;
 }
 
+/* ── fetch-error toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed; left: 50%; bottom: var(--space-6);
+  transform: translate(-50%, 0);
+  background: var(--surface-3); border: 0.5px solid var(--red-border);
+  color: var(--text); font-size: 12px; font-family: var(--font-mono);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-hover);
+  display: flex; align-items: center; gap: var(--space-3);
+  z-index: 100;
+  animation: toast-in 0.2s ease-out;
+}
+.toast[hidden] { display: none; }
+.toast .toast-dismiss {
+  background: none; border: 0; color: var(--text-muted);
+  cursor: pointer; font-size: 13px; line-height: 1; padding: 0 2px;
+}
+.toast .toast-dismiss:hover { color: var(--text); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+
 /* ── mobile ────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
   /* Below this width, the 4-col grid becomes 3-col. Findings spanning 3 of 4
@@ -555,6 +633,18 @@ html, body {
   .rule-desc { white-space: normal; }
   .rule-id { display: none; }  /* hide on mobile to save space */
   .rule-res { display: none; }
+}
+
+/* ── small phones (iPhone SE / 375–393px) ────────────────────────────── */
+@media (max-width: 400px) {
+  .dash-wrap { padding: var(--space-3) var(--space-3) var(--space-5); }
+  .card { padding: var(--space-4) var(--space-4) var(--space-3); }
+  .stat-row { gap: var(--space-2); }
+  .stat-num { font-size: 18px; }
+  .meta-bar { padding: var(--space-3); gap: var(--space-2) var(--space-3); font-size: 10px; }
+  .dash-header { flex-direction: column; align-items: stretch; }
+  .sync-status { justify-content: space-between; }
+  .toast { left: var(--space-3); right: var(--space-3); transform: none; bottom: var(--space-3); }
 }
 
 /* ── scrollbar ─────────────────────────────────────────────── */

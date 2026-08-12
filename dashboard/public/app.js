@@ -12,7 +12,14 @@
 // ── utils ──────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-const REFRESH_MS    = 10_000;   // fallback poll interval
+function getRefreshMs() {
+  let fromQuery = null, fromStorage = null;
+  try { fromQuery = parseInt(new URLSearchParams(location.search).get('refresh'), 10); } catch {}
+  try { fromStorage = parseInt(localStorage.getItem('dashboard.refreshMs'), 10); } catch {}
+  const ms = fromQuery || fromStorage || 10_000;
+  return Math.max(2_000, ms);   // never poll faster than 2s
+}
+const REFRESH_MS    = getRefreshMs();   // ?refresh=<ms> or localStorage 'dashboard.refreshMs'
 const DATA_SERVER   = 'http://localhost:7788';  // local data-server
 
 const FETCH_TARGETS = [
@@ -45,10 +52,10 @@ setInterval(() => {
 async function safeFetch(path) {
   try {
     const r = await fetch(path, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    if (!r.ok) return { __error: `HTTP ${r.status}` };
     return await r.json();
   } catch (e) {
-    return { __error: e.message };
+    return { __error: e.message, __networkError: true };
   }
 }
 
@@ -146,6 +153,65 @@ function escHtml(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// ── sparklines (reads *-history.json, independent of the SSE/poll path
+//    since data-server.py's SSE snapshot only carries *-last.json) ──────
+const HISTORY_TARGETS = {
+  scan:   'data/tfsec-history.json',
+  deploy: 'data/deploy-history.json',
+  verify: 'data/verify-history.json',
+  drift:  'data/drift-history.json',
+};
+const HISTORY_POLL_MS = 30_000;
+
+function renderSparkline(svgId, values) {
+  const svg = $(svgId);
+  if (!svg) return;
+  const pts = (values || []).filter(v => typeof v === 'number' && !isNaN(v));
+  if (pts.length < 2) { svg.innerHTML = ''; return; }
+  const w = 100, h = 24, pad = 2;
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const range = max - min || 1;
+  const step = (w - pad * 2) / (pts.length - 1);
+  const coords = pts.map((v, i) => {
+    const x = pad + i * step;
+    const y = pad + (h - pad * 2) * (1 - (v - min) / range);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const fillPts = `${pad},${h - pad} ${coords.join(' ')} ${w - pad},${h - pad}`;
+  svg.innerHTML =
+    `<polygon class="spark-fill" points="${fillPts}"></polygon>` +
+    `<polyline class="spark-line" points="${coords.join(' ')}"></polyline>`;
+}
+
+async function fetchHistories() {
+  const entries = await Promise.all(
+    Object.entries(HISTORY_TARGETS).map(async ([key, path]) => [key, await safeFetch(path)])
+  );
+  for (const [key, data] of entries) {
+    if (!data || data.__error || !Array.isArray(data)) continue;
+    const recent = data.slice(-20);
+    let series = null;
+    if (key === 'scan')   series = recent.map(r => (r.counts?.critical || 0) + (r.counts?.high || 0));
+    if (key === 'deploy') series = recent.map(r => Object.keys(r.outputs || {}).length);
+    if (key === 'verify') series = recent.map(r => (r.total ? r.passed / r.total : 0));
+    if (key === 'drift')  series = recent.map(r => (r.changes || []).filter(c => !(c.actions || []).every(a => a === 'no-op')).length);
+    if (series) renderSparkline(`spark-${key}`, series);
+  }
+}
+
+// ── fetch-error toast ──────────────────────────────────────────────────
+let _toastHideTimer = null;
+function showToast(msg) {
+  const t = $('toast'), m = $('toast-msg');
+  if (!t || !m) return;
+  m.textContent = msg;
+  t.hidden = false;
+  clearTimeout(_toastHideTimer);
+  _toastHideTimer = setTimeout(hideToast, 8000);
+}
+function hideToast() { const t = $('toast'); if (t) t.hidden = true; }
+$('toast-dismiss')?.addEventListener('click', hideToast);
 
 // ── staleness ──────────────────────────────────────────────
 let __latestTs = null;
@@ -351,7 +417,11 @@ function renderDrift(d) {
   //   warn  - drift detected but agent is still able to reason about it
   //           (safe = could auto-fix, destructive = held back, security_only = blocked)
   //   fail  - reserved for HTTP-level failures, not policy decisions
-  const pillCls = clean ? 'pass' : 'warn';
+  const pillCls = clean ? 'clean'
+    : cls === 'destructive'   ? 'destructive'
+    : cls === 'security_only' ? 'warn'
+    : cls === 'safe'          ? 'drift'
+    : 'warn';
   const pillLabel = clean ? 'CLEAN'
     : cls === 'safe'           ? 'DRIFT · safe'
     : cls === 'destructive'    ? 'HELD · destructive'
@@ -359,7 +429,7 @@ function renderDrift(d) {
     : 'DRIFT';
 
   setPill('pill-drift', pillCls, pillLabel);
-  setCardState(cardId, clean ? 'pass' : 'warn');
+  setCardState(cardId, clean ? 'pass' : cls === 'destructive' ? 'fail' : 'warn');
   showCard(cardId, true, false);
 
   $('drift-class').textContent = `classification: ${cls}`;
@@ -451,9 +521,13 @@ function renderAgent(d) {
 
 // ── refresh ────────────────────────────────────────────────
 async function fetchAll() {
-  const [scan, deploy, verify, drift, agent] = await Promise.all(
-    FETCH_TARGETS.map(safeFetch)
-  );
+  const results = await Promise.all(FETCH_TARGETS.map(safeFetch));
+  const [scan, deploy, verify, drift, agent] = results;
+  if (results.every(d => d && d.__networkError)) {
+    showToast('Can’t reach dashboard data — retrying…');
+  } else {
+    hideToast();
+  }
   applySnapshot({ scan, deploy, verify, drift, agent, _running: {}, _ts: Date.now() });
 }
 
@@ -635,6 +709,8 @@ if (!IS_LOCAL) {
 
 // Always do an immediate file fetch so the dashboard isn't blank.
 fetchAllAndAnnounce();
+fetchHistories();
+setInterval(fetchHistories, HISTORY_POLL_MS);
 
 if (IS_LOCAL) {
   // Local dev: use SSE for 1s live updates.

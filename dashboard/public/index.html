@@ -34,7 +34,7 @@
     <div class="card" id="card-scan">
       <div class="card-head">
         <span class="card-label">tfsec gate</span>
-        <span class="pill idle" id="pill-scan">—</span>
+        <span class="pill idle" id="pill-scan" role="status">—</span>
         <button class="run-btn" data-run="scan" title="Run scan now">&#9654;</button>
       </div>
 
@@ -44,6 +44,7 @@
       </div>
 
       <div id="body-scan" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-scan" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
         <div class="stat-row">
           <div class="stat-item">
             <span class="stat-num danger" id="cnt-critical">0</span>
@@ -83,7 +84,7 @@
     <div class="card" id="card-deploy">
       <div class="card-head">
         <span class="card-label">last deploy</span>
-        <span class="pill idle" id="pill-deploy">—</span>
+        <span class="pill idle" id="pill-deploy" role="status">—</span>
         <button class="run-btn" data-run="deploy" title="Run deploy now">&#9654;</button>
       </div>
 
@@ -94,6 +95,7 @@
       </div>
 
       <div id="body-deploy" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-deploy" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
         <div class="list-row">
           <span class="list-key">endpoint</span>
           <span class="list-mono" id="dep-endpoint">—</span>
@@ -122,7 +124,7 @@
     <div class="card" id="card-verify">
       <div class="card-head">
         <span class="card-label">verify (api direct)</span>
-        <span class="pill idle" id="pill-verify">—</span>
+        <span class="pill idle" id="pill-verify" role="status">—</span>
         <button class="run-btn" data-run="verify" title="Run verify now">&#9654;</button>
       </div>
 
@@ -133,6 +135,7 @@
       </div>
 
       <div id="body-verify" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-verify" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
         <div class="list-row">
           <span class="list-key">endpoint</span>
           <span class="list-mono" id="ver-endpoint">—</span>
@@ -161,7 +164,7 @@
     <div class="card" id="card-drift">
       <div class="card-head">
         <span class="card-label">drift</span>
-        <span class="pill idle" id="pill-drift">—</span>
+        <span class="pill idle" id="pill-drift" role="status">—</span>
         <button class="run-btn" data-run="drift" title="Run drift-check now">&#9654;</button>
       </div>
 
@@ -172,6 +175,7 @@
       </div>
 
       <div id="body-drift" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-drift" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
         <div id="drift-changes"></div>
       </div>
 
@@ -195,7 +199,7 @@
     <div class="card" id="card-agent">
       <div class="card-head">
         <span class="card-label">agent loop</span>
-        <span class="pill idle" id="pill-agent">—</span>
+        <span class="pill idle" id="pill-agent" role="status">—</span>
       </div>
 
       <div id="skel-agent" class="skeleton-wrap">
@@ -243,6 +247,11 @@
 
 <!-- visually hidden ARIA live region for screen readers -->
 <div id="aria-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+<div id="toast" class="toast" role="alert" hidden>
+  <span id="toast-msg"></span>
+  <button class="toast-dismiss" id="toast-dismiss" aria-label="Dismiss">&times;</button>
+</div>
 
 <script src="app.js"></script>
 </body>
