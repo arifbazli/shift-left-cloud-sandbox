@@ -17,6 +17,10 @@ yourself if you don't trust this file's freshness.
    of the toolchain — `podman`, the pinned `tfsec` path, `curl`/`jq` in the
    shell scripts — has only been validated on WSL2. Running these scripts
    natively on Windows is untested territory, not a supported path.
+   (This applies to *local, manual* script runs. CI's `scan`/`deploy-local`
+   jobs run on GitHub-hosted `ubuntu-latest` and install their own
+   Podman/tfsec fresh per run — see CONTEXT.md. `auto-fix.yml` is the only
+   workflow still on the WSL2 `floci-self-hosted` runner.)
 2. **Check tfsec version.** `tfsec --version` must print exactly `v1.28.5`.
    `scan.sh` and the CI pipeline both hard-fail (exit 2 / `exit 1`) on any
    other version — don't work around that check, fix the binary.
@@ -54,10 +58,10 @@ yourself if you don't trust this file's freshness.
 
 | Tool | Pinned version | Enforced by |
 |---|---|---|
-| `tfsec` | **1.28.5** | `scan.sh` (`required_tfsec="v1.28.5"`, exits 2 on mismatch); `.github/workflows/pipeline.yml` (`Verify tfsec version` step, fails the job) |
+| `tfsec` | **1.28.5** | `scan.sh` (`required_tfsec="v1.28.5"`, exits 2 on mismatch); `.github/workflows/pipeline.yml`'s `scan` job installs this exact release binary fresh on `ubuntu-latest`, then verifies it, every run |
 | `terraform` | 1.9.8 | Documented only — not version-checked in code |
 | `jq` | 1.7.1 | Documented only (`--rawfile` used elsewhere in the toolchain) |
-| `podman-compose` | 1.6.0 | Documented only |
+| `podman-compose` | 1.6.0 (local WSL2) | Documented only. **CI note:** confirmed via a real CI run — `deploy-local` installs Podman **4.9.3** and podman-compose **1.0.6** from `ubuntu-latest`'s apt repo, not version-pinned in CI, and not the same major versions as local dev (Podman 5.x / podman-compose 1.6.0). |
 
 > [!CAUTION]
 > **Do not upgrade tfsec past 1.28.5.** 1.28.10 has a confirmed regression:

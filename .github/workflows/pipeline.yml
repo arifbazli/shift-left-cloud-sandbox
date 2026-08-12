@@ -11,15 +11,14 @@
 # only run after scan exits 0. A HIGH or CRITICAL tfsec finding blocks all
 # downstream jobs and posts a failing status on the PR/commit.
 #
-# Runner environment notes (self-hosted, Debian WSL):
-#   PATH:            ~/.local/bin must be prepended — tfsec is installed there,
-#                    not in /usr/local/bin. The systemd user service PATH does
-#                    not include ~/.local/bin by default.
-#   XDG_RUNTIME_DIR: must be set explicitly for rootless Podman. The runner
-#                    service inherits it from systemd --user, but GitHub
-#                    Actions step environments do not always propagate it.
-#   DOCKER_HOST:     set to the podman socket as a fallback for tools that
-#                    prefer DOCKER_HOST over XDG_RUNTIME_DIR auto-detection.
+# Runner environment notes:
+#   scan / deploy-local / publish-dashboard / pr-comment all run on
+#   GitHub-hosted ubuntu-latest — tfsec and Terraform are installed fresh
+#   each run (see their steps below), and Podman/podman-compose start an
+#   ephemeral floci-core for the duration of the job only.
+#   .github/workflows/auto-fix.yml is unaffected by this and still runs on
+#   the floci-self-hosted WSL2 runner (scripts/setup-runner.sh) — see
+#   CONTEXT.md for why that job keeps the self-hosted runner.
 # =============================================================================
 
 name: Shift-Left Security Pipeline
@@ -62,34 +61,32 @@ concurrency:
 permissions:
   contents: read
 
-# ---------------------------------------------------------------------------
-# Shared env block for all self-hosted runner jobs.
-# Injected at workflow level; jobs may override individual keys.
-# ---------------------------------------------------------------------------
-env:
-  # Prepend ~/.local/bin so tfsec (1.28.5) and other user-installed tools
-  # are found before the system PATH entries.
-  PATH_PREFIX: /home/arif_debian/.local/bin
-
 jobs:
   # ---------------------------------------------------------------------------
   # JOB 1 — scan
   # Runs tfsec against terraform/ and writes dashboard data.
-  # SEC_INTENT: self-hosted runner so tfsec 1.28.5 is pre-installed at a
-  # pinned path — GitHub-hosted runners can't guarantee the exact binary.
+  # SEC_INTENT: tfsec 1.28.5 is installed fresh from a pinned release URL
+  # every run — ubuntu-latest gives no guarantee about a pre-installed
+  # version, so pin-and-verify happens in-job instead of trusting the host.
   # ---------------------------------------------------------------------------
   scan:
     name: "tfsec gate"
-    runs-on: floci-self-hosted
-
-    env:
-      PATH: /home/arif_debian/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Hard-fail if the runner has a different tfsec version.
+      # SEC_INTENT: 1.28.10+ silently drops tfsec:ignore: directives, which
+      # would let the deliberate fixture (AVD-AWS-0057) slip through
+      # undetected. Pin the exact release binary, don't trust apt/the image.
+      - name: Install tfsec 1.28.5 (pinned)
+        run: |
+          curl -fsSL https://github.com/aquasecurity/tfsec/releases/download/v1.28.5/tfsec-linux-amd64 \
+            -o /usr/local/bin/tfsec
+          chmod +x /usr/local/bin/tfsec
+
+      # Hard-fail if the install above didn't produce exactly 1.28.5.
       # SEC_INTENT: version drift silently changes rule coverage;
       # the fixture depends on AVD-AWS-0057 being present in 1.28.5.
       - name: Verify tfsec version
@@ -98,7 +95,6 @@ jobs:
           echo "Detected tfsec version: $VERSION"
           if [[ "$VERSION" != "1.28.5" ]]; then
             echo "::error::tfsec version mismatch: got '$VERSION', expected 1.28.5"
-            echo "::error::tfsec must be installed at /home/arif_debian/.local/bin/tfsec"
             exit 1
           fi
           echo "tfsec $VERSION ✓"
@@ -126,7 +122,7 @@ jobs:
   # ---------------------------------------------------------------------------
   deploy-local:
     name: "terraform apply (LocalStack)"
-    runs-on: floci-self-hosted
+    runs-on: ubuntu-latest
     needs: scan
     if: >
       github.event_name == 'push' && github.ref == 'refs/heads/main' ||
@@ -135,11 +131,6 @@ jobs:
       github.event_name == 'repository_dispatch'
 
     env:
-      # Prepend ~/.local/bin for user-installed tools (terraform, tfsec, etc.)
-      PATH: /home/arif_debian/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      # Rootless Podman socket — must be explicit; not inherited from systemd service env.
-      XDG_RUNTIME_DIR: /run/user/1000
-      DOCKER_HOST: unix:///run/user/1000/podman/podman.sock
       # LocalStack dummy credentials — not real AWS.
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
@@ -149,38 +140,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # SEC_INTENT: deploy-local's terraform validate step needs a real
+      # terraform binary — ubuntu-latest doesn't ship one. Pinned to the
+      # version documented for local dev (README/SKILL.md) to keep both
+      # environments consistent.
+      - name: Install Terraform 1.9.8
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      # ubuntu-latest ships without a dedicated Podman toolchain path the
+      # way the old WSL2 self-hosted runner did — install fresh every run.
+      # NOTE: Ubuntu 24.04's apt repo currently ships podman 4.9.x here, not
+      # the 5.x documented for local WSL2 dev — see CONTEXT.md for the
+      # version-skew note. Nothing in scripts/ hard-checks Podman's version.
+      - name: Install Podman + podman-compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman podman-compose
+          podman --version
+          podman-compose --version
+
+      # network_mode: host in podman-compose.yml was originally a WSL2/
+      # netavark workaround (see podman-compose.yml comments). It's still
+      # the simplest Podman networking mode and works unchanged here.
       - name: Start floci-core
         run: |
           podman-compose -f podman-compose.yml up -d
           echo "Waiting for floci-core at $FLOCI_ENDPOINT ..."
           for i in $(seq 1 30); do
             if curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/health" 2>/dev/null \
-               || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/" 2>/dev/null; then
-              echo "floci-core is up."
-              break
-            fi
-            sleep 2
-          done
-
-      # Verify rootless Podman is accessible before attempting compose.
-      - name: Check Podman socket
-        run: |
-          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
-          echo "DOCKER_HOST=$DOCKER_HOST"
-          podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null \
-            && echo "Podman socket: OK" \
-            || { echo "::warning::podman info failed — socket may not be ready"; }
-          podman ps --format '{{.Names}}' 2>/dev/null \
-            && echo "podman ps: OK" \
-            || { echo "::error::podman ps failed — rootless Podman not accessible"; exit 1; }
-
-      - name: Start floci-core
-        run: |
-          podman-compose -f podman-compose.yml up -d
-          echo "Waiting for floci-core at $FLOCI_ENDPOINT ..."
-          for i in $(seq 1 30); do
-            if curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/health" 2>/dev/null \
-               || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/_localstack/health" 2>/dev/null \
                || curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/" 2>/dev/null; then
               echo "floci-core is up (attempt $i)."
               break
@@ -188,14 +178,7 @@ jobs:
             echo "  attempt $i/30 — waiting 2s ..."
             sleep 2
           done
-
-      - name: Check Podman socket
-        run: |
-          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
-          echo "DOCKER_HOST=$DOCKER_HOST"
-          podman ps --format '{{.Names}}' 2>/dev/null \
-            && echo "podman ps: OK" \
-            || echo "::warning::podman ps check skipped (not needed for validate)"
+          podman ps --format '{{.Names}}'
 
       - name: Download scan result
         uses: actions/download-artifact@v4
@@ -212,7 +195,7 @@ jobs:
           cd terraform
           terraform init -no-color -input=false
           terraform validate -no-color
-          echo "terraform validate: PASS \u2713"
+          echo "terraform validate: PASS ✓"
 
       # Upload ALL data files so publish-dashboard can serve fresh data on Pages.
       - name: Upload all dashboard data
@@ -222,6 +205,12 @@ jobs:
           name: dashboard-data
           path: dashboard/public/data/
           retention-days: 7
+
+      # SEC_INTENT: explicit teardown so a stopped/orphaned floci-core
+      # container never lingers past this ephemeral job.
+      - name: Stop floci-core
+        if: always()
+        run: podman-compose -f podman-compose.yml down
 
   # ---------------------------------------------------------------------------
   # JOB 3 — publish-dashboard

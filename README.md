@@ -26,7 +26,7 @@ podman-compose -f podman-compose.yml up -d   # start floci-core (moto) on :4566
 wrangler pages dev dashboard/public --port 8788   # open http://localhost:8788
 ```
 
-**Prerequisites:** `podman` 5.x · `terraform` 1.9.8 · `tfsec` **1.28.5** (pinned — [why](SKILL.md#tool-pins)) · `jq` 1.7.1 · `podman-compose` 1.6.0 · `python3` 3.10+ · WSL2 (Debian) — see [SKILL.md](SKILL.md#before-touching-this-repo) before running anything.
+**Prerequisites (local dev):** `podman` 5.x · `terraform` 1.9.8 · `tfsec` **1.28.5** (pinned — [why](SKILL.md#tool-pins)) · `jq` 1.7.1 · `podman-compose` 1.6.0 · `python3` 3.10+ · WSL2 (Debian) — see [SKILL.md](SKILL.md#before-touching-this-repo) before running anything. CI's `scan`/`deploy-local` jobs provision their own tfsec/Terraform/Podman on `ubuntu-latest` and don't need any of this locally-documented setup.
 
 **Live dashboard:** **https://shift-left-cloud-sandbox.pages.dev**
 
