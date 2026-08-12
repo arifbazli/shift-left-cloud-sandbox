@@ -199,6 +199,12 @@ no auth) run via `podman-compose.yml`:
   [Known floci limitation](#known-floci-limitation). The tradeoff is deliberate:
   a shift-left CI demo needs something fast, free, and reachable with zero
   setup, not full API fidelity.
+- **CI and local dev now run two different Podman versions.** `deploy-local`
+  installs whatever Ubuntu 24.04's apt repo ships (currently Podman 4.9.x)
+  fresh on every `ubuntu-latest` run; local WSL2 development is documented
+  and validated against Podman 5.x (see SKILL.md). Nothing in `scripts/`
+  hard-checks Podman's version the way `scan.sh` hard-checks tfsec's, so
+  this skew is a known, accepted gap rather than a gate failure.
 
 ## What "deliberate misconfig" means
 
@@ -240,11 +246,17 @@ layer rather than assumed:
 - **The dashboard is static-only.** `wrangler.toml` deliberately ships no
   `[vars]`, `[[kv_namespaces]]`, `[[d1_databases]]`, or Workers — it's
   Cloudflare Pages serving files, full stop.
-- **Publishing requires a self-hosted runner**, not because GitHub-hosted
-  runners couldn't reach floci, but because they *can't* — floci only exists
-  on the local Debian WSL machine. The pinned `tfsec` binary at
-  `~/.local/bin/tfsec` on that same machine is what the pipeline's version
-  guard checks against.
+- **Publishing runs entirely on GitHub-hosted runners now, not a
+  self-hosted one** — for the pipeline's `scan`/`deploy-local`/
+  `publish-dashboard`/`pr-comment` jobs. As of this change they all run on
+  `ubuntu-latest`, installing a pinned `tfsec` 1.28.5 and a fresh
+  Podman/podman-compose every run, then spinning up an ephemeral floci-core
+  for the job's lifetime only. **`auto-fix.yml` still requires the
+  `floci-self-hosted` WSL2 runner** — that job wasn't touched by this
+  change. The local WSL2 `podman-compose.yml` setup (this section's
+  original subject) remains fully intact for manual development —
+  `agent-loop.sh`, direct `terraform` work, and anything run by hand still
+  targets the persistent local floci-core, not CI's ephemeral one.
 - **Pushing is manual by default; only the dashboard JSON auto-syncs**, and
   only through a script that refuses to push anything else (see next
   section).
@@ -303,6 +315,7 @@ in someone's head. This table collects them in one place.
 | `scripts/sync-dashboard.sh` | The only script in the repo allowed to push automatically, and only for `dashboard/public/data/*.json` — anything else staged aborts the run before the credential gate even runs. |
 | `.github/CODEOWNERS` | Gate scripts, the fixture, and `.github/` itself require human review — and the agent-loop's bot account is explicitly excluded from owning these paths, so it can never approve its own PRs. |
 | `.github/workflows/pipeline.yml` | `scan` is the one chokepoint job; `deploy-local` and `publish-dashboard` only run after it exits 0. |
+| `.github/workflows/pipeline.yml` | `scan`/`deploy-local` run on ephemeral `ubuntu-latest` runners, each installing its own pinned `tfsec` and fresh Podman — no shared, persistent state between CI runs and no dependency on the local WSL2 machine being online. `auto-fix.yml` is the only workflow still tied to `floci-self-hosted`. |
 | `.github/workflows/auto-fix.yml` | Auto-fix only runs behind an explicit human-applied `auto-fix` label (or an internal dispatch) — never on a bare push — and always opens a PR rather than pushing to `main`. |
 | `.github/workflows/deploy-dashboard.yml` | Dashboard publish is treated as read-only w.r.t. infra, which is why it's allowed to deploy independently of the tfsec/terraform jobs. |
 | `wrangler.toml` | No `[vars]`, no KV, no D1, no Workers — kept empty deliberately so the "static assets only" claim is enforced by the config, not just documentation. |
