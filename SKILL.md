@@ -61,7 +61,7 @@ yourself if you don't trust this file's freshness.
 | `tfsec` | **1.28.5** | `scan.sh` (`required_tfsec="v1.28.5"`, exits 2 on mismatch); `.github/workflows/pipeline.yml`'s `scan` job installs this exact release binary fresh on `ubuntu-latest`, then verifies it, every run |
 | `terraform` | 1.9.8 | Documented only — not version-checked in code |
 | `jq` | 1.7.1 | Documented only (`--rawfile` used elsewhere in the toolchain) |
-| `podman-compose` | 1.6.0 (local WSL2) | Documented only. **CI note:** `deploy-local` installs whatever `ubuntu-latest`'s apt repo ships (currently Podman 4.9.x / podman-compose from the same repo) — not version-pinned in CI, and not the same Podman major version as local dev. |
+| `podman-compose` | 1.6.0 (local WSL2) | Documented only. **CI note:** confirmed via a real CI run — `deploy-local` installs Podman **4.9.3** and podman-compose **1.0.6** from `ubuntu-latest`'s apt repo, not version-pinned in CI, and not the same major versions as local dev (Podman 5.x / podman-compose 1.6.0). |
 
 > [!CAUTION]
 > **Do not upgrade tfsec past 1.28.5.** 1.28.10 has a confirmed regression:

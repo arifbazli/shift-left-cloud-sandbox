@@ -195,7 +195,7 @@ jobs:
           cd terraform
           terraform init -no-color -input=false
           terraform validate -no-color
-          echo "terraform validate: PASS \u2713"
+          echo "terraform validate: PASS ✓"
 
       # Upload ALL data files so publish-dashboard can serve fresh data on Pages.
       - name: Upload all dashboard data
