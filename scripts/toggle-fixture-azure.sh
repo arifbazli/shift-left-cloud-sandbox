@@ -117,5 +117,4 @@ mv "$swap_tmp" "$TARGET"
 trap - EXIT
 
 echo "Azure fixture state: $current_state → $target_state"
-echo "Note: scripts/scan.sh does not yet scan terraform/azure/ — run tfsec"
-echo "  against terraform/azure directly to see the gate verdict for now."
+echo "Run scripts/scan.sh to see the gate verdict (writes tfsec-azure-last.json)."

@@ -1,0 +1,316 @@
+[
+  {
+    "timestamp": "2026-08-13T07:46:28Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T07:53:04Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T07:53:33Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T07:57:40Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T07:59:02Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 113
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 113
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T08:08:15Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T08:49:00Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 113
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 113
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-13T08:58:48Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AZU-0040",
+        "resource": "module.azure-compute",
+        "description": "Cluster does not have logging enabled via OMS Agent.",
+        "line": 194
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0015",
+        "resource": "module.azure-security",
+        "description": "Secret does not have a content-type specified.",
+        "line": 106
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AZU-0017",
+        "resource": "module.azure-security",
+        "description": "Secret should have an expiry date specified.",
+        "line": 106
+      },
+      {
+        "severity": "CRITICAL",
+        "rule_id": "AVD-AZU-0013",
+        "resource": "module.azure-security",
+        "description": "Vault network ACL does not block access by default.",
+        "line": 80
+      }
+    ]
+  }
+]

@@ -1,0 +1,79 @@
+[
+  {
+    "timestamp": "2026-08-13T08:00:58Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_resource_group.main",
+    "total_queued": 22,
+    "applied_count": 1
+  },
+  {
+    "timestamp": "2026-08-13T08:01:37Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_virtual_network.main",
+    "total_queued": 22,
+    "applied_count": 2
+  },
+  {
+    "timestamp": "2026-08-13T08:02:05Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_subnet.private",
+    "total_queued": 22,
+    "applied_count": 3
+  },
+  {
+    "timestamp": "2026-08-13T08:02:33Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_group.app",
+    "total_queued": 22,
+    "applied_count": 4
+  },
+  {
+    "timestamp": "2026-08-13T08:03:05Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_subnet_network_security_group_association.private",
+    "total_queued": 22,
+    "applied_count": 5
+  },
+  {
+    "timestamp": "2026-08-13T08:03:33Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_rule.ssh_admin",
+    "total_queued": 22,
+    "applied_count": 6
+  },
+  {
+    "timestamp": "2026-08-13T08:04:00Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_rule.app_internal",
+    "total_queued": 22,
+    "applied_count": 7
+  },
+  {
+    "timestamp": "2026-08-13T08:04:28Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_rule.egress_https",
+    "total_queued": 22,
+    "applied_count": 8
+  },
+  {
+    "timestamp": "2026-08-13T08:04:55Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_rule.egress_dns_tcp",
+    "total_queued": 22,
+    "applied_count": 9
+  },
+  {
+    "timestamp": "2026-08-13T08:05:24Z",
+    "status": "applied",
+    "next_target": "module.azure-network.azurerm_network_security_rule.egress_dns_udp",
+    "total_queued": 22,
+    "applied_count": 10
+  },
+  {
+    "timestamp": "2026-08-13T08:49:13Z",
+    "status": "applied",
+    "next_target": "module.azure-storage.azurerm_storage_account.main",
+    "total_queued": 22,
+    "applied_count": 11
+  }
+]

@@ -20,14 +20,14 @@
 #           applying more than one target per invocation
 #
 # Preconditions (fail loud, do nothing)
-#   1. tfsec gate against terraform/azure must show PASS. UNLIKE grow-
-#      stack.sh (AWS), which reads an EXISTING dashboard/public/data/
-#      tfsec-last.json written by scan.sh, there is no Azure-scoped gate
-#      file yet — scripts/scan.sh does not scan terraform/azure/ (out of
-#      scope, see CONTEXT.md). This script runs tfsec against terraform/
-#      azure directly, itself, as its own self-contained precondition,
-#      rather than trusting a file nothing currently produces. Adaptation,
-#      not a literal mirror — flagged for review.
+#   1. tfsec gate against terraform/azure must show PASS. Reads
+#      dashboard/public/data/tfsec-azure-last.json, written by
+#      scripts/scan.sh — same pattern as grow-stack.sh (AWS) reading
+#      tfsec-last.json. scan.sh was wired to scan terraform/azure/
+#      alongside terraform/ on 2026-08-13; this precondition previously
+#      ran tfsec directly itself (a self-contained adaptation, since no
+#      Azure-scoped gate file existed yet) — that workaround is removed
+#      now that its root cause is fixed.
 #   2. floci-az must be reachable at FLOCI_AZ_ENDPOINT.
 #   3. growth-queue-azure.yaml must exist and contain at least one address.
 #
@@ -86,23 +86,22 @@ APPLY_TIMEOUT_SECONDS="${APPLY_TIMEOUT_SECONDS:-240}"
 
 mkdir -p "$DASH_DATA"
 
-# ---- Precondition 1: tfsec gate must be PASS, checked directly -------------
+# ---- Precondition 1: tfsec gate must be PASS -------------------------------
 # SEC_INTENT: same reasoning as grow-stack.sh — don't grow while a HIGH/
-# CRITICAL finding is open. Self-contained (see header) since no external
-# gate file for terraform/azure exists yet.
-if ! command -v tfsec >/dev/null 2>&1; then
-  echo "FATAL: tfsec is not installed — cannot confirm gate is PASS. Refusing to grow." >&2
+# CRITICAL finding is open. Reads scripts/scan.sh's Azure-scoped gate file
+# directly, same pattern as grow-stack.sh reading tfsec-last.json — this
+# REMOVES the earlier self-contained tfsec-invocation adaptation, since its
+# root cause (no Azure gate file existing) is fixed as of scan.sh's
+# terraform/azure/ wiring (2026-08-13).
+TFSEC_AZURE_LAST="$DASH_DATA/tfsec-azure-last.json"
+if [[ ! -s "$TFSEC_AZURE_LAST" ]]; then
+  echo "FATAL: $TFSEC_AZURE_LAST is missing — cannot confirm gate is PASS. Refusing to grow." >&2
+  echo "  Run scripts/scan.sh first." >&2
   exit 2
 fi
-tfsec_json="$(mktemp)"
-set +e
-tfsec "$TF_DIR" -f json --no-color --force-all-dirs >"$tfsec_json" 2>/dev/null
-set -e
-critical_count="$(jq '[.results[]? | select(.severity=="CRITICAL")] | length' "$tfsec_json" 2>/dev/null || echo 1)"
-high_count="$(jq '[.results[]? | select(.severity=="HIGH")] | length' "$tfsec_json" 2>/dev/null || echo 1)"
-rm -f "$tfsec_json"
-if [[ "$critical_count" -gt 0 || "$high_count" -gt 0 ]]; then
-  echo "FATAL: tfsec gate against terraform/azure is not PASS (critical=$critical_count high=$high_count). Refusing to grow." >&2
+gate="$(jq -r '.gate // "UNKNOWN"' "$TFSEC_AZURE_LAST")"
+if [[ "$gate" != "PASS" ]]; then
+  echo "FATAL: tfsec gate against terraform/azure is $gate (expected PASS). Refusing to grow." >&2
   echo "  If this is the AVD-AZU-0013 fixture, run: ./scripts/toggle-fixture-azure.sh off" >&2
   exit 2
 fi
