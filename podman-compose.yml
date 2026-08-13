@@ -1,10 +1,19 @@
-# floci-core (real floci.io AWS emulator) for floci-stack
+# floci-core (real floci.io AWS emulator) + floci-az (real floci.io Azure
+# emulator) for floci-stack
 # Usage:
-#   podman-compose up -d    # start
-#   podman-compose down     # stop
-#   podman-compose ps       # status
+#   ./scripts/start-floci-az.sh     # start both, WITH the netavark/iptables
+#                                    fix actually applied (see below) — use
+#                                    this if you're doing any Azure work
+#   podman-compose up -d            # start both, AWS-only work is fine with
+#                                    this; Azure sidecar-spawning services
+#                                    will hit an nftables error without the
+#                                    fix above
+#   podman-compose down             # stop both
+#   podman-compose ps               # status
 #
 # This file exists so the README Quick Start works out of the box.
+#
+# ─── floci-core (AWS) ───────────────────────────────────────────────────────
 # floci-core emulates AWS services on localhost:4566 — no real AWS calls.
 # Image: docker.io/floci/floci (MIT, no auth required) — the REAL floci.io
 # AWS emulator, not motoserver/moto. Swapped after this session's isolated
@@ -32,6 +41,39 @@
 # network_mode: host — required on WSL2 where the netavark backend cannot
 # apply nftables rulesets (missing kernel capability). host mode binds
 # the container directly to the host network stack, no bridge needed.
+#
+# ─── floci-az (Azure) ───────────────────────────────────────────────────────
+# floci-az emulates Azure services on localhost:4577 — no real Azure calls.
+# Image: docker.io/floci/floci-az (MIT, no auth required).
+#
+# Docker-socket mount, and why: floci-az's Functions/AKS/Redis/ACR services
+# spawn real sidecar containers on demand (e.g. an actual Azure Functions
+# runtime container per deployed function), talking back to Podman over this
+# bind-mounted socket. floci-core never needs this — it has no equivalent
+# sidecar-spawning service.
+#
+# SEC_INTENT: NETAVARK_FW=iptables below is DOCUMENTATION of intent, not
+# enforcement. A container's own environment variables live in a completely
+# separate process tree from the host-side `podman.service` that actually
+# serves this mounted socket and invokes netavark for sidecar networking —
+# setting it here has no effect on that process's environment, by
+# construction. The real fix is applied by scripts/start-floci-az.sh
+# (systemctl --user set-environment, host-side) before this compose file is
+# ever brought up. Verified 2026-08-13: on this WSL2 rootless-Podman host,
+# netavark's native nftables driver fails outright when floci-az tries to
+# start a sidecar ("nft did not return successfully while applying
+# ruleset") — the same missing-kernel-capability gap already documented
+# above for floci-core's network_mode: host workaround, now hit on a code
+# path (floci-az's own sidecar launcher) this repo doesn't control the
+# network mode of. Switching netavark to its iptables-nft driver resolves
+# it. See CONTEXT.md's Research log for the full gate-4 test.
+#
+# Known open issue (2026-08-13, not yet root-caused — tracked the same way
+# AWS's EKS/MSK/OpenSearch findings are, not swept under the rug): once a
+# sidecar starts successfully, the real Azure Functions host inside it
+# reports "0 functions found" — deployed function code isn't being picked
+# up. growth-queue-azure.yaml documents this inline; expected to stall
+# visibly there, not a bug in grow-stack-azure.sh if it does.
 
 services:
   floci-core:
@@ -41,6 +83,28 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4566/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  floci-az:
+    container_name: floci-az
+    image: docker.io/floci/floci-az:latest
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      # Documentation only — see the SEC_INTENT comment above. The real fix
+      # is applied host-side by scripts/start-floci-az.sh, not here.
+      - NETAVARK_FW=iptables
+    volumes:
+      # Requires XDG_RUNTIME_DIR to be set — true of any working rootless
+      # Podman session by construction, so no hardcoded-UID fallback here;
+      # an unset value fails loudly (empty mount path) rather than silently
+      # mounting the wrong user's socket.
+      - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4577/health"]
       interval: 15s
       timeout: 5s
       retries: 10
