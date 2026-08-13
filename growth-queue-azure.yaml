@@ -1,0 +1,96 @@
+# growth-queue-azure.yaml
+# =============================================================================
+# Ordered resource addresses scripts/grow-stack-azure.sh applies one at a
+# time, oldest-first, on scheduled CI runs only. Azure sibling of
+# growth-queue.yaml (AWS) — separate file, separate script, separate state
+# (terraform/azure/), mirroring that file's structure exactly. Intended CI
+# cache key (not wired yet — pipeline.yml integration is out of scope
+# tonight): growth-state-azure-${{ github.run_id }}, same prefix-restore
+# pattern as the AWS queue's growth-state-${{ github.run_id }}.
+#
+# Rules:
+#   - Every address already exists in terraform/modules/azure-*/**/*.tf.
+#     This file only sequences EXISTING resources — it never defines new
+#     ones.
+#   - Order encodes dependency order: an address's terraform-graph deps
+#     must already appear earlier in this list. Once any run has applied
+#     an address, DO NOT reorder or remove it — later state depends on it.
+#   - The security fixture (AVD-AZU-0013, network_acls on
+#     azurerm_key_vault.main) is NOT excluded from this queue the way
+#     AWS's fixture is excluded from growth-queue.yaml — it can't be: the
+#     fixture here is an omission inside an EXISTING resource
+#     (module.azure-security.azurerm_key_vault.main), not a separate
+#     resource. Handled the same way it always has been: grow-stack-
+#     azure.sh's precondition 1 (tfsec gate PASS) already refuses to grow
+#     at all while the fixture is on. scripts/toggle-fixture-azure.sh is
+#     still the ONLY sanctioned way to change the fixture's state.
+#
+# HONEST NOTE ON THIS QUEUE'S SHAPE (2026-08-13): items 12-22 (roughly half)
+# are confirmed-broken or inconclusive, not just "might not apply" the way
+# AWS's EKS/MSK/OpenSearch tail is — several hang indefinitely with no
+# natural timeout, not just slowly. Past item 11 (azurerm_storage_account.
+# main), forward progress is expected to be minimal for a long time. See
+# grow-stack-azure.sh's header for how apply timeouts are handled as a
+# result, and each item below for the specific finding.
+# =============================================================================
+queue:
+  # -- azure-network (all 10 confirmed working, 2026-08-13 real apply) -------
+  - module.azure-network.azurerm_resource_group.main
+  - module.azure-network.azurerm_virtual_network.main
+  - module.azure-network.azurerm_subnet.private
+  - module.azure-network.azurerm_network_security_group.app
+  - module.azure-network.azurerm_subnet_network_security_group_association.private
+  - module.azure-network.azurerm_network_security_rule.ssh_admin
+  - module.azure-network.azurerm_network_security_rule.app_internal
+  - module.azure-network.azurerm_network_security_rule.egress_https
+  - module.azure-network.azurerm_network_security_rule.egress_dns_tcp
+  - module.azure-network.azurerm_network_security_rule.egress_dns_udp
+
+  # -- azure-storage ------------------------------------------------------------
+  - module.azure-storage.azurerm_storage_account.main
+  # CONFIRMED STUCK (2026-08-13 apply test): both resources below hang
+  # indefinitely on apply — ZERO corresponding request ever appeared in
+  # floci-az's own logs, confirming the hang is client-side, before any
+  # request is even sent. Root cause: floci-az's ARM response for the
+  # storage account above returns real-Azure-shaped data-plane hostnames
+  # (http://<account>.blob.core.windows.net/, .../table.core.windows.net/),
+  # which the azurerm provider targets directly for these two resources —
+  # and those hostnames don't resolve. No per-resource endpoint override
+  # exists on the real azurerm provider for this. Kept per the visible-
+  # stall-over-silent-skip design — retried forever (bounded by
+  # APPLY_TIMEOUT_SECONDS per attempt, see grow-stack-azure.sh).
+  - module.azure-storage.azurerm_storage_container.artifacts
+  - module.azure-storage.azurerm_storage_table.main
+
+  # -- azure-security -------------------------------------------------------------
+  - module.azure-security.azurerm_key_vault.main
+  # CONFIRMED STUCK (2026-08-13 apply test), same root cause as the storage
+  # entries above: floci-az's Key Vault ARM response returns a real-Azure-
+  # shaped vaultUri (https://<vault>.vault.azure.net/), which the azurerm
+  # provider uses directly for secret data-plane calls — and that hostname
+  # doesn't resolve either. Kept, retried forever (bounded per attempt).
+  - module.azure-security.azurerm_key_vault_secret.app_config
+
+  # -- azure-compute --------------------------------------------------------------
+  - module.azure-compute.azurerm_network_interface.app
+  - module.azure-compute.tls_private_key.app
+  - module.azure-compute.azurerm_linux_virtual_machine.app
+  - module.azure-compute.azurerm_storage_account.functions
+  # INCONCLUSIVE (2026-08-13 apply test), not confirmed-failed: exactly one
+  # PUT + one GET reached floci-az's generic ArmHandler fallback (Microsoft.
+  # Web is not one of floci-az's dedicated ARM provider namespaces), then
+  # total silence for 10+ minutes with no error and no completion. Root
+  # cause not fully isolated. Because the Function App below depends on
+  # this, it never even starts applying while this is stuck.
+  - module.azure-compute.azurerm_service_plan.functions
+  - module.azure-compute.azurerm_linux_function_app.main
+  # CONFIRMED FAILURE (2026-08-13 isolated test), independent of the above:
+  # the netavark/iptables fix (podman-compose.yml) works correctly here —
+  # the k3s container is created and STARTS. k3s itself then crashes
+  # fatally within ~1 second: "Error: failed to find cpuset cgroup (v2)" —
+  # rootless Podman doesn't delegate the cpuset cgroup v2 controller to
+  # containers spawned via floci-az's Docker-API call. floci-az's own
+  # provisioningState never leaves "Creating" (it doesn't detect the
+  # backing container died), so this stalls forever from the ARM API's
+  # perspective too, not just slowly.
+  - module.azure-compute.azurerm_kubernetes_cluster.main

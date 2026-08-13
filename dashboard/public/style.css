@@ -201,6 +201,44 @@ html, body {
   animation: spin 0.7s linear infinite;
 }
 
+/* ── cloud tab switcher ────────────────────────────────────── */
+.tab-switcher {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.tab-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab-btn.active { color: var(--teal); background: rgba(0,212,170,0.12); }
+.tab-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.tab-panel[hidden] { display: none; }
+
+/* Placeholder cards (Azure verify/drift/agent — no script exists yet).
+   Visually distinct from a normal "no data yet" empty-state: dashed
+   border, no pulse/skeleton — this isn't waiting on data, it's an
+   honestly-labeled gap. */
+.card.is-placeholder {
+  border-style: dashed;
+  opacity: 0.6;
+}
+.card.is-placeholder .empty-state { padding: 20px 0; }
+
 /* ── card grid ─────────────────────────────────────────────── */
 /* Use auto-fit so cards get evenly sized; with 5 cards on a wide screen
    we get 3 columns and 2 cards wrap to a second row, which is more

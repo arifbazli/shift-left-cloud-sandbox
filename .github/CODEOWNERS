@@ -25,9 +25,13 @@
 # Security module (contains the deliberate misconfig fixture)
 /terraform/modules/security/          @arifbazli
 
+# Azure security module (contains the deliberate misconfig fixture — AVD-AZU-0013)
+/terraform/modules/azure-security/    @arifbazli
+
 # Gate scripts — any change here must be manually reviewed
 /scripts/scan.sh                      @arifbazli
 /scripts/toggle-fixture.sh            @arifbazli
+/scripts/toggle-fixture-azure.sh      @arifbazli
 /scripts/deploy.sh                    @arifbazli
 /scripts/agent-loop.sh                @arifbazli
 

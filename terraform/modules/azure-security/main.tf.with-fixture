@@ -1,0 +1,115 @@
+# =============================================================================
+# modules/azure-security/main.tf
+# =============================================================================
+# CONFIRMED GAPS AGAINST modules/security (AWS) — read this before the
+# resources below. This module is structurally thinner than modules/security
+# by design, not oversight:
+#
+#   1. No RBAC/role-assignment equivalent. AWS's aws_iam_role.app + its
+#      inline policy + aws_iam_instance_profile (the mechanism that grants
+#      compute permissions) has no floci-az counterpart anywhere — confirmed
+#      absent across floci-az's full documented service list, not just this
+#      module's scope.
+#   2. No Key Vault Keys (KMS equivalent). Confirmed via a live test
+#      (2026-08-13): a key-create call correctly routes to floci-az's own
+#      KeyVaultHandler, then returns a real 404 "Resource not found:
+#      keys/{name}/create" from that handler itself — not an auth or
+#      routing failure, a genuine absence. aws_kms_key/aws_kms_alias have
+#      no azurerm equivalent that will actually work.
+#   3. No Key Vault Certificates (ACM equivalent). Same test, same result
+#      shape: a real 404 from KeyVaultHandler for certificate creation.
+#      aws_acm_certificate has no working azurerm equivalent either.
+#   4. CONFIRMED GAP, apply-level, distinct from gaps 2/3 above: unlike
+#      Keys/Certificates, the Secret API itself IS real (confirmed via a
+#      direct curl+auth-header test — HTTP 200, real secret ID/attributes).
+#      But a real `terraform apply` of azurerm_key_vault_secret.app_config
+#      below hangs indefinitely with ZERO corresponding request ever
+#      appearing in floci-az's logs — the same client-side-before-any-
+#      request signature as modules/azure-storage's container/table gap,
+#      and the same root cause: floci-az's Key Vault ARM response returns
+#      a real-Azure-shaped vaultUri (`https://<vault>.vault.azure.net/`),
+#      which the azurerm provider uses directly for secret data-plane
+#      calls, and that hostname doesn't resolve. Kept in code rather than
+#      removed — same visible-stall-over-silent-skip philosophy as AWS's
+#      EKS/MSK findings.
+#
+# Only Key Vault Secrets are real and confirmed working at the API level —
+# matching docs/services/key-vault.md, which documents secrets exclusively
+# (keys and certificates are not mentioned there at all — the docs were
+# accurate) — but not reachable through Terraform specifically, per gap 4.
+#
+# Resources built: Key Vault + one Secret (Secrets Manager equivalent only,
+# expected to stall on apply per gap 4 above).
+# =============================================================================
+
+# =============================================================================
+#  >>>>>>>>>>>>>>>>>  DELIBERATE MISCONFIGURATION  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+# =============================================================================
+# SEC_INTENT — FIXTURE, NOT ADVICE.
+#
+# azurerm_key_vault.main below is missing a `network_acls` block on purpose.
+# tfsec flags this as AVD-AZU-0013 (azure-keyvault-specify-network-acl,
+# CRITICAL) — "Vault network ACL does not block access by default." This is
+# the Azure fixture, mirroring modules/security's aws_iam_policy.
+# fixtures_admin: a real tfsec finding on purpose, so the Azure side of the
+# pipeline has something genuine to gate on too.
+#
+# Unlike the AWS fixture (a separate resource, toggled by commenting it out),
+# this fixture is an OMISSION inside an existing resource — there's no
+# separate block to comment out. Use scripts/toggle-fixture-azure.sh on|off,
+# never hand-edit this file directly: the script swaps in/out a network_acls
+# block via the same 3-file cp-and-validate mechanism toggle-fixture.sh uses
+# for AWS — inverted, though: fixture ON here means network_acls is ABSENT,
+# vs AWS's fixture ON meaning the extra resource is PRESENT.
+#
+# Confirmed directly against the pinned tfsec 1.28.5 binary (2026-08-13):
+# AVD-AZU-0013 fires as CRITICAL on exactly this shape.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Key Vault
+# SEC_INTENT: mirrors modules/security's intent for aws_kms_key (a sandbox-
+# only container for cryptographic material) as far as floci-az allows —
+# soft-delete and purge protection are the closest analog to KMS's mandatory
+# key rotation as a "don't lose this by accident" property, given floci-az
+# has no key-rotation concept to enforce at all (there are no keys).
+#
+# FIXTURE STATE: ON (network_acls absent — see the banner above). Toggle with
+# scripts/toggle-fixture-azure.sh.
+# -----------------------------------------------------------------------------
+resource "azurerm_key_vault" "main" {
+  name                = "floci-kv-${var.environment}"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tenant_id           = "00000000-0000-0000-0000-000000000002" # floci-az's fixed mock tenant
+
+  sku_name = "standard"
+
+  purge_protection_enabled   = true # SEC_INTENT: mirrors KMS's protection against accidental key loss
+  soft_delete_retention_days = 7    # SEC_INTENT: mirrors aws_kms_key's 7-day deletion_window_in_days
+
+  tags = {
+    Name        = "floci-kv"
+    Environment = var.environment
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Key Vault Secret
+# SEC_INTENT: mirrors modules/security's aws_secretsmanager_secret.main —
+# application config secrets stored in a managed secret store rather than
+# environment variables. Unlike AWS's recovery_window_in_days = 0
+# (sandbox-only immediate delete), Key Vault's soft-delete is vault-wide
+# (set above) — there's no per-secret override to match AWS's zero-day
+# setting exactly; a real API-shape difference, not a choice made here.
+# -----------------------------------------------------------------------------
+resource "azurerm_key_vault_secret" "app_config" {
+  name         = "app-config"
+  value        = "placeholder — sandbox secret, not a real credential"
+  key_vault_id = azurerm_key_vault.main.id
+
+  tags = {
+    Name        = "floci-app-config"
+    Environment = var.environment
+  }
+}
