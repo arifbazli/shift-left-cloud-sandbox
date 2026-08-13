@@ -9,6 +9,55 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > newest, into 6 logical phases — not real releases. Short hashes are
 > included per entry so you can trace each line back to `git show <hash>`.
 
+## [0.8.0] - 2026-08-13 — Growth loop: autonomous incremental stack building
+
+### Added
+- `growth-queue.yaml`: 62 existing resource addresses across all 7
+  modules, ordered to respect terraform-graph dependencies — sequences
+  existing resources only, never defines new ones. Security fixture
+  excluded (`toggle-fixture.sh` owns it exclusively) (`ed737ba`)
+- `scripts/grow-stack.sh`: applies exactly one
+  `terraform apply -target=<address>` per invocation — the next
+  `growth-queue.yaml` entry not yet in `terraform state list`. Never
+  edits `*.tf`, never destroys, never advances past a failed target
+  (same address retried next run, not skipped). Preconditions: tfsec
+  gate must be `PASS`, floci-core must be reachable — independently
+  re-implemented, does not call into or modify `agent-loop.sh`. Writes
+  `growth-last.json`/`growth-history.json` via the same atomic-write
+  pattern as `scan.sh`/`drift-check.sh` (`ed737ba`)
+- `pipeline.yml`: new `grow` boolean input on `workflow_dispatch`
+  (default `false`) for manual testing without waiting on the
+  `*/10 * * * *` schedule; growth steps gated to `schedule`-triggered
+  runs or explicit `grow: true`, never `push`/`pull_request` (`ed737ba`)
+- `terraform.tfstate` persists across ephemeral `ubuntu-latest` runs via
+  `actions/cache`, using a `growth-state-${{ github.run_id }}` key with
+  prefix `restore-keys` — cache entries are immutable per key, so a
+  mutable "latest state" needs the unique-key + prefix-restore pattern,
+  not one static key. A cache miss (first run, or eviction) restarts
+  growth from the top of the queue, not an error (`ed737ba`)
+- Completion fast-path: a "Check growth status" step reads
+  `growth-last.json` and skips the entire Restore/Grow/Save sequence
+  once `status: "complete"`, so a finished 62-entry queue stops paying
+  full job cost every 10-minute tick forever. Defaults safely to "not
+  complete" when the file doesn't exist yet (`ed737ba`)
+- `CONTEXT.md`/`SKILL.md`: new "Growth loop" architecture section, a
+  floci-limitation note for moto's unconfirmed `aws_eks_cluster`/
+  `aws_msk_cluster`/`aws_opensearch_domain` coverage, 2 new
+  `SEC_INTENT` table rows, and a queue-ordering/cache-key-convention
+  checklist item (`ed737ba`)
+
+### Notes
+- Three queued resources (`aws_eks_cluster`, `aws_msk_cluster`,
+  `aws_opensearch_domain`) may never apply successfully against moto —
+  module comments already flagged partial/Pro-tier coverage before this
+  loop existed. A failure stalls growth visibly at that exact queue
+  position (retried every run) rather than silently skipping ahead —
+  intentional, not a bug if it happens.
+- Deliberately deferred, not implemented: a stuck-target circuit
+  breaker (e.g. alert after N consecutive failures on one address), and
+  gating `Install Podman`/`Start floci-core`/`Stop floci-core` on the
+  completion fast-path — both known, accepted gaps.
+
 ## [0.6.0] - 2026-08-05 — Live dashboard: SSE, auto-trigger, data-server
 
 ### Added

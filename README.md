@@ -32,6 +32,8 @@ wrangler pages dev dashboard/public --port 8788   # open http://localhost:8788
 
 For architecture diagrams, why floci is a `moto` stub instead of real AWS, what the deliberate misconfig demonstrates, and the full security-decision catalog, see **[CONTEXT.md](CONTEXT.md)**.
 
+The stack also grows itself: a scheduled CI job applies one new resource from `growth-queue.yaml` every 10 minutes via `terraform apply -target`, entirely on GitHub-hosted runners, no human in the loop — see [CONTEXT.md § Growth loop](CONTEXT.md#growth-loop).
+
 ## Demo walkthrough
 
 ```bash
@@ -81,7 +83,7 @@ Full catalog (14 `SEC_INTENT` decisions, one per file): [CONTEXT.md § Security 
 
 ## CI secrets
 
-The pipeline needs a **self-hosted runner** (`floci-self-hosted`, on the Debian WSL machine — floci isn't reachable from GitHub-hosted runners) and two repo secrets: `CLOUDFLARE_API_TOKEN` (Pages-scoped) and `CLOUDFLARE_ACCOUNT_ID`. Full setup and branch protection: [`.github/branch-protection.md`](.github/branch-protection.md).
+`scan`/`deploy-local`/`publish-dashboard`/`pr-comment` all run on GitHub-hosted `ubuntu-latest` — no self-hosted runner needed for the main pipeline. `.github/workflows/auto-fix.yml` is the one exception still requiring a **self-hosted runner** (`floci-self-hosted`, on the Debian WSL machine — not migrated in this pass). Two repo secrets are needed regardless: `CLOUDFLARE_API_TOKEN` (Pages-scoped) and `CLOUDFLARE_ACCOUNT_ID`. Full setup and branch protection: [`.github/branch-protection.md`](.github/branch-protection.md).
 
 ## License
 
