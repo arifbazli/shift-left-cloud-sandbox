@@ -30,6 +30,16 @@ const FETCH_TARGETS = [
   'data/agent-actions.json',
 ];
 
+// Azure tab data -- fetched independently of the AWS SSE/poll path above.
+// data-server.py's live snapshot only knows about the 5 AWS files, so
+// Azure's 2 real cards (scan, growth) always poll on their own cadence,
+// never pushed over SSE. verify/drift/agent have no Azure sibling yet --
+// see index.html's placeholder cards, no fetch target needed for those.
+const FETCH_TARGETS_AZURE = [
+  'data/tfsec-azure-last.json',
+  'data/growth-last-azure.json',
+];
+
 // fmtDataAge: given epoch seconds (file mtime), return e.g. "3s ago" / "2m ago"
 function fmtDataAge(epochSec) {
   if (!epochSec) return '—';
@@ -161,6 +171,8 @@ const HISTORY_TARGETS = {
   deploy: 'data/deploy-history.json',
   verify: 'data/verify-history.json',
   drift:  'data/drift-history.json',
+  'scan-azure':   'data/tfsec-azure-history.json',
+  'growth-azure': 'data/growth-history-azure.json',
 };
 const HISTORY_POLL_MS = 30_000;
 
@@ -196,8 +208,18 @@ async function fetchHistories() {
     if (key === 'deploy') series = recent.map(r => Object.keys(r.outputs || {}).length);
     if (key === 'verify') series = recent.map(r => (r.total ? r.passed / r.total : 0));
     if (key === 'drift')  series = recent.map(r => (r.changes || []).filter(c => !(c.actions || []).every(a => a === 'no-op')).length);
+    if (key === 'scan-azure')   series = recent.map(r => (r.counts?.critical || 0) + (r.counts?.high || 0));
+    if (key === 'growth-azure') series = recent.map(r => r.applied_count || 0);
     if (series) renderSparkline(`spark-${key}`, series);
   }
+}
+
+// Independent fetch cycle for the Azure tab's 2 real cards (scan, growth).
+// Not part of applySnapshot()/the SSE path -- see FETCH_TARGETS_AZURE above.
+async function fetchAllAzure() {
+  const [scanAzure, growthAzure] = await Promise.all(FETCH_TARGETS_AZURE.map(safeFetch));
+  try { renderScanAzure(scanAzure); } catch (e) { console.error('renderScanAzure failed:', e); }
+  try { renderGrowthAzure(growthAzure); } catch (e) { console.error('renderGrowthAzure failed:', e); }
 }
 
 // ── fetch-error toast ──────────────────────────────────────────────────
@@ -255,13 +277,55 @@ function updateLatestTs(payloads) {
 
 // ── renderers ──────────────────────────────────────────────
 
-function renderScan(d) {
-  const cardId = 'card-scan';
+// Map resource-type prefix to module name for grouping the findings list.
+// Shared by both clouds' scan cards (renderScanGeneric below).
+const AWS_MODULE_MAP = [
+  ['aws_vpc', 'network'],       ['aws_subnet', 'network'],
+  ['aws_security_group', 'network'], ['aws_flow_log', 'network'],
+  ['aws_s3_bucket', 'storage'], ['aws_dynamodb', 'storage'],
+  ['aws_instance', 'compute'],  ['aws_launch', 'compute'],
+  ['aws_lambda', 'compute'],    ['aws_ecs', 'compute'],    ['aws_eks', 'compute'],
+  ['aws_sqs', 'messaging'],     ['aws_sns', 'messaging'],
+  ['aws_cloudwatch_event', 'messaging'], ['aws_sfn', 'messaging'],
+  ['aws_db_', 'data'],          ['aws_rds', 'data'],
+  ['aws_elasticache', 'data'],  ['aws_msk', 'data'],       ['aws_opensearch', 'data'],
+  ['aws_iam', 'security'],      ['aws_kms', 'security'],
+  ['aws_secretsmanager', 'security'], ['aws_acm', 'security'],
+  ['aws_api_gateway', 'api'],   ['aws_cloudwatch_log', 'api'],
+  ['aws_cloudwatch_metric', 'api'],
+];
+const AZURE_MODULE_MAP = [
+  ['azurerm_resource_group', 'network'], ['azurerm_virtual_network', 'network'],
+  ['azurerm_subnet', 'network'],         ['azurerm_network_security', 'network'],
+  ['azurerm_storage', 'storage'],
+  ['azurerm_key_vault', 'security'],
+  ['azurerm_linux_virtual_machine', 'compute'], ['azurerm_network_interface', 'compute'],
+  ['azurerm_service_plan', 'compute'],   ['azurerm_linux_function_app', 'compute'],
+  ['azurerm_kubernetes_cluster', 'compute'], ['tls_private_key', 'compute'],
+];
+// Most tfsec findings in this repo are attributed at the MODULE level
+// (resource: "module.storage", "module.azure-security", not a specific
+// address) -- confirmed directly against the real pinned binary for both
+// clouds. Handle that shape first; fall back to the resource-type-prefix
+// map for the findings that DO carry a full address (e.g. "aws_db_instance.main").
+function getModule(resource, moduleMap) {
+  if (!resource) return 'other';
+  const modMatch = resource.match(/^module\.(azure-)?([a-z]+)/);
+  if (modMatch) return modMatch[2];
+  const map = moduleMap || AWS_MODULE_MAP;
+  const entry = map.find(([prefix]) => resource.startsWith(prefix));
+  return entry ? entry[1] : 'other';
+}
+
+// Generic scan-card renderer -- drives both AWS's and Azure's scan cards.
+// ids: { card, pill, cntCritical, cntHigh, cntMedium, cntLow, cntIgnored,
+//        ts, findingsList, findingsCount }
+function renderScanGeneric(d, ids, moduleMap) {
   if (!d || d.__error) {
-    setPill('pill-scan', 'idle', '—');
-    showCard(cardId, true, true);
-    $('findings-list').innerHTML = '<div class="empty-state">No scan data yet.</div>';
-    $('findings-count').textContent = '0 total';
+    setPill(ids.pill, 'idle', '—');
+    showCard(ids.card, true, true);
+    $(ids.findingsList).innerHTML = '<div class="empty-state">No scan data yet.</div>';
+    $(ids.findingsCount).textContent = '0 total';
     return;
   }
 
@@ -283,62 +347,41 @@ function renderScan(d) {
     ? (nonLow > 0 ? `PASS · ${nonLow}` : 'PASS · clean')
     : gate;
 
-  setPill('pill-scan', pass ? 'pass' : 'fail', pillLabel);
-  setCardState(cardId, pass ? 'pass' : 'fail');
-  showCard(cardId, true, false);
+  setPill(ids.pill, pass ? 'pass' : 'fail', pillLabel);
+  setCardState(ids.card, pass ? 'pass' : 'fail');
+  showCard(ids.card, true, false);
 
-  animCount($('cnt-critical'), crit);
-  animCount($('cnt-high'),     high);
-  animCount($('cnt-medium'),   med);
-  animCount($('cnt-low'),      low);
-  animCount($('cnt-ignored'),  ign);
+  animCount($(ids.cntCritical), crit);
+  animCount($(ids.cntHigh),     high);
+  animCount($(ids.cntMedium),   med);
+  animCount($(ids.cntLow),      low);
+  animCount($(ids.cntIgnored),  ign);
 
-  $('scan-ts').textContent  = fmtTs(d.timestamp);
+  $(ids.ts).textContent = fmtTs(d.timestamp);
 
   // findings list
   // JSON key is "findings" (not "results"); findings have no "ignored" field
-  $('findings-count').textContent = `${findings.length} total`;
-  const findingsWrap = document.querySelector('.findings-wrap');
+  $(ids.findingsCount).textContent = `${findings.length} total`;
+  // Scope to THIS card's own findings-wrap, not a global querySelector —
+  // there are now two .findings-wrap elements on the page (AWS + Azure).
+  const findingsWrap = $(ids.findingsList).closest('.findings-wrap');
   if (findingsWrap) findingsWrap.classList.toggle('is-empty', findings.length === 0);
 
   if (findings.length === 0) {
-    $('findings-list').innerHTML = '<div class="empty-state">No open findings \u2014 gate is clean.</div>';
+    $(ids.findingsList).innerHTML = '<div class="empty-state">No open findings \u2014 gate is clean.</div>';
     return;
-  }
-
-  // ---- Group findings by module ----------------------------------------
-  // Map resource-type prefix → module name for grouping the findings list.
-  const MODULE_MAP = [
-    ['aws_vpc', 'network'],       ['aws_subnet', 'network'],
-    ['aws_security_group', 'network'], ['aws_flow_log', 'network'],
-    ['aws_s3_bucket', 'storage'], ['aws_dynamodb', 'storage'],
-    ['aws_instance', 'compute'],  ['aws_launch', 'compute'],
-    ['aws_lambda', 'compute'],    ['aws_ecs', 'compute'],    ['aws_eks', 'compute'],
-    ['aws_sqs', 'messaging'],     ['aws_sns', 'messaging'],
-    ['aws_cloudwatch_event', 'messaging'], ['aws_sfn', 'messaging'],
-    ['aws_db_', 'data'],          ['aws_rds', 'data'],
-    ['aws_elasticache', 'data'],  ['aws_msk', 'data'],       ['aws_opensearch', 'data'],
-    ['aws_iam', 'security'],      ['aws_kms', 'security'],
-    ['aws_secretsmanager', 'security'], ['aws_acm', 'security'],
-    ['aws_api_gateway', 'api'],   ['aws_cloudwatch_log', 'api'],
-    ['aws_cloudwatch_metric', 'api'],
-  ];
-  function getModule(resource) {
-    if (!resource) return 'other';
-    const entry = MODULE_MAP.find(([prefix]) => resource.startsWith(prefix));
-    return entry ? entry[1] : 'other';
   }
 
   // Build ordered groups (preserve first-seen order per module).
   const groupOrder = [];
   const groups = {};
   findings.slice(0, 30).forEach(r => {
-    const mod = getModule(r.resource || '');
+    const mod = getModule(r.resource || '', moduleMap);
     if (!groups[mod]) { groups[mod] = []; groupOrder.push(mod); }
     groups[mod].push(r);
   });
 
-  $('findings-list').innerHTML = groupOrder.map(mod => {
+  $(ids.findingsList).innerHTML = groupOrder.map(mod => {
     const rows = groups[mod].map(r => {
       const sev  = (r.severity || 'low').toLowerCase();
       const bCls = sev === 'critical' ? 'crit' : sev;
@@ -354,6 +397,54 @@ function renderScan(d) {
         ${rows}
       </div>`;
   }).join('');
+}
+
+const SCAN_IDS = {
+  card: 'card-scan', pill: 'pill-scan',
+  cntCritical: 'cnt-critical', cntHigh: 'cnt-high', cntMedium: 'cnt-medium',
+  cntLow: 'cnt-low', cntIgnored: 'cnt-ignored',
+  ts: 'scan-ts', findingsList: 'findings-list', findingsCount: 'findings-count',
+};
+const SCAN_AZURE_IDS = {
+  card: 'card-scan-azure', pill: 'pill-scan-azure',
+  cntCritical: 'cnt-critical-azure', cntHigh: 'cnt-high-azure', cntMedium: 'cnt-medium-azure',
+  cntLow: 'cnt-low-azure', cntIgnored: 'cnt-ignored-azure',
+  ts: 'scan-azure-ts', findingsList: 'findings-list-azure', findingsCount: 'findings-count-azure',
+};
+
+function renderScan(d) { renderScanGeneric(d, SCAN_IDS, AWS_MODULE_MAP); }
+function renderScanAzure(d) { renderScanGeneric(d, SCAN_AZURE_IDS, AZURE_MODULE_MAP); }
+
+// growth-last-azure.json: {timestamp, status, next_target, total_queued,
+// applied_count, error?} -- written by scripts/grow-stack-azure.sh. No AWS
+// equivalent card exists (the AWS growth loop was built without one).
+function renderGrowthAzure(d) {
+  const cardId = 'card-growth-azure';
+  if (!d || d.__error) {
+    setPill('pill-growth-azure', 'idle', '—');
+    showCard(cardId, true, true);
+    return;
+  }
+
+  const status = d.status || 'unknown';
+  const PILL_BY_STATUS = {
+    applied:   ['pass', 'GROWING'],
+    complete:  ['clean', 'COMPLETE'],
+    failed:    ['fail', 'FAILED'],
+    timed_out: ['warn', 'TIMED OUT'],
+  };
+  const byStatus = PILL_BY_STATUS[status] || ['idle', status.toUpperCase()];
+  const pillCls = byStatus[0], pillLabel = byStatus[1];
+  setPill('pill-growth-azure', pillCls, pillLabel);
+  setCardState(cardId, (pillCls === 'pass' || pillCls === 'clean') ? 'pass'
+    : pillCls === 'fail' ? 'fail' : 'warn');
+  showCard(cardId, true, false);
+
+  const total = d.total_queued ?? '?';
+  const applied = d.applied_count ?? '?';
+  $('growth-azure-progress').textContent = `${applied} / ${total}`;
+  $('growth-azure-next').textContent = d.next_target || '(queue complete)';
+  $('growth-azure-ts').textContent = fmtTs(d.timestamp);
 }
 
 function renderDeploy(d) {
@@ -694,6 +785,33 @@ document.querySelectorAll('[data-run]').forEach(btn => {
   });
 });
 
+// ── Cloud tab switcher ─────────────────────────────────────
+// AWS is the default/first tab. Persists the active tab across reloads
+// (same localStorage pattern as dashboard.refreshMs).
+(function setupTabSwitcher() {
+  const tabBtnAws = $('tab-btn-aws'), tabBtnAzure = $('tab-btn-azure');
+  const tabAws = $('tab-aws'), tabAzure = $('tab-azure');
+  if (!tabBtnAws || !tabBtnAzure || !tabAws || !tabAzure) return;
+
+  function switchTab(target) {
+    const toAzure = target === 'azure';
+    tabAws.hidden = toAzure;
+    tabAzure.hidden = !toAzure;
+    tabBtnAws.classList.toggle('active', !toAzure);
+    tabBtnAzure.classList.toggle('active', toAzure);
+    tabBtnAws.setAttribute('aria-selected', String(!toAzure));
+    tabBtnAzure.setAttribute('aria-selected', String(toAzure));
+    try { localStorage.setItem('dashboard.activeTab', target); } catch {}
+  }
+
+  tabBtnAws.addEventListener('click', () => switchTab('aws'));
+  tabBtnAzure.addEventListener('click', () => switchTab('azure'));
+
+  try {
+    if (localStorage.getItem('dashboard.activeTab') === 'azure') switchTab('azure');
+  } catch {}
+})();
+
 // ── Boot sequence ─────────────────────────────────────────
 // On Cloudflare Pages (HTTPS) the browser blocks HTTP localhost
 // as mixed content — EventSource never fires onerror cleanly,
@@ -711,6 +829,11 @@ if (!IS_LOCAL) {
 fetchAllAndAnnounce();
 fetchHistories();
 setInterval(fetchHistories, HISTORY_POLL_MS);
+
+// Azure tab: independent poll cycle, same cadence as AWS's fallback
+// polling, regardless of whether AWS is in SSE or polling mode.
+fetchAllAzure();
+setInterval(fetchAllAzure, REFRESH_MS);
 
 if (IS_LOCAL) {
   // Local dev: use SSE for 1s live updates.
