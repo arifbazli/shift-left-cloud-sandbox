@@ -1,4 +1,4 @@
-# floci-core (moto-server AWS mock) for floci-stack
+# floci-core (real floci.io AWS emulator) for floci-stack
 # Usage:
 #   podman-compose up -d    # start
 #   podman-compose down     # stop
@@ -6,7 +6,28 @@
 #
 # This file exists so the README Quick Start works out of the box.
 # floci-core emulates AWS services on localhost:4566 — no real AWS calls.
-# Image: docker.io/motoserver/moto (Apache-2.0, no auth required)
+# Image: docker.io/floci/floci (MIT, no auth required) — the REAL floci.io
+# AWS emulator, not motoserver/moto. Swapped after this session's isolated
+# verification: plan-level compatibility confirmed (62/62 resources plan
+# cleanly, zero provider-config changes), same dummy account ID
+# (000000000000) as moto by default. See CONTEXT.md for the full picture,
+# including apply-level findings — some resources confirmed broken or
+# impractically slow; planning cleanly doesn't mean every service applies.
+#
+# floci also runs a second listener, an EC2 IMDS server on port 9169 —
+# relevant because modules/compute enforces IMDSv2 (http_tokens = "required").
+# network_mode: host already exposes it automatically; no `ports:` entry
+# is needed (or possible) under host networking.
+#
+# Removed from the old moto config, deliberately not carried over untested:
+#   - the `-H`/`-p` command override (moto-specific CLI flags; floci's own
+#     defaults already bind 0.0.0.0:4566 correctly, verified directly)
+#   - MOTO_ACCOUNT_ID (moto-specific; floci defaults to 000000000000 with
+#     no env var needed, verified directly)
+#   - the floci-data volume mount to /tmp/moto (moto-specific path; floci's
+#     own banner reports a different internal path, "Storage: memory
+#     Path: /app/data" — persistence behavior unverified, not guessing a
+#     replacement mount)
 #
 # network_mode: host — required on WSL2 where the netavark backend cannot
 # apply nftables rulesets (missing kernel capability). host mode binds
@@ -15,13 +36,8 @@
 services:
   floci-core:
     container_name: floci-core
-    image: docker.io/motoserver/moto:latest
+    image: docker.io/floci/floci:latest
     network_mode: host
-    command: ["-H", "0.0.0.0", "-p", "4566"]
-    environment:
-      MOTO_ACCOUNT_ID: "000000000000"
-    volumes:
-      - floci-data:/tmp/moto
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4566/"]
@@ -29,6 +45,3 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
-
-volumes:
-  floci-data:

@@ -56,6 +56,11 @@ queue:
   - module.compute.aws_ecs_cluster.main
   - module.compute.aws_ecs_task_definition.main
   - module.compute.aws_instance.app
+  # CONFIRMED FAILURE under real floci (2026-08-13 apply test): transitions
+  # to "FAILED" state on its own — not a timeout/kill artifact. Same
+  # practical outcome as moto's prior uncertainty (no regression), stated
+  # precisely: confirmed failure, not "unconfirmed." Kept per the
+  # visible-stall-over-silent-skip design — retried forever, not removed.
   - module.compute.aws_iam_role.eks_cluster
   - module.compute.aws_iam_role_policy_attachment.eks_cluster
   - module.compute.aws_eks_cluster.main
@@ -73,7 +78,28 @@ queue:
   - module.messaging.aws_cloudwatch_log_group.sfn
   - module.messaging.aws_sfn_state_machine.main
 
-  # -- data (moto MSK/OpenSearch support unconfirmed) -----------------------
+  # -- data --------------------------------------------------------------
+  # Real-floci apply test (2026-08-13, see CONTEXT.md):
+  #   aws_db_subnet_group.main          — succeeds.
+  #   aws_elasticache_subnet_group.main — NEW CONFIRMED FAILURE, a real
+  #     regression vs. moto (never flagged as risky before): floci returns
+  #     "UnsupportedOperation: CreateCacheSubnetGroup is not supported".
+  #     Also blocks aws_elasticache_replication_group.main below, which
+  #     depends on this subnet group.
+  #   aws_db_instance.main              — INCONCLUSIVE, not confirmed-
+  #     failed or confirmed-working: sat in "Still creating..." 8.5+ min
+  #     with no resolution; manually killed before Terraform's real
+  #     default timeout for this resource type. Genuine pass/fail unknown.
+  #     Practically incompatible with the 10-minute schedule cadence
+  #     regardless of eventual outcome — growth stalls here either way.
+  #   aws_msk_cluster.main              — same INCONCLUSIVE status as
+  #     aws_db_instance above (8.5+ min, killed, cadence-incompatible
+  #     either way).
+  #   aws_opensearch_domain.main        — same INCONCLUSIVE status as
+  #     aws_db_instance above.
+  # All four (elasticache subnet group, elasticache replication group,
+  # db instance, msk, opensearch) kept per the visible-stall-over-silent-
+  # skip design — retried forever, not removed.
   - module.data.aws_db_subnet_group.main
   - module.data.aws_elasticache_subnet_group.main
   - module.data.aws_db_instance.main

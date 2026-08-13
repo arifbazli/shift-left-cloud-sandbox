@@ -37,12 +37,10 @@ AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
 AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
+# (only TF_VAR_localstack_endpoint below is read by providers.tf's
+#  endpoints{} block — see deploy.sh for the full explanation)
 export TF_VAR_localstack_enabled=true
 export TF_VAR_localstack_endpoint="$FLOCI_ENDPOINT"
-export TF_S3_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_EC2_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_IAM_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_STS_ENDPOINT="$FLOCI_ENDPOINT"
 
 if ! curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/health" 2>/dev/null \
    && ! curl -sf -m 3 -o /dev/null "$FLOCI_ENDPOINT/" 2>/dev/null; then
