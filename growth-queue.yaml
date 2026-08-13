@@ -1,0 +1,90 @@
+# growth-queue.yaml
+# =============================================================================
+# Ordered resource addresses scripts/grow-stack.sh applies one at a time,
+# oldest-first, on scheduled CI runs only.
+#
+# Rules:
+#   - Every address already exists in terraform/modules/**/*.tf. This file
+#     only sequences EXISTING resources — it never defines new ones.
+#   - Order encodes dependency order: an address's terraform-graph deps must
+#     already appear earlier in this list. Once any run has applied an
+#     address, DO NOT reorder or remove it — later state depends on it.
+#   - The security fixture is intentionally absent — toggle-fixture.sh owns
+#     it exclusively, never this queue.
+# =============================================================================
+queue:
+  # -- network ---------------------------------------------------------------
+  - module.network.aws_vpc.main
+  - module.network.aws_subnet.private
+  - module.network.aws_security_group.app
+  - module.network.aws_security_group_rule.ssh_admin
+  - module.network.aws_security_group_rule.app_internal
+  - module.network.aws_security_group_rule.egress_https
+  - module.network.aws_security_group_rule.egress_dns_tcp
+  - module.network.aws_security_group_rule.egress_dns_udp
+  - module.network.aws_s3_bucket.flow_logs
+  - module.network.aws_s3_bucket_public_access_block.flow_logs
+  - module.network.aws_s3_bucket_server_side_encryption_configuration.flow_logs
+  - module.network.aws_s3_bucket_logging.flow_logs
+  - module.network.aws_iam_role.flow_logs
+  - module.network.aws_iam_role_policy.flow_logs_write
+  - module.network.aws_flow_log.main
+
+  # -- storage -----------------------------------------------------------
+  - module.storage.aws_s3_bucket.artifacts
+  - module.storage.aws_s3_bucket_public_access_block.artifacts
+  - module.storage.aws_s3_bucket_server_side_encryption_configuration.artifacts
+  - module.storage.aws_s3_bucket_versioning.artifacts
+  - module.storage.aws_s3_bucket_logging.artifacts
+  - module.storage.aws_dynamodb_table.main
+
+  # -- security (fixture excluded) --------------------------------------
+  - module.security.aws_iam_role.app
+  - module.security.aws_iam_role_policy.app_inline
+  - module.security.aws_iam_instance_profile.app
+  - module.security.aws_kms_key.main
+  - module.security.aws_kms_alias.main
+  - module.security.aws_secretsmanager_secret.main
+  - module.security.aws_acm_certificate.main
+
+  # -- compute -------------------------------------------------------------
+  - module.compute.aws_iam_role.lambda_exec
+  - module.compute.aws_iam_role_policy_attachment.lambda_vpc
+  - module.compute.aws_lambda_function.main
+  - module.compute.aws_iam_role.ecs_exec
+  - module.compute.aws_iam_role_policy_attachment.ecs_exec
+  - module.compute.aws_ecs_cluster.main
+  - module.compute.aws_ecs_task_definition.main
+  - module.compute.aws_instance.app
+  - module.compute.aws_iam_role.eks_cluster
+  - module.compute.aws_iam_role_policy_attachment.eks_cluster
+  - module.compute.aws_eks_cluster.main
+
+  # -- messaging -----------------------------------------------------------
+  - module.messaging.aws_sqs_queue.dlq
+  - module.messaging.aws_sqs_queue.main
+  - module.messaging.aws_sqs_queue_policy.main
+  - module.messaging.aws_sns_topic.main
+  - module.messaging.aws_sns_topic_subscription.sqs
+  - module.messaging.aws_cloudwatch_event_rule.main
+  - module.messaging.aws_cloudwatch_event_target.sqs
+  - module.messaging.aws_iam_role.sfn_exec
+  - module.messaging.aws_iam_role_policy.sfn_logs
+  - module.messaging.aws_cloudwatch_log_group.sfn
+  - module.messaging.aws_sfn_state_machine.main
+
+  # -- data (moto MSK/OpenSearch support unconfirmed) -----------------------
+  - module.data.aws_db_subnet_group.main
+  - module.data.aws_elasticache_subnet_group.main
+  - module.data.aws_db_instance.main
+  - module.data.aws_elasticache_replication_group.main
+  - module.data.aws_msk_cluster.main
+  - module.data.aws_opensearch_domain.main
+
+  # -- api -------------------------------------------------------------------
+  - module.api.aws_cloudwatch_log_group.api_access
+  - module.api.aws_api_gateway_rest_api.main
+  - module.api.aws_api_gateway_deployment.main
+  - module.api.aws_api_gateway_stage.main
+  - module.api.aws_api_gateway_domain_name.main
+  - module.api.aws_cloudwatch_metric_alarm.api_5xx
