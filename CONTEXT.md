@@ -378,7 +378,7 @@ layer rather than assumed:
 | `terraform.tfstate`, `state-snapshots/` | `terraform/` (gitignored) | Never |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Shell env, always the literal `test` | Never — `deploy.sh`/`agent-loop.sh` refuse real-looking values before running |
 | Raw tfsec JSON output | Local temp file | Never — `scan.sh` writes only a trimmed record (severity, rule_id, resource, description, line — no filesystem paths) to `dashboard/public/data/tfsec-last.json` |
-| `dashboard/public/data/*.json` (10 files) | Local disk, written by `scan.sh`/`deploy.sh`/`verify.sh`/`drift-check.sh`/`agent-loop.sh` | **Yes** — pushed to GitHub, then Cloudflare Pages, but only after `sync-dashboard.sh`'s credential gate passes |
+| `dashboard/public/data/*.json` (14 files: 10 AWS + 4 Azure) | Local disk, written by `scan.sh`/`deploy.sh`/`verify.sh`/`drift-check.sh`/`agent-loop.sh`/`grow-stack-azure.sh` | **Yes** — pushed to GitHub, then Cloudflare Pages, but only after `sync-dashboard.sh`'s credential gate passes |
 | `dashboard/public/{index.html,app.js,style.css,*.svg}` | Local disk | Yes — static assets, no runtime secrets by construction |
 | `floci-self-hosted` runner | Debian WSL machine | The runner process never leaves; only job logs and the two artifacts it uploads (`scan-result`, `dashboard-data`) transit GitHub's servers |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | GitHub Actions encrypted secrets | Never printed to logs; scoped to Pages, used only by `publish-dashboard` / `deploy-dashboard.yml` |

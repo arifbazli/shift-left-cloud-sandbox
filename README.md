@@ -55,7 +55,7 @@ Azure gets the same shift-left treatment on a separate track: **floci-az** (`:45
 | CODEOWNERS | `modules/security/`, gate scripts, and `.github/` all require human review |
 | Agent allowlist | `agent-loop.sh` may only restart `floci-core` or apply safe drift — never edits `*.tf`, never destroys |
 
-Full catalog (14 `SEC_INTENT` decisions, one per file): [CONTEXT.md § Security decisions in code](CONTEXT.md#security-decisions-in-code).
+Full catalog (23 `SEC_INTENT` decisions across 19 files): [CONTEXT.md § Security decisions in code](CONTEXT.md#security-decisions-in-code).
 
 ## Repo layout
 
