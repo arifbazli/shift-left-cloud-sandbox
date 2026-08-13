@@ -14,6 +14,14 @@ terraform/state-snapshots/
 terraform/.drift.tfplan
 terraform/.drift.tfplan.json
 
+# Terraform local state and provider cache (Azure root — separate state)
+terraform/azure/.terraform/
+terraform/azure/.terraform.lock.hcl
+terraform/azure/*.tfstate
+terraform/azure/*.tfstate.backup
+terraform/azure/*.tfstate.d/
+terraform/azure/.terraform.tfstate.lock.info
+
 # tfsec output dir (config.yml IS committed; outputs are not)
 terraform/.tfsec/
 
@@ -45,6 +53,10 @@ scripts/*.log.*
 # - terraform/providers.tf
 # - terraform/variables.tf
 # - terraform/outputs.tf
+# - terraform/azure/main.tf
+# - terraform/azure/providers.tf
+# - terraform/azure/variables.tf
+# - terraform/azure/outputs.tf
 # - terraform/.tfsec/config.json
 # - terraform/.tfsec/config.yml
 #   tfsec config in JSON form. Committed so the gate is
