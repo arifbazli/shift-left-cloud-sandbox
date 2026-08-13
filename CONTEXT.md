@@ -427,6 +427,22 @@ are traceable rather than asserted.
   `000000000000` account ID as moto — the basis for the swap documented
   in [Why floci specifically](#why-floci-specifically) above.
 
+**CI dispatch of `feat/azure-phase2` (2026-08-13):** a real
+`workflow_dispatch` run on `ubuntu-latest` confirmed `floci-az`'s
+container itself starts and stays up cleanly there — image pull, the
+`${XDG_RUNTIME_DIR}/podman/podman.sock` mount (resolves to a different
+path than WSL2's, since the runner's UID differs — worked correctly
+either way), and the `NETAVARK_FW=iptables` container env var were all
+applied without error, and the container was still running at job end.
+**What this run did *not* exercise: floci-az's Docker-socket
+sidecar-spawning path — the actual reason the netavark/iptables fix
+exists.** `pipeline.yml` never calls `grow-stack-azure.sh` (deliberately
+out of scope for this branch), so nothing in CI ever asks floci-az to
+spawn a bridge-networked sidecar container the way `growth-queue-azure.
+yaml`'s later items would. That path remains verified only locally,
+under WSL2 rootless Podman (see the bullet above) — genuinely open
+until `pipeline.yml` eventually wires `grow-stack-azure.sh` in.
+
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the
   full apply test, likely EC2-related (`aws_instance.app`), but was not
