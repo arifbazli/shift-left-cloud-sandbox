@@ -48,9 +48,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.event.client_payload.branch || 'main' }}
           fetch-depth: 0
 
+      # SEC_INTENT: NOT --force-all-dirs. That flag makes tfsec treat every
+      # subdirectory as its own scan root, and since terraform/azure/ lives
+      # physically inside terraform/, it leaks Azure's findings (including
+      # its own AVD-AZU-0013 fixture) into what triage.py treats as an
+      # AWS-only report -- the same bug confirmed and fixed in scan.sh; this
+      # invocation was missed at the time since auto-fix.yml wasn't touched
+      # during the Azure work. Module-graph resolution alone is sufficient.
       - name: Run tfsec (pre-fix baseline)
         run: |
-          tfsec terraform/ -f json --no-color --force-all-dirs \
+          tfsec terraform/ -f json --no-color \
             2>/dev/null | grep -v '^=' | python3 -c "
           import sys, json
           raw = sys.stdin.read()
