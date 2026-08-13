@@ -197,7 +197,8 @@ resource "azurerm_kubernetes_cluster" "main" {
   location            = var.location
   dns_prefix          = "floci-aks-${var.environment}"
 
-  private_cluster_enabled = true # SEC_INTENT: no public API server, mirrors EKS's endpoint_public_access = false
+  private_cluster_enabled           = true # SEC_INTENT: no public API server, mirrors EKS's endpoint_public_access = false
+  role_based_access_control_enabled = true # SEC_INTENT: RBAC on — mirrors EKS's IAM-based least-privilege intent (AVD-AZU-0042)
 
   default_node_pool {
     name           = "default"
@@ -208,6 +209,14 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+  # SEC_INTENT: enforce network policies between pods — mirrors EKS's
+  # encryption_config/log-type hardening as "harden it even though apply is
+  # confirmed to fail" (AVD-AZU-0043).
+  network_profile {
+    network_plugin = "azure"
+    network_policy = "azure"
   }
 
   tags = {

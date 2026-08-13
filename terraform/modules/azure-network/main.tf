@@ -24,6 +24,22 @@ resource "azurerm_resource_group" "main" {
     Environment = var.environment
     Owner       = "shift-left-sandbox"
   }
+
+  # SEC_INTENT: CONFIRMED GAP (2026-08-13, grow-stack-azure.sh live test).
+  # floci-az's ARM create response does not persist the tags sent above —
+  # so any LATER `terraform apply -target=<dependent resource>` (e.g.
+  # azurerm_virtual_network.main, which depends on this resource group)
+  # refreshes state, sees the missing tags as drift, and tries to
+  # reconcile it via an update call. floci-az's ArmHandler rejects that
+  # update outright: "405 Method Not Allowed". Without ignore_changes,
+  # growth-queue-azure.yaml's one-target-at-a-time pattern gets stuck
+  # forever on the SECOND queued item, never reaching this resource
+  # group's own genuinely-dependent resources. This is a workaround for a
+  # floci-az limitation, not a statement that tags don't matter — tags
+  # are still sent and honored on the initial create.
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -109,14 +125,15 @@ resource "azurerm_network_security_rule" "app_internal" {
 # SEC_INTENT: explicit egress restricted to https (443) only — same scope as
 # modules/network's egress_https rule.
 resource "azurerm_network_security_rule" "egress_https" {
-  name                        = "egress-https"
-  priority                    = 100
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "*"
+  name                   = "egress-https"
+  priority               = 100
+  direction              = "Outbound"
+  access                 = "Allow"
+  protocol               = "Tcp"
+  source_port_range      = "*"
+  destination_port_range = "443"
+  source_address_prefix  = "*"
+  # tfsec:ignore:AVD-AZU-0051 Sandbox needs outbound HTTPS to pull packages
   destination_address_prefix  = "*"
   resource_group_name         = azurerm_resource_group.main.name
   network_security_group_name = azurerm_network_security_group.app.name
@@ -124,14 +141,15 @@ resource "azurerm_network_security_rule" "egress_https" {
 }
 
 resource "azurerm_network_security_rule" "egress_dns_tcp" {
-  name                        = "egress-dns-tcp"
-  priority                    = 110
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "53"
-  source_address_prefix       = "*"
+  name                   = "egress-dns-tcp"
+  priority               = 110
+  direction              = "Outbound"
+  access                 = "Allow"
+  protocol               = "Tcp"
+  source_port_range      = "*"
+  destination_port_range = "53"
+  source_address_prefix  = "*"
+  # tfsec:ignore:AVD-AZU-0051 DNS egress required for service discovery
   destination_address_prefix  = "*"
   resource_group_name         = azurerm_resource_group.main.name
   network_security_group_name = azurerm_network_security_group.app.name
@@ -139,14 +157,15 @@ resource "azurerm_network_security_rule" "egress_dns_tcp" {
 }
 
 resource "azurerm_network_security_rule" "egress_dns_udp" {
-  name                        = "egress-dns-udp"
-  priority                    = 120
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "Udp"
-  source_port_range           = "*"
-  destination_port_range      = "53"
-  source_address_prefix       = "*"
+  name                   = "egress-dns-udp"
+  priority               = 120
+  direction              = "Outbound"
+  access                 = "Allow"
+  protocol               = "Udp"
+  source_port_range      = "*"
+  destination_port_range = "53"
+  source_address_prefix  = "*"
+  # tfsec:ignore:AVD-AZU-0051 DNS egress required for service discovery
   destination_address_prefix  = "*"
   resource_group_name         = azurerm_resource_group.main.name
   network_security_group_name = azurerm_network_security_group.app.name
