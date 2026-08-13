@@ -14,7 +14,7 @@
 
 **Docs:** [CONTEXT.md](CONTEXT.md) (architecture, why floci, security rationale) · [SKILL.md](SKILL.md) (AI agent operating guide) · [CHANGELOG.md](CHANGELOG.md)
 
-floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. **floci-az**, floci.io's Azure emulator, gets the same tfsec-gated treatment on a separate track. A static Cloudflare Pages dashboard shows both loops live, behind an AWS/Azure tab switcher; the only thing that ever leaves this machine is that dashboard's JSON.
+floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. **floci-az**, floci.io's Azure emulator, gets the same tfsec gate and its own incremental growth loop on a separate, narrower track — no verify/drift/agent layer yet, that part stays AWS-only for now. A static Cloudflare Pages dashboard shows both clouds live, behind an AWS/Azure tab switcher; the only thing that ever leaves this machine is that dashboard's JSON.
 
 ## TL;DR
 

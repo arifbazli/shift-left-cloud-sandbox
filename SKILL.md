@@ -72,10 +72,12 @@ yourself if you don't trust this file's freshness.
     `APKA`, `ASCA`) in an env var, a file, or a diff — stop. Don't run
     `deploy.sh` or `agent-loop.sh` until it's gone.
 12. **Check `.github/CODEOWNERS` before expecting a PR to merge unreviewed.**
-    `terraform/`, `terraform/modules/security/`, `scripts/scan.sh`,
-    `scripts/toggle-fixture.sh`, `scripts/deploy.sh`, `scripts/agent-loop.sh`,
-    `scripts/ai/`, and `.github/` all require `@arifbazli` review — no
-    exceptions, including PRs opened by the `floci-agent-loop` bot.
+    `terraform/`, `terraform/modules/security/`,
+    `terraform/modules/azure-security/`, `scripts/scan.sh`,
+    `scripts/toggle-fixture.sh`, `scripts/toggle-fixture-azure.sh`,
+    `scripts/deploy.sh`, `scripts/agent-loop.sh`, `scripts/ai/`, and
+    `.github/` all require `@arifbazli` review — no exceptions, including
+    PRs opened by the `floci-agent-loop` bot.
 13. **Never reorder or delete entries in `growth-queue.yaml` once a
     scheduled run may have applied them.** `scripts/grow-stack.sh` finds
     "next" purely by diffing the queue against `terraform state list` — an

@@ -10,10 +10,14 @@
 #
 # Coverage:
 #   *              → default reviewer for any unmatched path
-#   terraform/     → infra changes reviewed by security lead
-#   scripts/scan.sh, toggle-fixture.sh → gate integrity — requires review
+#   terraform/     → infra changes reviewed by security lead (covers both
+#                    modules/security/ and modules/azure-security/ already,
+#                    listed separately below for emphasis)
+#   scripts/scan.sh, toggle-fixture.sh, toggle-fixture-azure.sh → gate
+#                    integrity — requires review
 #   .github/       → workflow changes — prevents privilege escalation
-#   modules/security/ → misconfig fixture lives here — requires review
+#   modules/security/, modules/azure-security/ → misconfig fixtures live
+#                    here (AVD-AWS-0057, AVD-AZU-0013) — requires review
 # =============================================================================
 
 # Default: all files need review

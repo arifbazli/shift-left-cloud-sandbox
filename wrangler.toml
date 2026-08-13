@@ -8,12 +8,12 @@
 #   wrangler pages dev dashboard/public
 #
 # Architecture note:
-#   The frontend fetches three JSON files from this same Pages project:
-#     - tfsec-last.json + tfsec-history.json
-#     - drift-last.json + drift-history.json
-#     - agent-actions.json
-#   All backend services (floci-core, podman, terraform.tfstate) live on
-#   the local machine. Nothing except these JSON files ever leaves it.
+#   The frontend fetches whatever's under dashboard/public/data/*.json from
+#   this same Pages project — 14 files as of 2026-08-13 (10 AWS + 4 Azure);
+#   see CONTEXT.md's data-plane table for the current, authoritative list
+#   rather than duplicating it here where it'll go stale again.
+#   All backend services (floci-core, floci-az, podman, terraform.tfstate)
+#   live on the local machine. Nothing except these JSON files ever leaves it.
 # =============================================================================
 name = "shift-left-cloud-sandbox"
 pages_build_output_dir = "dashboard/public"
