@@ -45,6 +45,11 @@ on:
         description: 'Reason for manual trigger'
         required: false
         default: 'manual'
+      grow:
+        description: 'Also run scripts/grow-stack.sh (single-target apply) even outside a scheduled run'
+        required: false
+        type: boolean
+        default: false
   # ── API trigger from data-server ───────────────────────────────
   # Triggered by POST /repos/{owner}/{repo}/dispatches with
   # event_type: 'dashboard-refresh'
@@ -196,6 +201,29 @@ jobs:
           terraform init -no-color -input=false
           terraform validate -no-color
           echo "terraform validate: PASS ✓"
+
+      # SEC_INTENT: growth is a separate, narrower automation from the
+      # validate-only step above — see CONTEXT.md "Growth loop". Gated to
+      # schedule by default; grow: true on workflow_dispatch is an explicit
+      # opt-in for manual testing, never implicit on push/PR.
+      - name: Restore terraform state (growth)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.grow == true)
+        uses: actions/cache/restore@v4
+        with:
+          path: terraform/terraform.tfstate
+          key: growth-state-${{ github.run_id }}
+          restore-keys: growth-state-
+
+      - name: Grow stack (scripts/grow-stack.sh)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.grow == true)
+        run: bash scripts/grow-stack.sh
+
+      - name: Save terraform state (growth)
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.grow == true)) && always()
+        uses: actions/cache/save@v4
+        with:
+          path: terraform/terraform.tfstate
+          key: growth-state-${{ github.run_id }}
 
       # Upload ALL data files so publish-dashboard can serve fresh data on Pages.
       - name: Upload all dashboard data

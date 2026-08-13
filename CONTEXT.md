@@ -294,6 +294,47 @@ identically to AWS in every corner case.
 If you see this specific resource flagged, it's expected — not a bug in the
 agent.
 
+> [!TIP]
+> Three module comments already flag partial floci/moto coverage:
+> `aws_eks_cluster`, `aws_msk_cluster`, and `aws_opensearch_domain` may
+> require floci Pro or a moto build with those services enabled.
+> `scripts/grow-stack.sh` will surface this honestly if it happens — a
+> failed `-target` apply is retried at the same queue position forever
+> rather than skipped, so growth visibly stalling at one of these three is
+> expected, not a bug in the script.
+
+## Growth loop
+
+A separate, narrower automation from the demo pipeline above:
+`scripts/grow-stack.sh` incrementally builds out the floci stack by applying
+exactly one new resource per scheduled CI run, using
+`terraform apply -target=<address>` against the ordered list in
+[`growth-queue.yaml`](growth-queue.yaml).
+
+- **No `.tf` edits, ever.** Every address in `growth-queue.yaml` already
+  exists in `terraform/modules/**/*.tf` — the queue only *sequences* existing
+  resources, it never defines new ones. `-target` just constrains which
+  resource a given `apply` reconciles; the rest of state is untouched.
+- **State persists across ephemeral `ubuntu-latest` runs via `actions/cache`**,
+  using a per-run-id cache key (`growth-state-${{ github.run_id }}`) with a
+  prefix `restore-keys` fallback — cache entries are immutable per key, so a
+  mutable "latest state" can't use one static key. On a cache miss (first
+  run, or all entries evicted), growth simply restarts from the top of the
+  queue — not an error.
+- **`schedule`-only by default**, plus an opt-in `workflow_dispatch` input
+  (`grow: true`) for manual testing — never on `push`/`pull_request`, so a
+  code change never also grows the stack in the same run.
+- **Deliberately separate from `scripts/agent-loop.sh`.** Both scripts can
+  run `terraform apply`, but they don't call into each other and don't share
+  an allowlist. `grow-stack.sh` independently re-implements the same
+  "tfsec gate must be PASS" precondition `agent-loop.sh` already enforces for
+  drift reconciliation — that duplication is a known, accepted gap (see
+  [Security decisions in code](#security-decisions-in-code)), not an oversight.
+- **Failure doesn't skip ahead.** If a target apply fails, the same address
+  is retried next run rather than silently moving to the next one — see
+  above for why some queued resources (EKS, MSK, OpenSearch) may never
+  succeed against moto.
+
 ## Security decisions in code
 
 Every non-obvious security decision in this repo is tagged `SEC_INTENT:` at
@@ -319,3 +360,5 @@ in someone's head. This table collects them in one place.
 | `.github/workflows/auto-fix.yml` | Auto-fix only runs behind an explicit human-applied `auto-fix` label (or an internal dispatch) — never on a bare push — and always opens a PR rather than pushing to `main`. |
 | `.github/workflows/deploy-dashboard.yml` | Dashboard publish is treated as read-only w.r.t. infra, which is why it's allowed to deploy independently of the tfsec/terraform jobs. |
 | `wrangler.toml` | No `[vars]`, no KV, no D1, no Workers — kept empty deliberately so the "static assets only" claim is enforced by the config, not just documentation. |
+| `scripts/grow-stack.sh` | Applies exactly one `-target` per invocation, never advances past a failed target, never destroys, never edits `*.tf` — same "make the dangerous action impossible" philosophy as `agent-loop.sh`, independently implemented rather than shared. |
+| `growth-queue.yaml` | Ordering is load-bearing, not cosmetic — an address's dependencies must already appear earlier in the list. Reordering or removing an already-applied address after the fact is undefined behavior, not just a style issue. |

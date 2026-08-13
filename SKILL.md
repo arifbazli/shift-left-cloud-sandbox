@@ -53,6 +53,14 @@ yourself if you don't trust this file's freshness.
    `scripts/toggle-fixture.sh`, `scripts/deploy.sh`, `scripts/agent-loop.sh`,
    `scripts/ai/`, and `.github/` all require `@arifbazli` review — no
    exceptions, including PRs opened by the `floci-agent-loop` bot.
+10. **Never reorder or delete entries in `growth-queue.yaml` once a
+    scheduled run may have applied them.** `scripts/grow-stack.sh` finds
+    "next" purely by diffing the queue against `terraform state list` — an
+    address's dependencies must stay earlier in the list than the address
+    itself. Also don't collapse the `growth-state-${{ github.run_id }}` +
+    prefix `restore-keys` cache-key pattern in `pipeline.yml` into one
+    static key — `actions/cache` entries are immutable per key, so a single
+    static key can never be "updated," it just silently stops persisting.
 
 ## Tool pins
 
@@ -162,3 +170,4 @@ it stops.
 | Publish the static dashboard | `scripts/deploy-dashboard.sh` | wrangler-based; never touches `terraform/` |
 | Local live-data server | `scripts/data-server.py` | Binds `127.0.0.1` only; hard-coded script allowlist |
 | Bootstrap the CI runner | `scripts/setup-runner.sh` | Needs `GH_RUNNER_TOKEN`; never logs it |
+| Grow the floci stack by one resource | `scripts/grow-stack.sh` | `schedule`-only, or `workflow_dispatch` with `grow: true`; reads `growth-queue.yaml`; never destroys, never skips a failed target |
