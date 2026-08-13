@@ -245,12 +245,10 @@ while [[ "$loop_count" -lt "$MAX_LOOPS" ]]; do
   export AWS_SECRET_ACCESS_KEY=test
   export AWS_DEFAULT_REGION=us-east-1
   export FLOCI_ENDPOINT="${FLOCI_ENDPOINT:-http://localhost:4566}"
+  # (only TF_VAR_localstack_endpoint below is read by providers.tf's
+  #  endpoints{} block — see deploy.sh for the full explanation)
   export TF_VAR_localstack_enabled=true
   export TF_VAR_localstack_endpoint="$FLOCI_ENDPOINT"
-  export TF_S3_ENDPOINT="$FLOCI_ENDPOINT"
-  export TF_EC2_ENDPOINT="$FLOCI_ENDPOINT"
-  export TF_IAM_ENDPOINT="$FLOCI_ENDPOINT"
-  export TF_STS_ENDPOINT="$FLOCI_ENDPOINT"
 
   apply_output="$(mktemp)"
   if (cd "$TF_DIR" && terraform apply -auto-approve -input=false -no-color) >"$apply_output" 2>&1; then

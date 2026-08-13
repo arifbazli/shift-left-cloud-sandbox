@@ -117,31 +117,14 @@ set +u
 export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
 export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
 export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-# Per-service endpoint overrides — Terraform's AWS provider picks these up.
+# SEC_INTENT: providers.tf's endpoints{} block reads ONLY this one variable
+# for every service (all 7 modules share a single floci-core endpoint) — a
+# per-service TF_<SERVICE>_ENDPOINT convention was exported here previously
+# but was never read by any .tf file. Removed rather than wired up: with one
+# emulator container per cloud, per-service endpoints would all resolve to
+# the same value anyway.
 export TF_VAR_localstack_enabled=true
 export TF_VAR_localstack_endpoint="$FLOCI_ENDPOINT"
-# Per-service endpoint overrides for all 7 modules.
-export TF_S3_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_EC2_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_IAM_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_STS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_DYNAMODB_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_LAMBDA_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_SQS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_SNS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_SFN_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_KMS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_SECRETSMANAGER_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_ACM_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_APIGATEWAY_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_CLOUDWATCH_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_CLOUDWATCHLOGS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_RDS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_ELASTICACHE_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_KAFKA_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_OPENSEARCH_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_EKS_ENDPOINT="$FLOCI_ENDPOINT"
-export TF_ECS_ENDPOINT="$FLOCI_ENDPOINT"
 set -u
 
 # ---- terraform init (idempotent) -------------------------------------------
