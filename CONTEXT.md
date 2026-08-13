@@ -13,7 +13,9 @@ quick start; this is *why the sandbox is built the way it is*. See also
 - [Offline-first design](#offline-first-design)
 - [Backend never exposed — the data-plane table](#backend-never-exposed--the-data-plane-table)
 - [Known floci limitation](#known-floci-limitation)
+- [Growth loop](#growth-loop)
 - [Security decisions in code](#security-decisions-in-code)
+- [Research log](#research-log)
 
 ## Architecture
 
@@ -177,29 +179,50 @@ flowchart LR
 
 ## Why floci specifically
 
-"floci" is this sandbox's own name for a single-container AWS stub, not a
-product. Under the hood it is
-[`docker.io/motoserver/moto`](https://github.com/getmoto/moto) (Apache-2.0,
-no auth) run via `podman-compose.yml`:
+`floci-core` runs the real [floci.io](https://floci.io) AWS emulator —
+[`docker.io/floci/floci`](https://github.com/floci-io/floci) (MIT, no auth) —
+not a stub, and not a nickname for something else. That wasn't always true:
+this repo ran `motoserver/moto` under the "floci" name for months, a naming
+coincidence discovered and resolved in the same session this section was
+rewritten (2026-08-13). The swap happened after direct verification, not a
+leap of faith:
 
-- **One container, one port.** `floci-core` binds `0.0.0.0:4566`, `MOTO_ACCOUNT_ID`
-  fixed to `000000000000`. Every one of the 7 Terraform modules points its AWS
-  provider at this single endpoint via `TF_<SERVICE>_ENDPOINT` env vars.
+- **Plan-level compatibility is real, not marketing.** An isolated test
+  applied the full 62-resource configuration against the real binary with
+  zero provider-config changes — same `providers.tf`, same default
+  `http://localhost:4566` endpoint, same dummy account ID (`000000000000`)
+  moto used, matching `sync-dashboard.sh`'s existing credential-gate
+  allowlist with no changes needed there either.
+- **Apply-level compatibility is mixed — planning cleanly doesn't mean
+  every service applies.** See [Known floci limitation](#known-floci-limitation)
+  for exactly which resources are confirmed broken, confirmed working, or
+  genuinely inconclusive.
+- **One container, one port — plus a second, for IMDS.** `floci-core` binds
+  `0.0.0.0:4566`; it also runs a separate EC2 IMDS listener on port 9169,
+  relevant because `modules/compute` enforces IMDSv2. `network_mode: host`
+  exposes both automatically — no explicit `ports:` mapping needed or
+  possible under host networking.
+- **Only one Terraform variable actually does anything.** `providers.tf`'s
+  `endpoints{}` block reads `var.localstack_endpoint` (set via
+  `TF_VAR_localstack_endpoint`) for every one of the 7 modules — a single
+  shared value, not per-service overrides. A parallel set of
+  `TF_<SERVICE>_ENDPOINT` env vars existed in several scripts for a long
+  time and did nothing; discovered and removed in the same swap rather than
+  wired up, since one emulator container per cloud means per-service
+  endpoints would all resolve to the same value anyway.
+- **The variable is still named `localstack_endpoint`.** A naming holdover
+  from before either moto or floci was involved — not a hint that
+  LocalStack is, or ever was, actually running.
 - **`network_mode: host`, not bridge.** WSL2's netavark backend cannot apply
   the nftables rules Podman's default bridge network needs (missing kernel
-  capability on this host) — host mode sidesteps it entirely.
-- **The dummy account ID is load-bearing, not cosmetic.** `sync-dashboard.sh`'s
-  credential gate explicitly allowlists ARNs under `000000000000` and blocks
-  everything else — the account ID is how the gate tells "floci output" apart
-  from "something that looks like real AWS."
-- **The Terraform variable is still called `localstack_endpoint`.** That's a
-  naming holdover, not a hint that LocalStack is involved — moto is what's
-  actually running.
+  capability on this host) — host mode sidesteps it entirely, unrelated to
+  which emulator image is running.
 - **It's explicitly a stub, not a full emulator** — see
   [Known floci limitation](#known-floci-limitation). The tradeoff is deliberate:
   a shift-left CI demo needs something fast, free, and reachable with zero
   setup, not full API fidelity.
-- **CI and local dev now run two different Podman versions.** `deploy-local`
+- **CI and local dev still run two different Podman versions**, independent
+  of the emulator swap. `deploy-local`
   installs whatever Ubuntu 24.04's apt repo ships (currently Podman 4.9.x)
   fresh on every `ubuntu-latest` run; local WSL2 development is documented
   and validated against Podman 5.x (see SKILL.md). Nothing in `scripts/`
@@ -235,10 +258,13 @@ guaranteed to catch. It exists to give the pipeline something real to gate on.
 Nothing in this sandbox calls real AWS, and that's enforced at more than one
 layer rather than assumed:
 
-- **Every module's provider endpoint is overridden** to floci
-  (`TF_S3_ENDPOINT`, `TF_EC2_ENDPOINT`, … one per AWS service used across the
-  7 modules) — there's no code path where a module falls back to a default
-  AWS endpoint.
+- **Every module's provider endpoint is overridden** to floci via a single
+  shared variable, `var.localstack_endpoint` (set through
+  `TF_VAR_localstack_endpoint`) — `providers.tf`'s `endpoints{}` block reads
+  this one value for all 7 modules. There's no code path where a module
+  falls back to a default AWS endpoint. (A parallel set of per-service
+  `TF_<SERVICE>_ENDPOINT` env vars existed for a long time and did nothing
+  — see [Why floci specifically](#why-floci-specifically) for that history.)
 - **`deploy.sh` and `agent-loop.sh` both refuse to run against real-looking
   credentials.** They pattern-match `AWS_ACCESS_KEY_ID` against real key
   prefixes (`AKIA`, `ASIA`, `AIDA`, …) and refuse if `~/.aws/credentials`
@@ -265,7 +291,7 @@ layer rather than assumed:
 
 | What | Lives where | Ever leaves the machine? |
 |---|---|---|
-| `floci-core` (moto AWS stub) | Podman container, `127.0.0.1:4566` (host network) | Never — not reachable outside the WSL host |
+| `floci-core` (real floci.io AWS emulator) | Podman container, `127.0.0.1:4566` (host network) | Never — not reachable outside the WSL host |
 | `terraform.tfstate`, `state-snapshots/` | `terraform/` (gitignored) | Never |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Shell env, always the literal `test` | Never — `deploy.sh`/`agent-loop.sh` refuse real-looking values before running |
 | Raw tfsec JSON output | Local temp file | Never — `scan.sh` writes only a trimmed record (severity, rule_id, resource, description, line — no filesystem paths) to `dashboard/public/data/tfsec-last.json` |
@@ -281,8 +307,9 @@ local.
 
 ## Known floci limitation
 
-floci-core is a Podman-wrapped `moto` stub, not a real workload — it exists
-to give `verify.sh` and `drift-check.sh` something to call, not to behave
+floci-core runs the real floci.io emulator, not a stub of something else —
+but it's still not a full, byte-for-byte AWS clone. It exists to give
+`verify.sh` and `drift-check.sh` something to call, not to behave
 identically to AWS in every corner case.
 
 > [!TIP]
@@ -295,13 +322,30 @@ If you see this specific resource flagged, it's expected — not a bug in the
 agent.
 
 > [!TIP]
-> Three module comments already flag partial floci/moto coverage:
-> `aws_eks_cluster`, `aws_msk_cluster`, and `aws_opensearch_domain` may
-> require floci Pro or a moto build with those services enabled.
-> `scripts/grow-stack.sh` will surface this honestly if it happens — a
-> failed `-target` apply is retried at the same queue position forever
-> rather than skipped, so growth visibly stalling at one of these three is
-> expected, not a bug in the script.
+> Real-floci apply-test findings (2026-08-13, a full 62-resource apply, not
+> just plan — see also `growth-queue.yaml`'s inline annotations):
+> - `aws_eks_cluster` — **confirmed failure**. Transitions to a `FAILED`
+>   state on its own, not a timeout/kill artifact. Same practical outcome
+>   as the earlier moto-era uncertainty ("may require floci Pro"), now
+>   stated precisely instead of left as "unconfirmed."
+> - `aws_elasticache_subnet_group` — **new confirmed failure**, a real
+>   regression vs. moto (never flagged as risky before this session):
+>   floci returns `UnsupportedOperation: CreateCacheSubnetGroup is not
+>   supported`. Also blocks the dependent `aws_elasticache_replication_group`.
+> - `aws_msk_cluster`, `aws_db_instance`, `aws_opensearch_domain` — marked
+>   **inconclusive**, not confirmed-failed or confirmed-working: all three
+>   sat in `Still creating...` for 8.5+ minutes with no resolution: the
+>   test was stopped before Terraform's real default timeout rather than
+>   left running indefinitely. Whichever way they'd eventually resolve,
+>   multi-minute-plus creation time is practically incompatible with the
+>   10-minute schedule cadence — growth stalls here in practice regardless
+>   of eventual pass/fail.
+>
+> `scripts/grow-stack.sh` surfaces all of this honestly rather than
+> papering over it — a failed or perpetually-slow `-target` apply is
+> retried at the same queue position forever, never silently skipped.
+> Growth visibly stalling at any of the five resources above is expected,
+> not a bug in the script.
 
 ## Growth loop
 
@@ -332,8 +376,9 @@ exactly one new resource per scheduled CI run, using
   [Security decisions in code](#security-decisions-in-code)), not an oversight.
 - **Failure doesn't skip ahead.** If a target apply fails, the same address
   is retried next run rather than silently moving to the next one — see
-  above for why some queued resources (EKS, MSK, OpenSearch) may never
-  succeed against moto.
+  [Known floci limitation](#known-floci-limitation) above for which queued
+  resources are confirmed to fail, and which are merely too slow for the
+  10-minute cadence, against the real floci emulator.
 
 ## Security decisions in code
 
@@ -362,3 +407,29 @@ in someone's head. This table collects them in one place.
 | `wrangler.toml` | No `[vars]`, no KV, no D1, no Workers — kept empty deliberately so the "static assets only" claim is enforced by the config, not just documentation. |
 | `scripts/grow-stack.sh` | Applies exactly one `-target` per invocation, never advances past a failed target, never destroys, never edits `*.tf` — same "make the dangerous action impossible" philosophy as `agent-loop.sh`, independently implemented rather than shared. |
 | `growth-queue.yaml` | Ordering is load-bearing, not cosmetic — an address's dependencies must already appear earlier in the list. Reordering or removing an already-applied address after the fact is undefined behavior, not just a style issue. |
+
+## Research log
+
+Verification work done directly in-session, kept here so the claims above
+are traceable rather than asserted.
+
+**Emulator verification gates (2026-08-13, before the moto→floci swap):**
+- `AVD-AWS-0057` fires correctly under the exact pinned `tfsec` 1.28.5
+  binary CI installs, independent of a `deprecated: true` flag found in
+  *current* upstream `trivy-checks` metadata — tested against an isolated
+  temp copy with the fixture forced on, not the live repo.
+- `floci-az` (the Azure emulator — not yet integrated) starts successfully
+  under this machine's WSL2 rootless Podman, both with and without a
+  mounted Docker socket. Sidecar-spawning through that socket was not
+  verified end-to-end — only container startup.
+- The real `floci` AWS image plans the full 62-resource configuration
+  cleanly with zero provider-config changes, and defaults to the same
+  `000000000000` account ID as moto — the basis for the swap documented
+  in [Why floci specifically](#why-floci-specifically) above.
+
+**Open, undiagnosed items — not explained away:**
+- A `collecting instance settings: empty result` error appeared during the
+  full apply test, likely EC2-related (`aws_instance.app`), but was not
+  isolated or root-caused.
+- `terraform state list` reported 65 resources after the aborted apply
+  test — three more than the 62 planned. Not investigated further.

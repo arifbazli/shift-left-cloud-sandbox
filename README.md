@@ -14,12 +14,12 @@
 
 **Docs:** [CONTEXT.md](CONTEXT.md) (architecture, why floci, security rationale) · [SKILL.md](SKILL.md) (AI agent operating guide) · [CHANGELOG.md](CHANGELOG.md)
 
-floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — a single-container [moto](https://github.com/getmoto/moto) AWS stub, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. A static Cloudflare Pages dashboard shows the whole loop live; the only thing that ever leaves this machine is that dashboard's JSON.
+floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. A static Cloudflare Pages dashboard shows the whole loop live; the only thing that ever leaves this machine is that dashboard's JSON.
 
 ## TL;DR
 
 ```bash
-podman-compose -f podman-compose.yml up -d   # start floci-core (moto) on :4566
+podman-compose -f podman-compose.yml up -d   # start floci-core on :4566
 ./scripts/toggle-fixture.sh off              # disable the deliberate misconfig fixture
 ./scripts/scan.sh && ./scripts/deploy.sh     # tfsec gate → terraform apply (7 modules)
 ./scripts/verify.sh && ./scripts/drift-check.sh && ./scripts/agent-loop.sh &
@@ -30,7 +30,9 @@ wrangler pages dev dashboard/public --port 8788   # open http://localhost:8788
 
 **Live dashboard:** **https://shift-left-cloud-sandbox.pages.dev**
 
-For architecture diagrams, why floci is a `moto` stub instead of real AWS, what the deliberate misconfig demonstrates, and the full security-decision catalog, see **[CONTEXT.md](CONTEXT.md)**.
+For architecture diagrams, why floci-core runs the real floci.io emulator instead of real AWS, what the deliberate misconfig demonstrates, and the full security-decision catalog, see **[CONTEXT.md](CONTEXT.md)**.
+
+Only one Terraform variable (`TF_VAR_localstack_endpoint`) actually wires the AWS provider to floci — a parallel set of per-service `TF_S3_ENDPOINT`-style env vars in `deploy.sh`/`drift-check.sh`/`agent-loop.sh`/`grow-stack.sh` was dead code and has been removed (`verify.sh` never had them — it calls floci's HTTP API directly, not Terraform).
 
 The stack also grows itself: a scheduled CI job applies one new resource from `growth-queue.yaml` every 10 minutes via `terraform apply -target`, entirely on GitHub-hosted runners, no human in the loop — see [CONTEXT.md § Growth loop](CONTEXT.md#growth-loop).
 

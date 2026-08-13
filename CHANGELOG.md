@@ -9,6 +9,43 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > newest, into 6 logical phases — not real releases. Short hashes are
 > included per entry so you can trace each line back to `git show <hash>`.
 
+## [0.9.0] - 2026-08-13 — AWS emulator swap: motoserver/moto → real floci.io floci
+
+### Changed
+- `podman-compose.yml`: image `docker.io/motoserver/moto` →
+  `docker.io/floci/floci`. Removed moto-specific config that doesn't apply
+  to the real binary (command override, `MOTO_ACCOUNT_ID`, the
+  `/tmp/moto` volume mount) — each verified unnecessary/incorrect via
+  direct isolated testing rather than guessed (`10fcca2`)
+- `deploy.sh`/`drift-check.sh`/`agent-loop.sh`/`grow-stack.sh`: removed
+  4-to-20 `TF_<SERVICE>_ENDPOINT` env vars each — `providers.tf`'s
+  `endpoints{}` block only ever reads `TF_VAR_localstack_endpoint`. Dead
+  code discovered this session, unrelated to which emulator backs it.
+  `verify.sh` untouched — it never had them, it doesn't invoke Terraform
+  (`10fcca2`)
+- `growth-queue.yaml`: inline annotations updated with real full-apply
+  findings against real floci (not moto): `aws_eks_cluster` confirmed
+  `FAILED` state; `aws_elasticache_subnet_group` a **new** confirmed
+  failure (`UnsupportedOperation`), also blocking the dependent
+  `aws_elasticache_replication_group`; `aws_db_instance`/`aws_msk_cluster`/
+  `aws_opensearch_domain` marked inconclusive (8.5+ min unresolved,
+  manually killed before Terraform's real timeout) — practically
+  incompatible with the 10-minute schedule cadence regardless of
+  eventual pass/fail. All five kept per the existing
+  visible-stall-over-silent-skip design (`10fcca2`)
+
+### Notes
+- Plan-level compatibility (62/62 resources, zero provider-config
+  changes) and the matching dummy account ID (`000000000000`) were
+  verified via isolated testing before this swap, alongside a check that
+  `AVD-AWS-0057` still fires correctly under the exact pinned tfsec 1.28.5
+  binary independent of a `deprecated: true` flag in current upstream
+  `trivy-checks` metadata.
+- Two items intentionally left undiagnosed, not speculated on: a
+  `collecting instance settings: empty result` error (possibly
+  EC2-related) and a 65-vs-62 resource count in terraform state after the
+  aborted apply test. Both are open follow-up items.
+
 ## [0.8.0] - 2026-08-13 — Growth loop: autonomous incremental stack building
 
 ### Added
