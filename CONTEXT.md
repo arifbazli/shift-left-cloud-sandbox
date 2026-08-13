@@ -9,10 +9,12 @@ quick start; this is *why the sandbox is built the way it is*. See also
 
 - [Architecture](#architecture)
 - [Why floci specifically](#why-floci-specifically)
+- [Why floci-az](#why-floci-az)
 - [What "deliberate misconfig" means](#what-deliberate-misconfig-means)
 - [Offline-first design](#offline-first-design)
 - [Backend never exposed — the data-plane table](#backend-never-exposed--the-data-plane-table)
 - [Known floci limitation](#known-floci-limitation)
+- [Known floci-az limitations](#known-floci-az-limitations)
 - [Growth loop](#growth-loop)
 - [Security decisions in code](#security-decisions-in-code)
 - [Research log](#research-log)
@@ -229,6 +231,74 @@ leap of faith:
   hard-checks Podman's version the way `scan.sh` hard-checks tfsec's, so
   this skew is a known, accepted gap rather than a gate failure.
 
+## Why floci-az
+
+`floci-az` runs the real [floci.io](https://floci.io) Azure emulator —
+`docker.io/floci/floci-az` (MIT, no auth) — on its own port (`:4577`),
+alongside `floci-core` (AWS, `:4566`). Built and verified
+directly in-session (2026-08-13), the same discipline as the AWS emulator
+swap above:
+
+- **A completely different provider-redirection mechanism than AWS.** The
+  `aws` provider has a `dynamic "endpoints"` block — one HTTP override per
+  service. `azurerm` has none: the whole provider is redirected via
+  `environment = "stack"` + `metadata_host`, the same mechanism real Azure
+  Stack / sovereign-cloud deployments use — Terraform calls
+  `GET https://<metadata_host>/metadata/endpoints` to discover where every
+  other endpoint (resource manager, login, graph, ...) actually lives.
+  Confirmed via a real `terraform init` + `terraform plan` against a live
+  `floci-az` container with this exact provider shape (`terraform/azure/
+  providers.tf`).
+- **TLS is mandatory, not optional** — unlike AWS's plain-HTTP
+  `endpoints{}` block. The provider's metadata-discovery call is
+  HTTPS-only with no HTTP fallback, and azurerm has no
+  insecure-skip-verify-style argument for the ARM endpoint at all
+  (confirmed by checking directly — unlike, say, the kubernetes/helm
+  providers). `floci-az` must run with `FLOCI_AZ_TLS_ENABLED=true`; its
+  self-signed cert is fetched from `/_floci/tls-cert` and trusted via
+  `SSL_CERT_FILE` for the calling process only — never a system
+  trust-store change.
+- **A separate Terraform root, not a shared one with AWS.** `terraform/`'s
+  existing full `terraform apply` (`deploy.sh`) would otherwise try to
+  plan/apply Azure resources on every AWS-only run, requiring `floci-az`
+  to be running with TLS enabled just to do AWS work. `terraform/azure/`
+  has its own state (`terraform.tfstate`, gitignored, a separate file from
+  AWS's), its own provider block, its own apply lifecycle.
+- **The netavark/iptables discovery.** `floci-az`'s Functions/AKS/Redis/ACR
+  services spawn real sidecar containers on demand over a mounted Docker
+  socket, using Podman's default bridge network. On this WSL2 host,
+  rootless Podman's netavark backend can't apply the nftables rules that
+  needs (missing kernel capability — the same root cause already forcing
+  `network_mode: host` on `floci-core`/`floci-az` themselves). Confirmed
+  directly: `floci-az`'s sidecar launcher fails outright with `nft did not
+  return successfully while applying ruleset`. `NETAVARK_FW=iptables`
+  fixes it — but only if applied to the **host-side** `podman.service`
+  process's environment. A container's own `environment:` block in
+  `podman-compose.yml` cannot do this by construction: container envs and
+  the host-side socket-serving process are separate process trees.
+  `scripts/start-floci-az.sh` applies the real fix
+  (`systemctl --user set-environment`, reversible, doesn't survive a
+  reboot); `podman-compose.yml`'s own `NETAVARK_FW=iptables` line is
+  documentation of intent only, not enforcement — see its `SEC_INTENT`
+  comment.
+- **A second, independent gap the netavark fix does NOT cover.** Rootless
+  Podman doesn't delegate the `cpuset` cgroup v2 controller to containers
+  spawned via `floci-az`'s Docker-API call — confirmed to crash AKS's
+  backing k3s container within ~1 second, regardless of the netavark fix
+  being correctly applied. See
+  [Known floci-az limitations](#known-floci-az-limitations).
+- **Apply-level compatibility is mixed, same as AWS.** Planning cleanly
+  doesn't mean every service applies — see
+  [Known floci-az limitations](#known-floci-az-limitations) for exactly
+  which resources are confirmed stuck, confirmed failed, or genuinely
+  inconclusive.
+- **Not yet exercised in real CI beyond container startup.** A real
+  `ubuntu-latest` CI run confirmed `floci-az`'s own container starts and
+  stays up cleanly there — but nothing in `pipeline.yml` calls
+  `grow-stack-azure.sh`, so the Docker-socket sidecar-spawning path the
+  netavark fix exists for has only been verified locally, under WSL2. See
+  the Research log below.
+
 ## What "deliberate misconfig" means
 
 One resource, `aws_iam_policy.fixtures_admin` in
@@ -252,6 +322,19 @@ guaranteed to catch. It exists to give the pipeline something real to gate on.
   and blocks `deploy.sh`. With it `off`, the gate passes and the rest of the
   demo (`deploy.sh` → `verify.sh` → `drift-check.sh` → `agent-loop.sh`) runs
   end to end.
+- **Azure has an equivalent fixture, with inverted semantics.**
+  `azurerm_key_vault.main` in `terraform/modules/azure-security/main.tf` is
+  missing a `network_acls` block on purpose — `AVD-AZU-0013` (CRITICAL).
+  Toggled the same way, via `scripts/toggle-fixture-azure.sh
+  {on|off|status}` and a 3-file cp-and-validate swap — but INVERTED: this
+  fixture is an omission inside an existing resource, not a separate
+  resource to comment out, so fixture `on` means `network_acls` is
+  *absent*, the opposite of AWS's `on` meaning the extra resource is
+  *present*. Confirmed directly against the pinned tfsec 1.28.5 binary.
+  `scripts/scan.sh` gates the AWS pipeline on the AWS fixture only — the
+  Azure fixture is scanned with the same rigor but never blocks
+  `deploy.sh` (see [Growth loop](#growth-loop) and `scan.sh`'s own header
+  for the decoupling).
 
 ## Offline-first design
 
@@ -347,6 +430,98 @@ agent.
 > Growth visibly stalling at any of the five resources above is expected,
 > not a bug in the script.
 
+## Known floci-az limitations
+
+`floci-az` runs the real floci.io Azure emulator on `:4577` — not a stub of
+something else, same as `floci-core` for AWS (see [Why floci-az](#why-floci-az)).
+Its documented service coverage (`docs/services/*.md`, 23 services) is
+real, but apply-level compatibility is mixed, confirmed the same way AWS's
+was: by testing directly against the real binary, not assumed from docs.
+
+**Scope gap, not a confirmed incompatibility:** Phase 2 built 4 of AWS's 7
+modules — `azure-network`/`azure-storage`/`azure-security`/`azure-compute`,
+mirroring AWS's `network`/`storage`/`security`/`compute`. AWS's
+`messaging`/`data`/`api` modules (SQS/SNS/EventBridge/Step Functions,
+RDS/ElastiCache/MSK/OpenSearch, API Gateway) have no Azure sibling built at
+all yet — not evaluated for `floci-az` support one way or the other, just
+out of scope for this phase.
+
+**Confirmed absent** (tested directly against `floci-az`, not inferred
+from docs):
+- No RBAC/role-assignment equivalent anywhere in `floci-az`'s documented
+  service list — AWS's `aws_iam_role.app` + inline policy +
+  `aws_iam_instance_profile` (the mechanism that grants compute
+  permissions) has no counterpart.
+- No Key Vault Keys (KMS equivalent) — a key-create call correctly routes
+  to `floci-az`'s own `KeyVaultHandler`, then returns a real 404 from that
+  handler itself. Not an auth/routing failure — a genuine absence.
+- No Key Vault Certificates (ACM equivalent) — same test, same 404 shape.
+- No NSG Flow Logs / Network Watcher equivalent — AWS's `azure-network`
+  sibling module provisions `aws_flow_log.main`; `floci-az`'s network
+  service docs explicitly enumerate their full scope (VNet, subnets, NIC,
+  public IP, NSG, load balancers, application gateways, private DNS
+  zones, private endpoints, private link services) and flow logs are not
+  among them.
+- No ECS Fargate / Container Apps equivalent anywhere in `floci-az`'s 23
+  documented services.
+
+> [!TIP]
+> Real `floci-az` apply-test findings (2026-08-13, live tests against the
+> real binary):
+> - `azurerm_storage_container.artifacts`, `azurerm_storage_table.main`,
+>   `azurerm_key_vault_secret.app_config` — **confirmed stuck**. All three
+>   hang indefinitely on apply with ZERO corresponding request ever
+>   appearing in `floci-az`'s own logs — the hang is client-side, before
+>   any request is sent. Root cause, confirmed directly: `floci-az`'s ARM
+>   response for the parent resource (storage account / Key Vault)
+>   returns real-Azure-shaped data-plane hostnames
+>   (`*.blob.core.windows.net`, `*.table.core.windows.net`,
+>   `*.vault.azure.net`) instead of a self-referential `floci-az` URL. The
+>   azurerm provider targets these directly for data-plane calls, and
+>   they don't resolve (confirmed via a direct DNS lookup — NXDOMAIN). No
+>   per-resource endpoint override exists on the real azurerm provider for
+>   this — a known limitation independent of `floci-az`, also hit against
+>   Azurite.
+> - `azurerm_service_plan.functions` — **inconclusive**, not confirmed
+>   failed: exactly one PUT + one GET reached `floci-az`'s generic
+>   `ArmHandler` fallback (`Microsoft.Web` isn't one of `floci-az`'s
+>   dedicated ARM provider namespaces), then total silence for 10+ minutes
+>   with no error and no completion. Root cause not fully isolated — same
+>   treatment as AWS's MSK/RDS/OpenSearch findings above. Because
+>   `azurerm_linux_function_app.main` depends on this plan, it never even
+>   starts applying while this is stuck.
+> - `azurerm_kubernetes_cluster.main` — **confirmed failure**, independent
+>   root cause from the two findings above: the netavark/iptables fix
+>   (see [Why floci-az](#why-floci-az)) works correctly here — the k3s
+>   container is created and starts, no nftables error. k3s itself then
+>   crashes fatally within ~1 second: `Error: failed to find cpuset
+>   cgroup (v2)` — rootless Podman doesn't delegate the cpuset cgroup v2
+>   controller to containers spawned via `floci-az`'s Docker-API call.
+>   `floci-az`'s own `provisioningState` never leaves `"Creating"` (it
+>   doesn't detect the backing container died), so this stalls forever
+>   from the ARM API's perspective too, not just slowly.
+> - `azurerm_resource_group.main` — a real, fixed **incremental-apply
+>   bug**, not a stall: `floci-az`'s ARM create response doesn't persist
+>   the tags sent on create, so any later `-target` apply of a dependent
+>   resource sees the missing tags as drift and tries to reconcile via an
+>   update call, which `floci-az`'s `ArmHandler` rejects outright (`405
+>   Method Not Allowed`) — `growth-queue-azure.yaml`'s one-target-at-a-time
+>   pattern got stuck forever on the second queued item. Fixed with
+>   `lifecycle { ignore_changes = [tags] }` on the resource group, then
+>   re-tested against the other tagged resources in the same queue
+>   (`azurerm_virtual_network.main`, `azurerm_network_security_group.app`)
+>   to confirm the fix's scope was correctly narrow, not a lucky
+>   single-symptom patch — it did not recur.
+>
+> `scripts/grow-stack-azure.sh` surfaces all of this the same way
+> `grow-stack.sh` does for AWS — a failed, timed-out, or perpetually-stuck
+> `-target` apply is retried at the same queue position forever, never
+> silently skipped. See [Growth loop](#growth-loop) for why this queue
+> also needed a per-attempt wall-clock timeout that AWS's never did.
+
+If you see any of the above, it's expected — not a bug in the module or
+the growth script.
+
 ## Growth loop
 
 A separate, narrower automation from the demo pipeline above:
@@ -379,6 +554,34 @@ exactly one new resource per scheduled CI run, using
   [Known floci limitation](#known-floci-limitation) above for which queued
   resources are confirmed to fail, and which are merely too slow for the
   10-minute cadence, against the real floci emulator.
+- **Azure gets its own growth loop, not a parametrized shared one.**
+  `scripts/grow-stack-azure.sh` + `growth-queue-azure.yaml` mirror the AWS
+  pattern exactly — separate sibling script, separate queue, its own
+  precondition check (reads `tfsec-azure-last.json`, not AWS's gate file)
+  — deliberately not merged into one script with a cloud parameter, same
+  reasoning as every other AWS/Azure separation in this repo. Intended
+  cache key `growth-state-azure-${{ github.run_id }}` (same
+  prefix-`restore-keys` pattern as AWS's), **not yet wired into
+  `pipeline.yml`** — Azure's growth loop is proven to run correctly
+  locally, but CI never invokes it. Genuinely open, not an oversight
+  papered over — see the Research log below.
+- **One deliberate deviation from AWS's pattern: a wall-clock apply
+  timeout.** AWS's growth loop assumes a stuck target eventually returns
+  (fails fast, or is slow but bounded by the provider's own internal
+  timeout). Confirmed false for Azure: several targets (storage
+  container/table, Key Vault secret, Service Plan) hang with no error and
+  no observed natural timeout within 10+ minutes of direct testing — a
+  dead client-side stall with zero incremental server-side activity, not
+  just slowness. `grow-stack-azure.sh` wraps its apply call in
+  `timeout "$APPLY_TIMEOUT_SECONDS"`, default 240s — justified against the
+  one legitimate slow-but-working case on the same queue
+  (`azurerm_storage_account.main`/`.functions`, both measured at 2m54s in
+  a real apply — many sequential provider-side calls populating ~80
+  computed attributes, not a bug), not picked arbitrarily. The
+  confirmed-stuck targets would time out identically at 30s or 300s —
+  there's no evidence a longer wait ever helps them; a smarter
+  per-resource timeout table would let those fail fast without risking
+  the slow-but-working ones, not built, out of scope for this phase.
 
 ## Security decisions in code
 
@@ -407,6 +610,10 @@ in someone's head. This table collects them in one place.
 | `wrangler.toml` | No `[vars]`, no KV, no D1, no Workers — kept empty deliberately so the "static assets only" claim is enforced by the config, not just documentation. |
 | `scripts/grow-stack.sh` | Applies exactly one `-target` per invocation, never advances past a failed target, never destroys, never edits `*.tf` — same "make the dangerous action impossible" philosophy as `agent-loop.sh`, independently implemented rather than shared. |
 | `growth-queue.yaml` | Ordering is load-bearing, not cosmetic — an address's dependencies must already appear earlier in the list. Reordering or removing an already-applied address after the fact is undefined behavior, not just a style issue. |
+| `scripts/start-floci-az.sh` | Applies the netavark/iptables fix to the HOST-side `podman.service` environment (`systemctl --user set-environment`) — a container's own `environment:` block can't do this by construction. Reversible by design: a systemd user-manager variable, not a `containers.conf` edit; doesn't survive a reboot. |
+| `scripts/toggle-fixture-azure.sh` | The *only* sanctioned way to change the Azure fixture's state — same reasoning as `toggle-fixture.sh`, with an inverted presence-check (fixture `on` means `network_acls` is absent). `grow-stack-azure.sh` and `agent-loop.sh` are both forbidden from touching it. |
+| `scripts/grow-stack-azure.sh` | Same "make the dangerous action impossible" philosophy as `grow-stack.sh` — one `-target` per invocation, never destroys, never edits `*.tf`. Deliberately wraps its apply in a wall-clock `timeout` (default 240s) — a deviation from `grow-stack.sh` justified by confirmed unbounded stalls on this cloud's slowest targets, not present in AWS's queue. |
+| `scripts/scan.sh` | Scans `terraform/azure/` alongside `terraform/`, but the Azure result is intentionally decoupled from this script's own exit code — an Azure-only finding (including its own fixture) must never block the AWS-gated `deploy.sh`. `grow-stack-azure.sh` is the one place that reads the Azure gate file. |
 
 ## Research log
 

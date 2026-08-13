@@ -9,6 +9,88 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > newest, into 6 logical phases — not real releases. Short hashes are
 > included per entry so you can trace each line back to `git show <hash>`.
 
+## [0.10.0] - 2026-08-13 — Phase 2: Azure via floci-az
+
+### Added
+- `podman-compose.yml`: `floci-az` service (`docker.io/floci/floci-az:latest`,
+  `:4577`, `network_mode: host`) alongside `floci-core`; `scripts/
+  start-floci-az.sh` applies the netavark/iptables fix to the HOST-side
+  `podman.service` process's environment (`systemctl --user
+  set-environment`) — required for floci-az's Functions/AKS/Redis/ACR
+  sidecar-spawning services, and not achievable via the container's own
+  `environment:` block (separate process trees; that line in
+  `podman-compose.yml` documents intent only) (`68d15ab`)
+- `terraform/azure/`: a separate root (own state, own provider, own apply
+  lifecycle — deliberately not sharing AWS's root, so AWS-only work never
+  needs floci-az/TLS running) plus 4 modules mirroring AWS's `network`/
+  `storage`/`security`/`compute` as closely as floci-az's confirmed
+  service coverage allows: `azure-network` (RG/VNet/subnet/NSG+rules, all
+  10 resources confirmed working), `azure-storage` (storage account
+  confirmed working; container/table confirmed STUCK on apply — a
+  client-side DNS-hang against real-Azure-shaped hostnames floci-az
+  returns), `azure-security` (Key Vault + secret; RBAC/Keys/Certificates
+  confirmed absent, secret apply confirmed STUCK — same DNS-hang root
+  cause), `azure-compute` (VM confirmed working — mocked, no real OS;
+  Function App's Service Plan inconclusive; AKS confirmed FAILED — cpuset
+  cgroup v2 not delegated to floci-az's spawned k3s container). The
+  `azurerm_resource_group.main` tags/405 incremental-apply bug (floci-az
+  doesn't persist create-time tags, so a later `-target` apply sees drift
+  and floci-az's `ArmHandler` rejects the reconciling update with `405`)
+  found and fixed via `lifecycle { ignore_changes = [tags] }`, then
+  re-verified against the other tagged resources in the same growth queue
+  to confirm the fix didn't need to be broader (`9796a01`)
+- `AVD-AZU-0013` fixture (`azurerm_key_vault.main` missing `network_acls`,
+  CRITICAL) — Azure sibling of the AWS `AVD-AWS-0057` fixture, toggled via
+  `scripts/toggle-fixture-azure.sh {on|off|status}` and the same 3-file
+  cp-and-validate mechanism, INVERTED (fixture `on` means `network_acls`
+  is absent, not present). Verified directly against the pinned tfsec
+  1.28.5 binary (`9796a01`)
+- `growth-queue-azure.yaml` + `scripts/grow-stack-azure.sh`: Azure sibling
+  of the AWS growth loop — separate queue, separate script, own
+  precondition (reads `tfsec-azure-last.json`). One deliberate deviation
+  from AWS's pattern: an explicit `APPLY_TIMEOUT_SECONDS` wall-clock wrap
+  (default 240s) around each apply, justified against the one confirmed
+  slow-but-working case on this queue (`azurerm_storage_account.main`/
+  `.functions`, ~2m54s each in a real apply) — the confirmed-stuck targets
+  show zero evidence a longer timeout would ever help them (`4374993`)
+- `scripts/scan.sh`: now scans `terraform/azure/` alongside `terraform/`,
+  writing its own gate files (`tfsec-azure-last.json`/`-history.json`) —
+  but intentionally decoupled from this script's own exit code, so an
+  Azure-only finding (including its own fixture) never blocks the
+  AWS-gated `deploy.sh`. Removed `--force-all-dirs` from the tfsec
+  invocation after confirming it leaked Azure's findings into the AWS gate
+  (Azure's root is physically nested inside `terraform/`); confirmed
+  module-graph resolution alone still finds every AWS module's own
+  findings correctly without it. `grow-stack-azure.sh`'s precondition
+  simplified to read this new gate file instead of invoking tfsec itself
+  (`ef40997`)
+- Dashboard: an AWS/Azure cloud tab switcher (AWS default, state persisted
+  via `localStorage`), reusing the existing card components. Only scan +
+  growth are real, wired cards on the Azure tab — verify/drift/agent are
+  explicit "no Azure equivalent yet" placeholder cards, not faked empty
+  states (`45d5f5b`)
+- `CONTEXT.md`: Research-log entry noting that a real `ubuntu-latest` CI
+  run confirmed floci-az's own container starts and stays up cleanly
+  there, but — since `pipeline.yml` doesn't call `grow-stack-azure.sh` —
+  never exercised floci-az's Docker-socket sidecar-spawning path, the
+  actual reason the netavark/iptables fix exists. That path remains
+  verified only locally, under WSL2 (`c0b9797`)
+
+### Notes
+- Phase 2 mirrors 4 of AWS's 7 modules (network/storage/security/compute).
+  AWS's messaging/data/api modules have no Azure sibling built at all yet
+  — not evaluated for floci-az support one way or the other, just out of
+  scope for this phase.
+- `pipeline.yml` was not modified — no Azure-specific CI step exists yet
+  (no TLS enable, no `grow-stack-azure.sh` invocation, no Azure growth
+  cache key). Confirmed via a real dispatched CI run against this branch
+  before merge: the tfsec-gate decoupling holds under real CI (Azure gate
+  FAIL, job conclusion still success), and floci-az's container itself
+  starts cleanly on `ubuntu-latest` — but the sidecar-spawning path is
+  untested there, per the point above.
+- Merged via PR #12, a real merge commit (`a3fff15`), same as PR #11 — not
+  a bypass.
+
 ## [0.9.0] - 2026-08-13 — AWS emulator swap: motoserver/moto → real floci.io floci
 
 ### Changed

@@ -14,7 +14,7 @@
 
 **Docs:** [CONTEXT.md](CONTEXT.md) (architecture, why floci, security rationale) · [SKILL.md](SKILL.md) (AI agent operating guide) · [CHANGELOG.md](CHANGELOG.md)
 
-floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. A static Cloudflare Pages dashboard shows the whole loop live; the only thing that ever leaves this machine is that dashboard's JSON.
+floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. **floci-az**, floci.io's Azure emulator, gets the same tfsec-gated treatment on a separate track. A static Cloudflare Pages dashboard shows both loops live, behind an AWS/Azure tab switcher; the only thing that ever leaves this machine is that dashboard's JSON.
 
 ## TL;DR
 
@@ -35,6 +35,8 @@ For architecture diagrams, why floci-core runs the real floci.io emulator instea
 Only one Terraform variable (`TF_VAR_localstack_endpoint`) actually wires the AWS provider to floci — a parallel set of per-service `TF_S3_ENDPOINT`-style env vars in `deploy.sh`/`drift-check.sh`/`agent-loop.sh`/`grow-stack.sh` was dead code and has been removed (`verify.sh` never had them — it calls floci's HTTP API directly, not Terraform).
 
 The stack also grows itself: a scheduled CI job applies one new resource from `growth-queue.yaml` every 10 minutes via `terraform apply -target`, entirely on GitHub-hosted runners, no human in the loop — see [CONTEXT.md § Growth loop](CONTEXT.md#growth-loop).
+
+Azure gets the same shift-left treatment on a separate track: **floci-az** (`:4577`) behind its own `terraform/azure/` root — its own state, own tfsec gate, own growth loop — deliberately decoupled so an Azure-only finding never blocks an AWS-only `deploy.sh`. The dashboard's Azure tab shows what's actually real: scan + growth are wired; verify/drift/agent have no Azure sibling yet, and say so rather than faking an empty state. See [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) for the confirmed gaps and the netavark/iptables fix this needed locally.
 
 ## Demo walkthrough
 
@@ -67,6 +69,7 @@ Full catalog (14 `SEC_INTENT` decisions, one per file): [CONTEXT.md § Security 
 | `terraform/modules/messaging/` | SQS + DLQ, SNS (CMK), EventBridge, Step Functions |
 | `terraform/modules/data/` | RDS, ElastiCache Redis, MSK Kafka (CMK), OpenSearch |
 | `terraform/modules/api/` | API Gateway REGIONAL, CloudWatch logs + alarm |
+| `terraform/azure/` | Separate Azure root — 4 modules (network/storage/security/compute) via floci-az; own state, own gate. See [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) |
 | `.github/workflows/pipeline.yml` | Main CI: scan → deploy-local → publish-dashboard → pr-comment |
 | `.github/workflows/auto-fix.yml` | `scripts/ai/triage.py` remediation, triggered by the `auto-fix` label |
 | `.github/workflows/deploy-dashboard.yml` | Standalone dashboard publish |
@@ -81,7 +84,8 @@ Full catalog (14 `SEC_INTENT` decisions, one per file): [CONTEXT.md § Security 
 | `scripts/sync-dashboard.sh` | The only script allowed to auto-push — credential-gated |
 | `scripts/data-server.py` | Local SSE server: 1s live dashboard updates, run-buttons |
 | `scripts/setup-runner.sh` | Bootstrap the `floci-self-hosted` GitHub Actions runner |
-| `dashboard/public/` | Static HTML/JS/CSS + JSON — no backend, no KV, no D1 |
+| `scripts/{start-floci-az,toggle-fixture-azure,grow-stack-azure}.sh` | Azure siblings of the scripts above — see [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) |
+| `dashboard/public/` | Static HTML/JS/CSS + JSON — no backend, no KV, no D1. AWS tab (default) + Azure tab (cloud switcher) |
 
 ## CI secrets
 
