@@ -1,105 +1,49 @@
 # floci-stack — Shift-Left Cloud Security Sandbox
 
-> Local-only R&D sandbox for shift-left cloud security on Debian WSL + rootless Podman.
+floci-stack is a local, shift-left security sandbox powered entirely by real [floci.io](https://floci.io) emulators — **floci-core** for AWS and **floci-az** for Azure, running as equal siblings under one sandbox, not "AWS with Azure bolted on." Every `terraform apply` is gated behind a pinned tfsec scan, and each cloud carries one deliberate misconfiguration fixture so the gate has something real to catch. Nothing here ever touches a real cloud account.
 
-<div align="center">
+**Live dashboard:** https://shift-left-cloud-sandbox.pages.dev
 
-[![live dashboard](https://img.shields.io/badge/dashboard-live-00d4aa?style=for-the-badge&logo=cloudflare&logoColor=white)](https://shift-left-cloud-sandbox.pages.dev)
-[![tfsec pinned](https://img.shields.io/badge/tfsec-pinned_1.28.5-f6c54b?style=for-the-badge&logo=terraform&logoColor=white)](SKILL.md#tool-pins)
-[![offline only](https://img.shields.io/badge/backend-offline_only-6c7afc?style=for-the-badge&logo=podman&logoColor=white)](CONTEXT.md#offline-first-design)
-[![no kv/d1](https://img.shields.io/badge/cloudflare-pages_static_only-ff8c42?style=for-the-badge&logo=cloudflarepages&logoColor=white)](CONTEXT.md#backend-never-exposed--the-data-plane-table)
-[![MIT-style](https://img.shields.io/badge/license-local_R%26D-5b6376?style=for-the-badge)](#license)
-
-</div>
-
-**Docs:** [CONTEXT.md](CONTEXT.md) (architecture, why floci, security rationale) · [SKILL.md](SKILL.md) (AI agent operating guide) · [CHANGELOG.md](CHANGELOG.md)
-
-floci-stack gates every `terraform apply` behind a pinned tfsec scan, applies only once the gate passes, against **floci** — the real [floci.io](https://floci.io) AWS emulator, not real AWS — then lets a deliberately narrow agent reconcile only safe drift. **floci-az**, floci.io's Azure emulator, gets the same tfsec gate and its own incremental growth loop on a separate, narrower track — no verify/drift/agent layer yet, that part stays AWS-only for now. A static Cloudflare Pages dashboard shows both clouds live, behind an AWS/Azure tab switcher; the only thing that ever leaves this machine is that dashboard's JSON.
-
-## TL;DR
+## Quick start
 
 ```bash
-podman-compose -f podman-compose.yml up -d   # start floci-core on :4566
-./scripts/toggle-fixture.sh off              # disable the deliberate misconfig fixture
-./scripts/scan.sh && ./scripts/deploy.sh     # tfsec gate → terraform apply (7 modules)
-./scripts/verify.sh && ./scripts/drift-check.sh && ./scripts/agent-loop.sh &
-wrangler pages dev dashboard/public --port 8788   # open http://localhost:8788
+git clone https://github.com/arifbazli/shift-left-cloud-sandbox.git
+cd shift-left-cloud-sandbox
+./scripts/start-floci-az.sh   # starts floci-core (:4566) + floci-az (:4577) together
+./scripts/scan.sh             # tfsec gate against terraform/ and terraform/azure/
 ```
 
-**Prerequisites (local dev):** `podman` 5.x · `terraform` 1.9.8 · `tfsec` **1.28.5** (pinned — [why](SKILL.md#tool-pins)) · `jq` 1.7.1 · `podman-compose` 1.6.0 · `python3` 3.10+ · WSL2 (Debian) — see [SKILL.md](SKILL.md#before-touching-this-repo) before running anything. CI's `scan`/`deploy-local` jobs provision their own tfsec/Terraform/Podman on `ubuntu-latest` and don't need any of this locally-documented setup.
-
-**Live dashboard:** **https://shift-left-cloud-sandbox.pages.dev**
-
-For architecture diagrams, why floci-core runs the real floci.io emulator instead of real AWS, what the deliberate misconfig demonstrates, and the full security-decision catalog, see **[CONTEXT.md](CONTEXT.md)**.
-
-Only one Terraform variable (`TF_VAR_localstack_endpoint`) actually wires the AWS provider to floci — a parallel set of per-service `TF_S3_ENDPOINT`-style env vars in `deploy.sh`/`drift-check.sh`/`agent-loop.sh`/`grow-stack.sh` was dead code and has been removed (`verify.sh` never had them — it calls floci's HTTP API directly, not Terraform).
-
-The stack also grows itself: a scheduled CI job applies one new resource from `growth-queue.yaml` every 10 minutes via `terraform apply -target`, entirely on GitHub-hosted runners, no human in the loop — see [CONTEXT.md § Growth loop](CONTEXT.md#growth-loop).
-
-Azure gets the same shift-left treatment on a separate track: **floci-az** (`:4577`) behind its own `terraform/azure/` root — its own state, own tfsec gate, own growth loop — deliberately decoupled so an Azure-only finding never blocks an AWS-only `deploy.sh`. The dashboard's Azure tab shows what's actually real: scan + growth are wired; verify/drift/agent have no Azure sibling yet, and say so rather than faking an empty state. See [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) for the confirmed gaps and the netavark/iptables fix this needed locally.
-
-## Demo walkthrough
-
-```bash
-./scripts/toggle-fixture.sh on  && ./scripts/scan.sh   # HIGH finding → gate FAIL → deploy blocked
-./scripts/toggle-fixture.sh off && ./scripts/scan.sh   # gate PASS → ./scripts/deploy.sh → ./scripts/verify.sh
-./scripts/drift-check.sh && ./scripts/agent-loop.sh    # safe drift + gate PASS → agent reconciles
-```
-
-## Security controls (top-level)
-
-| Control | Behaviour |
-|---|---|
-| tfsec gate | Blocks `deploy.sh`; freezes agent drift-reconciliation while any HIGH/CRITICAL is open |
-| Credential gate | `sync-dashboard.sh` refuses to push if it finds AWS keys, private keys, or non-floci ARNs |
-| CODEOWNERS | `modules/security/`, gate scripts, and `.github/` all require human review |
-| Agent allowlist | `agent-loop.sh` may only restart `floci-core` or apply safe drift — never edits `*.tf`, never destroys |
-
-Full catalog (23 `SEC_INTENT` decisions across 19 files): [CONTEXT.md § Security decisions in code](CONTEXT.md#security-decisions-in-code).
+**Prerequisites** (identical for both clouds): `podman` 5.x · `terraform` 1.9.8 · `tfsec` **1.28.5** (pinned — [why](SKILL.md#tool-pins)) · `jq` 1.7.1 · `podman-compose` 1.6.0 · `python3` 3.10+ · WSL2 (Debian). CI provisions its own toolchain fresh on `ubuntu-latest` and needs none of this locally-documented setup.
 
 ## Repo layout
 
 | Path | Purpose |
 |---|---|
-| `terraform/` | Root module — wires all 7 modules |
-| `terraform/modules/network/` | VPC, private subnet, SG, flow logs |
-| `terraform/modules/storage/` | S3 artifacts + DynamoDB |
-| `terraform/modules/security/` | IAM app role, KMS CMK, Secrets Manager, ACM + **fixture** |
-| `terraform/modules/compute/` | EC2 (IMDSv2), Lambda, ECS Fargate, EKS (CMK secrets) |
-| `terraform/modules/messaging/` | SQS + DLQ, SNS (CMK), EventBridge, Step Functions |
-| `terraform/modules/data/` | RDS, ElastiCache Redis, MSK Kafka (CMK), OpenSearch |
-| `terraform/modules/api/` | API Gateway REGIONAL, CloudWatch logs + alarm |
-| `terraform/azure/` | Separate Azure root — 4 modules (network/storage/security/compute) via floci-az; own state, own gate. See [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) |
-| `.github/workflows/pipeline.yml` | Main CI: scan → deploy-local → publish-dashboard → pr-comment |
-| `.github/workflows/auto-fix.yml` | `scripts/ai/triage.py` remediation, triggered by the `auto-fix` label |
-| `.github/workflows/deploy-dashboard.yml` | Standalone dashboard publish |
-| `.github/CODEOWNERS` | Gate scripts + fixture path require review — see [SKILL.md](SKILL.md) |
-| `scripts/scan.sh` | tfsec gate → dashboard JSON |
-| `scripts/toggle-fixture.sh` | Toggle the deliberate misconfig on/off |
-| `scripts/deploy.sh` | `terraform apply` against floci (hard guards + output capture) |
-| `scripts/verify.sh` | Confirms deployed resources exist, independent of terraform state |
-| `scripts/drift-check.sh` | `terraform plan -detailed-exitcode` → classified dashboard JSON |
-| `scripts/agent-loop.sh` | Bounded remediation loop (allowlist only — see [SKILL.md](SKILL.md)) |
-| `scripts/ai/triage.py` | Allowlisted MEDIUM/LOW auto-remediation for the `auto-fix` workflow |
-| `scripts/sync-dashboard.sh` | The only script allowed to auto-push — credential-gated |
-| `scripts/data-server.py` | Local SSE server: 1s live dashboard updates, run-buttons |
-| `scripts/setup-runner.sh` | Bootstrap the `floci-self-hosted` GitHub Actions runner |
-| `scripts/{start-floci-az,toggle-fixture-azure,grow-stack-azure}.sh` | Azure siblings of the scripts above — see [CONTEXT.md § Why floci-az](CONTEXT.md#why-floci-az) |
-| `dashboard/public/` | Static HTML/JS/CSS + JSON — no backend, no KV, no D1. AWS tab (default) + Azure tab (cloud switcher) |
+| `terraform/` | AWS root — 7 modules (network/storage/security/compute/messaging/data/api) |
+| `terraform/azure/` | Azure root — 4 modules (network/storage/security/compute), separate state and provider |
+| `scripts/` | All automation — see [SKILL.md](SKILL.md) for the full task-to-script map |
+| `dashboard/public/` | Static Cloudflare Pages dashboard — AWS/Azure tab switcher, JSON only |
+| `.github/workflows/` | CI pipeline — see [CI secrets](#ci-secrets) below |
+
+Full module-by-module breakdown and every non-obvious design decision: **[CONTEXT.md](CONTEXT.md)**.
+
+## What each cloud can do today
+
+| Cloud | scan | deploy | verify | drift | agent-loop | growth-loop |
+|---|---|---|---|---|---|---|
+| AWS | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Azure | ✓ | N/A | partial | partial | partial | partial |
+
+Azure's `partial`/`N/A` cells are confirmed *permanent* floci-az limitations (DNS routing, a systemd cgroup gap, a fallback-handler gap) — not something this repo's scripts can fix, and not uncertain the way AWS's slowest resources are. Full explanation: [CONTEXT.md § Known floci-az limitations](CONTEXT.md#known-floci-az-limitations).
 
 ## CI secrets
 
-`scan`/`deploy-local`/`publish-dashboard`/`pr-comment` all run on GitHub-hosted `ubuntu-latest` — no self-hosted runner needed for the main pipeline. `.github/workflows/auto-fix.yml` is the one exception still requiring a **self-hosted runner** (`floci-self-hosted`, on the Debian WSL machine — not migrated in this pass). Two repo secrets are needed regardless: `CLOUDFLARE_API_TOKEN` (Pages-scoped) and `CLOUDFLARE_ACCOUNT_ID`. Full setup and branch protection: [`.github/branch-protection.md`](.github/branch-protection.md).
+`scan`/`deploy-local`/`publish-dashboard`/`pr-comment` all run on GitHub-hosted `ubuntu-latest` — no self-hosted runner needed. `.github/workflows/auto-fix.yml` is the one exception, still requiring the `floci-self-hosted` runner. Two repo secrets are needed regardless: `CLOUDFLARE_API_TOKEN` (Pages-scoped) and `CLOUDFLARE_ACCOUNT_ID`. Full setup and branch protection: [`.github/branch-protection.md`](.github/branch-protection.md).
+
+## Docs
+
+[CONTEXT.md](CONTEXT.md) — architecture, why floci, every confirmed gap · [SKILL.md](SKILL.md) — AI agent operating guide · [CHANGELOG.md](CHANGELOG.md) — history
 
 ## License
 
 Local R&D sandbox. Use at will.
-
----
-
-<div align="center">
-<sub>
-<a href="https://github.com/arifbazli/shift-left-cloud-sandbox"><code>shift-left-cloud-sandbox</code></a> ·
-<a href="https://shift-left-cloud-sandbox.pages.dev">shift-left-cloud-sandbox.pages.dev</a>
-</sub>
-</div>
