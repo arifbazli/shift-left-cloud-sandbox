@@ -125,13 +125,15 @@ else
   echo '{}' >"$plan_json"
 fi
 
+# NOTE: plan_exit==2 means terraform proposed SOME change, which includes
+# ordinary pending_growth creates -- that is not "drift" in this script's
+# vocabulary (see the header comment). $result's drift/no_drift value is
+# therefore finalized below, once pending_growth has been separated out,
+# not directly from plan_exit the way AWS's drift-check.sh can afford to.
 result="no_drift"
 case "$plan_exit" in
   124) result="timed_out" ;;
-  0)   result="no_drift" ;;
   1)   result="error" ;;
-  2)   result="drift" ;;
-  *)   result="unexpected_exit_$plan_exit" ;;
 esac
 
 # ---- Classify: pending_growth vs real drift, safe/destructive/security ----
@@ -141,6 +143,23 @@ esac
 # matters if one of them ever shows a non-create action, which would be a
 # genuinely new and unexpected finding worth flagging as such.
 all_changes="$(jq --argjson existing "$existing_before_json" '
+  # SEC_INTENT: security-tagged is checked at TWO grains, not one. The AWS
+  # classifier only needs resource-TYPE matches (aws_iam_, aws_kms_, ...)
+  # because AWS models security controls as separate resources
+  # (aws_s3_bucket_public_access_block). Azure bakes several security
+  # controls as plain ATTRIBUTES directly on azurerm_storage_account
+  # (allow_nested_items_to_be_public, min_tls_version,
+  # https_traffic_only_enabled) -- a resource-type-only check would call a
+  # change to any of those safe and let agent-loop-azure.sh auto-apply it.
+  # Confirmed directly (2026-08-14): floci-az currently returns this
+  # storage account with all three at their INSECURE default, regardless
+  # of what was requested on create -- this specific diff happens to move
+  # toward the secure config, but the classifier must not rely on that;
+  # it flags the ATTRIBUTE, not the direction, same reasoning as
+  # agent-loop.sh refusing security-tagged drift regardless of why it
+  # looks that way.
+  (["allow_nested_items_to_be_public","min_tls_version","https_traffic_only_enabled",
+    "network_acls","public_network_access_enabled"]) as $security_attrs |
   if .resource_changes then
     [.resource_changes[] | select(.change.actions != ["no-op"]) | {
       address: .address,
@@ -152,7 +171,9 @@ all_changes="$(jq --argjson existing "$existing_before_json" '
       )),
       has_security_path: (
         (.address | test("azurerm_network_security_rule")) or
-        (.address | test("azurerm_key_vault"))
+        (.address | test("azurerm_key_vault")) or
+        (((.change.before // {}) | keys) + ((.change.after // {}) | keys) | unique
+          | any(. as $k | $security_attrs | any(. == $k)))
       )
     }]
   else [] end
@@ -164,6 +185,13 @@ real_drift="$(echo "$all_changes" | jq '[.[] | select(.was_in_state == true or .
 drift_count="$(echo "$real_drift" | jq 'length')"
 drift=false
 [[ "$drift_count" -gt 0 ]] && drift=true
+
+# Finalize $result now that pending_growth has been excluded -- only
+# override with "drift" if the plan hadn't already been classified
+# timed_out/error above.
+if [[ "$result" == "no_drift" ]]; then
+  [[ "$drift" == true ]] && result="drift"
+fi
 
 classification="$(echo "$real_drift" | jq -r '
   if length == 0 then "no_drift"

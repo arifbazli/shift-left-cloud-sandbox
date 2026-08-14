@@ -1,31 +1,9 @@
 {
-  "timestamp": "2026-08-14T03:14:18Z",
-  "result": "drift",
-  "drift_detected": true,
-  "classification": "destructive",
-  "changes": [
-    {
-      "address": "module.azure-network.azurerm_virtual_network.main",
-      "type": "azurerm_virtual_network",
-      "actions": [
-        "update"
-      ],
-      "was_in_state": true,
-      "known_issue": false,
-      "has_security_path": false
-    },
-    {
-      "address": "module.azure-storage.azurerm_storage_account.main",
-      "type": "azurerm_storage_account",
-      "actions": [
-        "delete",
-        "create"
-      ],
-      "was_in_state": true,
-      "known_issue": false,
-      "has_security_path": false
-    }
-  ],
+  "timestamp": "2026-08-14T03:59:40Z",
+  "result": "no_drift",
+  "drift_detected": false,
+  "classification": "no_drift",
+  "changes": [],
   "pending_growth": [
     {
       "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
@@ -45,7 +23,7 @@
       ],
       "was_in_state": false,
       "known_issue": true,
-      "has_security_path": false
+      "has_security_path": true
     },
     {
       "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
@@ -85,7 +63,7 @@
       ],
       "was_in_state": false,
       "known_issue": false,
-      "has_security_path": false
+      "has_security_path": true
     },
     {
       "address": "module.azure-compute.tls_private_key.app",

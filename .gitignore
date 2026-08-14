@@ -21,6 +21,8 @@ terraform/azure/*.tfstate
 terraform/azure/*.tfstate.backup
 terraform/azure/*.tfstate.d/
 terraform/azure/.terraform.tfstate.lock.info
+terraform/azure/state-snapshots/
+terraform/azure/.drift-azure.tfplan
 
 # tfsec output dir (config.yml IS committed; outputs are not)
 terraform/.tfsec/

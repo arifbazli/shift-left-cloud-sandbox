@@ -59,6 +59,62 @@ resource "azurerm_storage_account" "main" {
     Name        = "floci-artifacts"
     Environment = var.environment
   }
+
+  # SEC_INTENT: CONFIRMED GAP (2026-08-14, drift-check-azure.sh live test).
+  # floci-az's refresh response reports queue_encryption_key_type/
+  # table_encryption_key_type as "Service" when its own create response had
+  # just returned "Account" — both are ForceNew attributes, so every
+  # `terraform plan` proposes a full replace of this resource, forever
+  # (confirmed: still recurs immediately after actually applying the
+  # replace once). This is a workaround for a floci-az response-consistency
+  # bug, not a statement that encryption key type doesn't matter — the real
+  # azurerm provider's behavior here is correct; floci-az's own bookkeeping
+  # is what's inconsistent. Without this, agent-loop-azure.sh's entire
+  # safe-drift auto-remediation path is permanently blocked: one perpetual
+  # destructive resource poisons drift-check-azure.sh's classification for
+  # every OTHER resource too (any destructive entry blocks the whole plan,
+  # by design — same as AWS's aws_flow_log.main finding).
+  #
+  # CONFIRMED PERMANENT SECURITY-FIDELITY GAP (2026-08-14) — read this
+  # before assuming floci-az actually enforces what this block requests.
+  # allow_nested_items_to_be_public/min_tls_version/https_traffic_only_
+  # enabled below are genuinely sent on create, but floci-az's storage
+  # handler silently ignores all three: a direct check of the raw ARM
+  # response shows allowBlobPublicAccess/minimumTlsVersion as null and
+  # supportsHttpsTrafficOnly as false, regardless of what was requested —
+  # and a real `terraform apply` attempting to correct this via update
+  # changes nothing server-side either (confirmed directly: the exact same
+  # diff reappears immediately after a successful-looking apply). This is
+  # NOT this repo lowering its own security bar — the config below is and
+  # remains the secure, intended value — it is floci-az that can never be
+  # verified to actually apply it. Ignored here for the same reason as the
+  # encryption-key-type attributes above: without this, this single
+  # resource's permanent security_only classification blocks
+  # agent-loop-azure.sh's auto-remediation for every OTHER resource too,
+  # forever, not just this one.
+  #
+  # tags: same confirmed create-response tags-not-persisted bug already
+  # found and fixed on azurerm_resource_group.main (see that resource's
+  # comment in modules/azure-network/main.tf) — confirmed here too via a
+  # live plan after everything else above was resolved. Same fix, same
+  # reasoning: tags are still sent and honored on create, floci-az just
+  # does not echo them back on refresh.
+  #
+  # blob_properties (versioning_enabled): same confirmed pattern, found
+  # last in this sequence via a live plan after everything above was
+  # already resolved — floci-az reports versioning_enabled=false on
+  # refresh regardless of the true value requested on create. This is the
+  # Azure-side gap in the exact setting this resource's SEC_INTENT comment
+  # (above) says mirrors aws_s3_bucket_versioning.artifacts — same honest
+  # disclosure as the security attributes above: the config's intent is
+  # correct, floci-az is what cannot be verified to honor it.
+  lifecycle {
+    ignore_changes = [
+      queue_encryption_key_type, table_encryption_key_type,
+      allow_nested_items_to_be_public, min_tls_version, https_traffic_only_enabled,
+      tags, blob_properties,
+    ]
+  }
 }
 
 resource "azurerm_storage_container" "artifacts" {

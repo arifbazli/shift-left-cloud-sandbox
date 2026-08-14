@@ -2228,5 +2228,129 @@
         "line": 91
       }
     ]
+  },
+  {
+    "timestamp": "2026-08-14T03:52:36Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 4,
+      "low": 3,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0025",
+        "resource": "module.storage",
+        "description": "Table encryption explicitly uses the default KMS key.",
+        "line": 74
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0074",
+        "resource": "module.data",
+        "description": "Cluster does not ship logs to any service.",
+        "line": 114
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0177",
+        "resource": "aws_db_instance.main.deletion_protection",
+        "description": "Instance does not have Deletion Protection enabled",
+        "line": 68
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0176",
+        "resource": "aws_db_instance.main",
+        "description": "Instance does not have IAM Authentication enabled",
+        "line": 44
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0133",
+        "resource": "module.data",
+        "description": "Instance does not have performance insights enabled.",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "module.network",
+        "description": "Bucket does not have versioning enabled",
+        "line": 114
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0098",
+        "resource": "module.security",
+        "description": "Secret explicitly uses the default key.",
+        "line": 91
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-14T03:59:09Z",
+    "tfsec_exit": 1,
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "medium": 4,
+      "low": 3,
+      "ignored": 0
+    },
+    "findings": [
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0025",
+        "resource": "module.storage",
+        "description": "Table encryption explicitly uses the default KMS key.",
+        "line": 74
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0074",
+        "resource": "module.data",
+        "description": "Cluster does not ship logs to any service.",
+        "line": 114
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0177",
+        "resource": "aws_db_instance.main.deletion_protection",
+        "description": "Instance does not have Deletion Protection enabled",
+        "line": 68
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0176",
+        "resource": "aws_db_instance.main",
+        "description": "Instance does not have IAM Authentication enabled",
+        "line": 44
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0133",
+        "resource": "module.data",
+        "description": "Instance does not have performance insights enabled.",
+        "line": 44
+      },
+      {
+        "severity": "MEDIUM",
+        "rule_id": "AVD-AWS-0090",
+        "resource": "module.network",
+        "description": "Bucket does not have versioning enabled",
+        "line": 114
+      },
+      {
+        "severity": "LOW",
+        "rule_id": "AVD-AWS-0098",
+        "resource": "module.security",
+        "description": "Secret explicitly uses the default key.",
+        "line": 91
+      }
+    ]
   }
 ]

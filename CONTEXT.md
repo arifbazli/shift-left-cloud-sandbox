@@ -544,11 +544,40 @@ from docs):
 >   Confirmed directly: `floci-az`'s refresh response reports
 >   `queue_encryption_key_type`/`table_encryption_key_type` as `"Service"`
 >   when the create response had returned `"Account"` — a ForceNew
->   attribute, so terraform sees it as drift requiring replacement.
->   `drift-check-azure.sh`/`agent-loop-azure.sh` correctly refuse to
->   auto-reconcile this (destructive drift is outside the allowlist
->   regardless of *why* the plan looks destructive) — expected, not a bug
->   in either script.
+>   attribute, so terraform sees it as drift requiring replacement. Fixed
+>   with `lifecycle { ignore_changes = [...] }`, same mechanism as the
+>   resource group's tags fix below.
+> - `azurerm_storage_account.main` — a SEPARATE, **confirmed permanent
+>   security-fidelity gap** (2026-08-14, found immediately after fixing
+>   the replace above): `allow_nested_items_to_be_public`,
+>   `min_tls_version`, `https_traffic_only_enabled`, and
+>   `blob_properties.versioning_enabled` are all genuinely sent on create,
+>   but `floci-az` silently ignores every one of them — confirmed via a
+>   direct read of the raw ARM response (`allowBlobPublicAccess`/
+>   `minimumTlsVersion` are `null`, `supportsHttpsTrafficOnly` is `false`,
+>   regardless of what was requested), and confirmed AGAIN that a real
+>   `terraform apply` attempting to correct this via update changes
+>   nothing server-side either — the exact same diff reappears
+>   immediately. **This is not this repo's config lowering its own
+>   security bar** — the module's SEC_INTENT comments correctly describe
+>   the intended secure values, and those are what's requested; it is
+>   `floci-az` that can never be verified to actually apply or enforce
+>   them. Added to the same `ignore_changes` block as the replace fix
+>   above, for a distinct but related reason: left unfixed, this single
+>   resource's permanent `security_only` classification would have
+>   permanently blocked `agent-loop-azure.sh`'s auto-remediation for every
+>   OTHER resource too (any security-tagged entry blocks the whole plan,
+>   same all-or-nothing reduce logic as the destructive case) — confirmed
+>   by direct operator sign-off before applying this specific fix, given
+>   its security framing.
+> - `azurerm_kubernetes_cluster.main` import — a separate, smaller
+>   `terraform import` failure ("SKU information is missing") when
+>   attempting to bring the already-existing (stuck-`Creating`) AKS object
+>   into state for testing. Not investigated further — noted here rather
+>   than silently worked around; blocked one specific test path
+>   (importing AKS to get a genuine known_issue-in-real-drift scenario),
+>   which was substituted with a crafted `drift-last-azure.json` input
+>   instead (see the Research log below for exactly what that verified).
 >
 > `scripts/grow-stack-azure.sh` surfaces all of this the same way
 > `grow-stack.sh` does for AWS — a failed, timed-out, or perpetually-stuck
@@ -652,7 +681,8 @@ in someone's head. This table collects them in one place.
 | `scripts/grow-stack-azure.sh` | Same "make the dangerous action impossible" philosophy as `grow-stack.sh` — one `-target` per invocation, never destroys, never edits `*.tf`. Deliberately wraps its apply in a wall-clock `timeout` (default 240s) — a deviation from `grow-stack.sh` justified by confirmed unbounded stalls on this cloud's slowest targets, not present in AWS's queue. |
 | `scripts/scan.sh` | Scans `terraform/azure/` alongside `terraform/`, but the Azure result is intentionally decoupled from this script's own exit code — an Azure-only finding (including its own fixture) must never block the AWS-gated `deploy.sh`. `grow-stack-azure.sh` is the one place that reads the Azure gate file. |
 | `scripts/verify-azure.sh` | Deliberately FULL PARITY, not partial like AWS's `verify.sh` — attempts every address in `growth-queue-azure.yaml`, including the confirmed-broken ones, rather than only checking resources known to deploy cleanly. Every check runs under an outer `timeout` (`CHECK_TIMEOUT_SECONDS`), same lesson `grow-stack-azure.sh` already learned: a stuck external call must never be trusted to return on its own. A `known_issue` resource never affects the exit code, mirroring `scan.sh`'s AWS/Azure gate decoupling — a pre-documented, permanent gap must not block a script whose whole job is reporting reality. |
-| `scripts/drift-check-azure.sh` | Classifies a pending "+ create" on a not-yet-grown resource as `pending_growth`, never as drift — Azure's incremental-growth model means there is no single moment of "fully deployed" the way AWS's `deploy.sh` gives `drift-check.sh`. Wraps the plan in an outer `timeout` as a safety net even though a real test showed `terraform plan` completes fast (~13s) even with every confirmed-broken resource still in the config — plan doesn't need to contact a resource's own API the way apply does. |
+| `scripts/drift-check-azure.sh` | Classifies a pending "+ create" on a not-yet-grown resource as `pending_growth`, never as drift — Azure's incremental-growth model means there is no single moment of "fully deployed" the way AWS's `deploy.sh` gives `drift-check.sh`. Wraps the plan in an outer `timeout` as a safety net even though a real test showed `terraform plan` completes fast (~13s) even with every confirmed-broken resource still in the config — plan doesn't need to contact a resource's own API the way apply does. Also checks security-sensitivity at the ATTRIBUTE level (not just resource type) — Azure bakes controls like `min_tls_version` directly onto `azurerm_storage_account` rather than as a separate resource the way AWS's `aws_s3_bucket_public_access_block` does. |
+| `scripts/agent-loop-azure.sh` | Confirmed with the operator before building: `known_issue` resources are EXCLUDED from auto-remediation entirely, not merely deprioritized — they are confirmed *permanent* limitations (host DNS/port, systemd cgroup delegation, a floci-az fallback-handler gap), unlike AWS's EKS/MSK/OpenSearch uncertainty. Applies `-target=<addr>` per drifted resource rather than a bare `terraform apply` — a bare apply would accidentally perform `grow-stack-azure.sh`'s job (creating every not-yet-grown resource) with none of its timeout discipline. |
 
 ## Research log
 
@@ -812,6 +842,42 @@ raw curl), tested empirically before designing the timeout strategy:
   by the pre-existing storage-account replace (any destructive entry
   blocks the whole plan, matching `drift-check.sh`'s exact reduce logic).
   Reverted after confirming.
+
+**agent-loop-azure.sh build + real test (2026-08-14, `feat/azure-verify-drift-agent`):**
+Before building, confirmed with the operator that `known_issue` resources
+should be EXCLUDED from auto-remediation entirely (not merely
+deprioritized), given they are confirmed permanent limitations rather
+than AWS's EKS/MSK-style uncertainty. Building and testing this
+surfaced two real, useful findings beyond the design question itself:
+- Getting to a genuinely clean plan (needed to test the "safe drift auto-
+  applies" happy path at all) surfaced the `azurerm_storage_account.main`
+  security-fidelity gap documented above — confirmed, with the operator's
+  explicit sign-off given the security framing, before adding it to
+  `ignore_changes`. Without that fix, the happy path could never be
+  exercised organically: the storage account's permanent `security_only`
+  classification would have blocked auto-remediation for every other
+  resource on every single run, forever.
+- A real bug in `agent-loop-azure.sh` itself, caught by testing rather
+  than by inspection: the known_issue-exclusion log call passed a raw jq
+  ARRAY as `log_event`'s `extras` argument, which the helper always
+  merges into an object with `+` — `jq: object and array cannot be added`.
+  Fixed by wrapping it (`{known_issue_addresses: [...]}`). Exactly the
+  kind of bug "it parses" would have missed.
+- Full happy-path test, against real `floci-az`: PUT the VNet's tags
+  directly (bypassing terraform, same mechanism as the drift-check test
+  above) with the Azure fixture off and gate PASS. `agent-loop-azure.sh`
+  correctly detected the drift as `safe` with no `known_issue` addresses,
+  snapshotted state, applied `-target=<addr>`, and the VNet's tags were
+  confirmed reconciled back to the config's value via a direct GET.
+- Known_issue-exclusion test: attempting to `terraform import` the
+  already-existing (stuck-`Creating`) AKS object to get a genuine
+  known_issue-in-real-drift scenario failed with a separate floci-az
+  limitation ("SKU information is missing" on import) — not investigated
+  further. Substituted a crafted `drift-last-azure.json` (via
+  `AGENT_SKIP_DRIFT_CHECK_AZURE=1`) instead, exercising the real script's
+  own exclusion logic against a hand-built input rather than a fully
+  organic one; explicitly labeled as such rather than presented as
+  equivalent to the other, fully organic tests above.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the
