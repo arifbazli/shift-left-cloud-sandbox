@@ -87,12 +87,22 @@ queue:
   - module.azure-compute.tls_private_key.app
   - module.azure-compute.azurerm_linux_virtual_machine.app
   - module.azure-compute.azurerm_storage_account.functions
-  # INCONCLUSIVE (2026-08-13 apply test), not confirmed-failed: exactly one
-  # PUT + one GET reached floci-az's generic ArmHandler fallback (Microsoft.
-  # Web is not one of floci-az's dedicated ARM provider namespaces), then
-  # total silence for 10+ minutes with no error and no completion. Root
-  # cause not fully isolated. Because the Function App below depends on
-  # this, it never even starts applying while this is stuck.
+  # CONFIRMED FAILURE, ROOT CAUSE ISOLATED (2026-08-14 follow-up — see
+  # CONTEXT.md's Research log; supersedes the 2026-08-13 "inconclusive"
+  # classification, which described a silent 10+ minute hang under the
+  # image pulled that night). Reproduced fresh via a real traced
+  # `terraform apply -target` AND a direct curl PUT with the provider's
+  # exact api-version (2023-12-01): the create PUT to `Microsoft.Web/
+  # serverFarms/{name}` returns an IMMEDIATE `404 ResourceNotFound`
+  # against the resource's OWN path — not a hang. Confirmed this is
+  # specific to `serverFarms`, not a generic "unregistered namespace"
+  # limitation: a PUT to `Microsoft.Web/sites/{name}` in the same
+  # resource group, same provider namespace, same generic ArmHandler
+  # fallback, returns `200 OK` and creates successfully. floci-az's
+  # fallback handler evidently doesn't recognize `serverFarms` as a
+  # creatable resource type the way it does `sites` — a gap in floci-az
+  # itself, not a Terraform config issue. Because the Function App below
+  # depends on this, it never even starts applying while this fails.
   - module.azure-compute.azurerm_service_plan.functions
   - module.azure-compute.azurerm_linux_function_app.main
   # CONFIRMED FAILURE, CONFIRMED PERMANENT HOST LIMITATION (2026-08-13

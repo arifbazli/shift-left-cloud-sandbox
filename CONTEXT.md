@@ -493,14 +493,20 @@ from docs):
 >   the host-level DNS+port-redirect fix is a materially bigger, more
 >   privileged change than this session's tags/405 fix, and was
 >   deliberately not forced.
-> - `azurerm_service_plan.functions` — **inconclusive**, not confirmed
->   failed: exactly one PUT + one GET reached `floci-az`'s generic
->   `ArmHandler` fallback (`Microsoft.Web` isn't one of `floci-az`'s
->   dedicated ARM provider namespaces), then total silence for 10+ minutes
->   with no error and no completion. Root cause not fully isolated — same
->   treatment as AWS's MSK/RDS/OpenSearch findings above. Because
->   `azurerm_linux_function_app.main` depends on this plan, it never even
->   starts applying while this is stuck.
+> - `azurerm_service_plan.functions` — **confirmed failure, root cause
+>   isolated** (2026-08-14 follow-up — see the Research log below;
+>   supersedes the 2026-08-13 "inconclusive" note, which described a
+>   silent 10+ minute hang under that night's `:latest` image). Reproduced
+>   fresh via a real traced `terraform apply -target` and a direct API
+>   probe: the create PUT to `Microsoft.Web/serverFarms/{name}` returns an
+>   immediate `404 ResourceNotFound` — not a hang. `Microsoft.Web` isn't
+>   one of `floci-az`'s dedicated ARM provider namespaces, so create falls
+>   through to a generic `ArmHandler` fallback — confirmed via a direct
+>   comparison that this same fallback creates `Microsoft.Web/sites` fine
+>   (`200 OK`) but doesn't recognize `serverFarms` as creatable. A gap in
+>   `floci-az`'s own fallback handler, not fixable on the Terraform side.
+>   Because `azurerm_linux_function_app.main` depends on this plan, it
+>   never even starts applying while this fails.
 > - `azurerm_kubernetes_cluster.main` — **confirmed failure, confirmed
 >   permanent host limitation** (root-caused further 2026-08-14 — see the
 >   Research log below), independent root cause from the two findings
@@ -705,6 +711,28 @@ configuration issue — the fix is a root-owned drop-in
 change well outside what a repo-local fix should do unprompted. Not
 attempted, per the same "report a genuine host gap rather than force a
 workaround" framing used for AWS's EKS uncertainty.
+
+**Service Plan bounded diagnosis attempt (2026-08-14, `fix/azure-phase2-bugs`):**
+20-minute time-boxed attempt to root-cause the previously-inconclusive
+`azurerm_service_plan.functions` finding, since it was the one item never
+fully diagnosed. A direct curl replay of the original guessed request
+shape got a 404 too quickly to be informative on its own, so the real
+test was a traced (`TF_LOG=trace`) `terraform apply -target=module.
+azure-compute.azurerm_service_plan.functions` against a fresh floci-az
+container (freshly restarted with TLS enabled for this test — confirmed
+the resource group it depends on was created and genuinely exists via a
+direct GET, ruling out a stale-state artifact). Result: an immediate
+`404 ResourceNotFound` on the create PUT, not the 10+ minute silent hang
+from the night before — either `floci-az:latest` changed upstream since
+then, or the original hang's eventual resolution was never observed to
+completion. Isolated further with a direct comparison: PUT `Microsoft.
+Web/serverFarms/{name}` → 404; PUT `Microsoft.Web/sites/{name}` (same
+resource group, same provider namespace, same generic fallback handler)
+→ 200 OK and creates successfully. This confirms the fallback handler
+itself works — it specifically doesn't treat `serverFarms` as a
+creatable type. Reclassified from "inconclusive" to "confirmed failure,
+root cause isolated" in `growth-queue-azure.yaml` and the module comment
+in `terraform/modules/azure-compute/main.tf`.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the
