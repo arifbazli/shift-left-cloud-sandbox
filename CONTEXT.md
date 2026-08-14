@@ -536,6 +536,19 @@ from docs):
 >   (`azurerm_virtual_network.main`, `azurerm_network_security_group.app`)
 >   to confirm the fix's scope was correctly narrow, not a lucky
 >   single-symptom patch — it did not recur.
+> - `azurerm_storage_account.main` — a real, confirmed **perpetual
+>   destructive-drift quirk** (2026-08-14, found while building
+>   `drift-check-azure.sh`), the Azure-side analog of AWS's documented
+>   `aws_flow_log.main` finding below: `terraform plan` shows a forced
+>   REPLACE on this resource on every run, never touched by hand.
+>   Confirmed directly: `floci-az`'s refresh response reports
+>   `queue_encryption_key_type`/`table_encryption_key_type` as `"Service"`
+>   when the create response had returned `"Account"` — a ForceNew
+>   attribute, so terraform sees it as drift requiring replacement.
+>   `drift-check-azure.sh`/`agent-loop-azure.sh` correctly refuse to
+>   auto-reconcile this (destructive drift is outside the allowlist
+>   regardless of *why* the plan looks destructive) — expected, not a bug
+>   in either script.
 >
 > `scripts/grow-stack-azure.sh` surfaces all of this the same way
 > `grow-stack.sh` does for AWS — a failed, timed-out, or perpetually-stuck
@@ -639,6 +652,7 @@ in someone's head. This table collects them in one place.
 | `scripts/grow-stack-azure.sh` | Same "make the dangerous action impossible" philosophy as `grow-stack.sh` — one `-target` per invocation, never destroys, never edits `*.tf`. Deliberately wraps its apply in a wall-clock `timeout` (default 240s) — a deviation from `grow-stack.sh` justified by confirmed unbounded stalls on this cloud's slowest targets, not present in AWS's queue. |
 | `scripts/scan.sh` | Scans `terraform/azure/` alongside `terraform/`, but the Azure result is intentionally decoupled from this script's own exit code — an Azure-only finding (including its own fixture) must never block the AWS-gated `deploy.sh`. `grow-stack-azure.sh` is the one place that reads the Azure gate file. |
 | `scripts/verify-azure.sh` | Deliberately FULL PARITY, not partial like AWS's `verify.sh` — attempts every address in `growth-queue-azure.yaml`, including the confirmed-broken ones, rather than only checking resources known to deploy cleanly. Every check runs under an outer `timeout` (`CHECK_TIMEOUT_SECONDS`), same lesson `grow-stack-azure.sh` already learned: a stuck external call must never be trusted to return on its own. A `known_issue` resource never affects the exit code, mirroring `scan.sh`'s AWS/Azure gate decoupling — a pre-documented, permanent gap must not block a script whose whole job is reporting reality. |
+| `scripts/drift-check-azure.sh` | Classifies a pending "+ create" on a not-yet-grown resource as `pending_growth`, never as drift — Azure's incremental-growth model means there is no single moment of "fully deployed" the way AWS's `deploy.sh` gives `drift-check.sh`. Wraps the plan in an outer `timeout` as a safety net even though a real test showed `terraform plan` completes fast (~13s) even with every confirmed-broken resource still in the config — plan doesn't need to contact a resource's own API the way apply does. |
 
 ## Research log
 
@@ -770,6 +784,34 @@ stuck-`Creating` state to test against). Findings:
   of sync. Reconciled with `terraform import`. Not investigated further
   (single occurrence, not reproduced on retry) — noted here rather than
   silently worked around.
+
+**drift-check-azure.sh build + real test (2026-08-14, `feat/azure-verify-drift-agent`):**
+Per the explicit instruction not to assume `verify-azure.sh`'s findings
+carry over unchanged (`terraform plan` is a different code path than a
+raw curl), tested empirically before designing the timeout strategy:
+- A full `terraform plan` against `terraform/azure` — with the 3 DNS-hang
+  resources and the AKS/Service-Plan confirmed failures still in the
+  config, and with a real AKS ARM object stuck at `provisioningState:
+  Creating` already present server-side — completed in ~13 seconds, no
+  hang, no error. Plan doesn't need to contact a resource's own API to
+  propose creating something not yet in state, so none of `verify-azure.
+  sh`'s DNS/stuck-state findings reproduce here. The outer `timeout` wrap
+  in `drift-check-azure.sh` is a safety net for a scenario that was
+  checked directly and NOT observed, unlike `grow-stack-azure.sh`'s.
+- That same test surfaced the `azurerm_storage_account.main` perpetual
+  destructive-replace quirk documented above.
+- Deliberate-drift test, per instruction, done on a confirmed-working
+  `azure-network` resource rather than a known-problem one for a clean,
+  unambiguous result: PATCHed `azurerm_virtual_network.main`'s tags
+  directly against `floci-az` (bypassing terraform) — PATCH itself
+  returned `405` (same method-not-allowed shape as the RG's tags bug), a
+  full-body PUT worked and stuck. `drift-check-azure.sh` correctly
+  detected it as a standalone `update` action with `has_security_path:
+  false` — i.e. would classify as `safe` in isolation; the run's overall
+  top-level classification still showed `destructive`, correctly driven
+  by the pre-existing storage-account replace (any destructive entry
+  blocks the whole plan, matching `drift-check.sh`'s exact reduce logic).
+  Reverted after confirming.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the
