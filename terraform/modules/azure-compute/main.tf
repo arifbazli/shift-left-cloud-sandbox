@@ -10,21 +10,22 @@
 # — Lambda equivalent, CONFIRMED BLOCKED, see below), AKS cluster (EKS
 # equivalent, CONFIRMED FAILURE, see below).
 #
-# CONFIRMED GAP (2026-08-13, apply-level): azurerm_service_plan.functions
-# hangs indefinitely on apply. floci-az's logs show exactly one PUT + one
-# GET for Microsoft.Web/serverFarms, then total silence — Microsoft.Web is
-# not one of floci-az's dedicated ARM provider namespaces, so it falls
-# through to a generic ArmHandler fallback (same fallback Microsoft.Web/
-# sites used successfully for a bare create-and-read in an earlier
-# isolated test) whose response evidently doesn't satisfy whatever
-# readiness state the azurerm provider's LRO logic is waiting for. Root
-# cause not fully isolated beyond this — same "inconclusive" treatment as
-# AWS's MSK/RDS/OpenSearch findings, not a confirmed single cause the way
-# AKS's is below. Because azurerm_linux_function_app.main depends on this
-# service plan, the Function App resource never even starts creating —
-# the "0 functions found" code-loading issue documented below is now
-# moot/premature; apply never gets far enough to reach it. Both kept in
-# code rather than removed — visible-stall-over-silent-skip.
+# CONFIRMED FAILURE, ROOT CAUSE ISOLATED (root-caused 2026-08-14,
+# superseding an earlier "inconclusive" 2026-08-13 note describing a
+# silent 10+ minute hang under that night's image): azurerm_service_plan.
+# functions fails immediately, not a hang. Microsoft.Web is not one of
+# floci-az's dedicated ARM provider namespaces, so create falls through
+# to a generic ArmHandler fallback — confirmed via a direct API probe
+# that this fallback creates Microsoft.Web/sites just fine (200 OK) but
+# returns 404 ResourceNotFound for a create PUT to Microsoft.Web/
+# serverFarms specifically: a gap in floci-az's own fallback handler, not
+# a Terraform-side issue. See growth-queue-azure.yaml and CONTEXT.md's
+# Research log for the full comparison. Because azurerm_linux_function_
+# app.main depends on this service plan, the Function App resource never
+# even starts creating — the "0 functions found" code-loading issue
+# documented below is now moot/premature; apply never gets far enough to
+# reach it. Both kept in code rather than removed — visible-stall-over-
+# silent-skip (even though this specific one fails fast, not slow).
 #
 # CONFIRMED FAILURE (2026-08-13, isolated test, independent of the above):
 # azurerm_kubernetes_cluster.main. The netavark/iptables fix (see

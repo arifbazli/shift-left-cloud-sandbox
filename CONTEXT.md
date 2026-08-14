@@ -469,37 +469,61 @@ from docs):
 > Real `floci-az` apply-test findings (2026-08-13, live tests against the
 > real binary):
 > - `azurerm_storage_container.artifacts`, `azurerm_storage_table.main`,
->   `azurerm_key_vault_secret.app_config` — **confirmed stuck**. All three
+>   `azurerm_key_vault_secret.app_config` — **confirmed stuck, and
+>   confirmed unfixable at the Terraform level** (2026-08-14 follow-up —
+>   see the Research log below for the full investigation). All three
 >   hang indefinitely on apply with ZERO corresponding request ever
 >   appearing in `floci-az`'s own logs — the hang is client-side, before
->   any request is sent. Root cause, confirmed directly: `floci-az`'s ARM
->   response for the parent resource (storage account / Key Vault)
->   returns real-Azure-shaped data-plane hostnames
->   (`*.blob.core.windows.net`, `*.table.core.windows.net`,
->   `*.vault.azure.net`) instead of a self-referential `floci-az` URL. The
->   azurerm provider targets these directly for data-plane calls, and
->   they don't resolve (confirmed via a direct DNS lookup — NXDOMAIN). No
->   per-resource endpoint override exists on the real azurerm provider for
->   this — a known limitation independent of `floci-az`, also hit against
->   Azurite.
-> - `azurerm_service_plan.functions` — **inconclusive**, not confirmed
->   failed: exactly one PUT + one GET reached `floci-az`'s generic
->   `ArmHandler` fallback (`Microsoft.Web` isn't one of `floci-az`'s
->   dedicated ARM provider namespaces), then total silence for 10+ minutes
->   with no error and no completion. Root cause not fully isolated — same
->   treatment as AWS's MSK/RDS/OpenSearch findings above. Because
->   `azurerm_linux_function_app.main` depends on this plan, it never even
->   starts applying while this is stuck.
-> - `azurerm_kubernetes_cluster.main` — **confirmed failure**, independent
->   root cause from the two findings above: the netavark/iptables fix
->   (see [Why floci-az](#why-floci-az)) works correctly here — the k3s
->   container is created and starts, no nftables error. k3s itself then
->   crashes fatally within ~1 second: `Error: failed to find cpuset
->   cgroup (v2)` — rootless Podman doesn't delegate the cpuset cgroup v2
->   controller to containers spawned via `floci-az`'s Docker-API call.
->   `floci-az`'s own `provisioningState` never leaves `"Creating"` (it
->   doesn't detect the backing container died), so this stalls forever
->   from the ARM API's perspective too, not just slowly.
+>   any request is sent. Root cause, confirmed via a direct ARM API probe
+>   against the real container: `floci-az`'s response for the parent
+>   resource (storage account / Key Vault) returns real-Azure-shaped
+>   data-plane hostnames with NO PORT and scheme `http`/`https` — e.g.
+>   `"blob":"http://<account>.blob.core.windows.net/"` — instead of a
+>   self-referential `floci-az` URL. The azurerm provider targets these
+>   directly for data-plane calls. This is NOT just a DNS problem: even a
+>   DNS-level fix (custom resolver, `/etc/hosts`) would only route a
+>   client to port 80/443, and `floci-az` listens on `:4577` only — a real
+>   fix needs a host-level DNS resolver AND a port 80/443→4577 redirect
+>   (iptables NAT or a reverse proxy), confirmed by checking `floci-az`'s
+>   own docs directly: no DNS/hosts-file component exists, and its
+>   `FLOCI_AZ_HOSTNAME`/`FLOCI_AZ_BASE_URL` env vars only affect TLS cert
+>   SANs, not ARM response bodies. No per-resource endpoint override
+>   exists on the real azurerm provider either — a known limitation
+>   independent of `floci-az`, also hit against Azurite. Not attempted:
+>   the host-level DNS+port-redirect fix is a materially bigger, more
+>   privileged change than this session's tags/405 fix, and was
+>   deliberately not forced.
+> - `azurerm_service_plan.functions` — **confirmed failure, root cause
+>   isolated** (2026-08-14 follow-up — see the Research log below;
+>   supersedes the 2026-08-13 "inconclusive" note, which described a
+>   silent 10+ minute hang under that night's `:latest` image). Reproduced
+>   fresh via a real traced `terraform apply -target` and a direct API
+>   probe: the create PUT to `Microsoft.Web/serverFarms/{name}` returns an
+>   immediate `404 ResourceNotFound` — not a hang. `Microsoft.Web` isn't
+>   one of `floci-az`'s dedicated ARM provider namespaces, so create falls
+>   through to a generic `ArmHandler` fallback — confirmed via a direct
+>   comparison that this same fallback creates `Microsoft.Web/sites` fine
+>   (`200 OK`) but doesn't recognize `serverFarms` as creatable. A gap in
+>   `floci-az`'s own fallback handler, not fixable on the Terraform side.
+>   Because `azurerm_linux_function_app.main` depends on this plan, it
+>   never even starts applying while this fails.
+> - `azurerm_kubernetes_cluster.main` — **confirmed failure, confirmed
+>   permanent host limitation** (root-caused further 2026-08-14 — see the
+>   Research log below), independent root cause from the two findings
+>   above: the netavark/iptables fix (see [Why floci-az](#why-floci-az))
+>   works correctly here — the k3s container is created and starts, no
+>   nftables error. k3s itself then crashes fatally within ~1 second:
+>   `Error: failed to find cpuset cgroup (v2)`. Confirmed directly: the
+>   kernel has `cpuset` available at the cgroup v2 root, but systemd does
+>   NOT delegate it down to the user slice (both `/sys/fs/cgroup/
+>   user.slice/user-<uid>.slice/cgroup.controllers` and `podman info`'s
+>   `CgroupControllers` list only `cpu`/`memory`/`pids`). This is a
+>   systemd delegation gap, not a Podman config toggle — the only fix is
+>   a root-owned systemd drop-in (`Delegate=cpuset` on `user@.service`,
+>   then `daemon-reload` + re-login), a privileged host-wide change not
+>   attempted here. `floci-az`'s own `provisioningState` never leaves
+>   `"Creating"` (it doesn't detect the backing container died), so this
+>   stalls forever from the ARM API's perspective too, not just slowly.
 > - `azurerm_resource_group.main` — a real, fixed **incremental-apply
 >   bug**, not a stall: `floci-az`'s ARM create response doesn't persist
 >   the tags sent on create, so any later `-target` apply of a dependent
@@ -649,6 +673,66 @@ spawn a bridge-networked sidecar container the way `growth-queue-azure.
 yaml`'s later items would. That path remains verified only locally,
 under WSL2 rootless Podman (see the bullet above) — genuinely open
 until `pipeline.yml` eventually wires `grow-stack-azure.sh` in.
+
+**DNS-hang bounded investigation (2026-08-14, `fix/azure-phase2-bugs`):**
+20-minute time-boxed check into whether the storage-container/table and
+Key-Vault-secret DNS-hang (above) had a floci-az-provided fix before
+resorting to a host-level one. Checked, in order: (1) the running
+container's filesystem for embedded docs — none found (minimal
+Quarkus-native image, no `docs/`); (2) candidate `/_floci/*` and
+`/openapi` endpoints for a DNS/capability API — all 404/501, no such
+endpoint; (3) floci-az's real GitHub docs (README + `docs/services/
+blob.md`) — confirms path-style routing and Host-header support for
+account-style hostnames *if* the request reaches floci-az at all, but no
+DNS/hosts-file component and no env var that changes ARM response
+hostnames (`FLOCI_AZ_HOSTNAME`/`FLOCI_AZ_BASE_URL` are TLS-cert-SAN-only);
+(4) a direct ARM API probe against the live container (`PUT .../
+storageAccounts/{name}`) to see the exact returned URL, confirming no
+port and `http` scheme. Conclusion: genuinely a host-level problem
+(DNS + port redirect), not a floci-az or Terraform-level one — matches
+the "different kind of change than the tags/405 fix" framing going in.
+Not attempted, per the same bounded-effort framing as AWS's inconclusive
+MSK/RDS/OpenSearch findings.
+
+**AKS cpuset host-capability check (2026-08-14, `fix/azure-phase2-bugs`):**
+Before treating the AKS cpuset failure as fixable, checked whether this
+host's rootless Podman CAN delegate the cpuset cgroup v2 controller at
+all, or whether it's a genuine kernel/systemd gap. `/sys/fs/cgroup/
+cgroup.controllers` (the v2 root) lists `cpuset` as available at the
+kernel level. But `/sys/fs/cgroup/user.slice/user-1000.slice/
+cgroup.controllers` and that slice's `cgroup.subtree_control` both list
+only `cpu memory pids` — no `cpuset`, no `io`, no `hugetlb`, no `rdma`.
+`podman info`'s `CgroupControllers` confirms the same three, with
+`CgroupManager: systemd`. Conclusion: this is systemd's default
+per-user delegation policy not including `cpuset`, not a Podman
+configuration issue — the fix is a root-owned drop-in
+(`/etc/systemd/system/user@.service.d/*.conf`, `Delegate=cpuset`) plus
+`daemon-reload` and a fresh login session, a privileged host-wide
+change well outside what a repo-local fix should do unprompted. Not
+attempted, per the same "report a genuine host gap rather than force a
+workaround" framing used for AWS's EKS uncertainty.
+
+**Service Plan bounded diagnosis attempt (2026-08-14, `fix/azure-phase2-bugs`):**
+20-minute time-boxed attempt to root-cause the previously-inconclusive
+`azurerm_service_plan.functions` finding, since it was the one item never
+fully diagnosed. A direct curl replay of the original guessed request
+shape got a 404 too quickly to be informative on its own, so the real
+test was a traced (`TF_LOG=trace`) `terraform apply -target=module.
+azure-compute.azurerm_service_plan.functions` against a fresh floci-az
+container (freshly restarted with TLS enabled for this test — confirmed
+the resource group it depends on was created and genuinely exists via a
+direct GET, ruling out a stale-state artifact). Result: an immediate
+`404 ResourceNotFound` on the create PUT, not the 10+ minute silent hang
+from the night before — either `floci-az:latest` changed upstream since
+then, or the original hang's eventual resolution was never observed to
+completion. Isolated further with a direct comparison: PUT `Microsoft.
+Web/serverFarms/{name}` → 404; PUT `Microsoft.Web/sites/{name}` (same
+resource group, same provider namespace, same generic fallback handler)
+→ 200 OK and creates successfully. This confirms the fallback handler
+itself works — it specifically doesn't treat `serverFarms` as a
+creatable type. Reclassified from "inconclusive" to "confirmed failure,
+root cause isolated" in `growth-queue-azure.yaml` and the module comment
+in `terraform/modules/azure-compute/main.tf`.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the

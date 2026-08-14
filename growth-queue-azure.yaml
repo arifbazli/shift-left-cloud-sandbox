@@ -48,27 +48,38 @@ queue:
 
   # -- azure-storage ------------------------------------------------------------
   - module.azure-storage.azurerm_storage_account.main
-  # CONFIRMED STUCK (2026-08-13 apply test): both resources below hang
-  # indefinitely on apply — ZERO corresponding request ever appeared in
-  # floci-az's own logs, confirming the hang is client-side, before any
-  # request is even sent. Root cause: floci-az's ARM response for the
-  # storage account above returns real-Azure-shaped data-plane hostnames
-  # (http://<account>.blob.core.windows.net/, .../table.core.windows.net/),
-  # which the azurerm provider targets directly for these two resources —
-  # and those hostnames don't resolve. No per-resource endpoint override
-  # exists on the real azurerm provider for this. Kept per the visible-
-  # stall-over-silent-skip design — retried forever (bounded by
-  # APPLY_TIMEOUT_SECONDS per attempt, see grow-stack-azure.sh).
+  # CONFIRMED UNFIXABLE AT THE TERRAFORM LEVEL (2026-08-14 follow-up
+  # investigation, see CONTEXT.md's Research log for the full writeup):
+  # both resources below hang indefinitely on apply — ZERO corresponding
+  # request ever appeared in floci-az's own logs, confirming the hang is
+  # client-side, before any request is even sent. Root cause, confirmed
+  # via a direct ARM API probe against the real container: floci-az
+  # returns real-Azure-shaped data-plane hostnames with NO PORT and
+  # scheme http, e.g. "blob":"http://<account>.blob.core.windows.net/" —
+  # so even a DNS-level fix (custom resolver, /etc/hosts) would only get
+  # a client to port 80, and floci-az listens on :4577 only. Checked
+  # floci-az's own docs directly: no DNS/hosts-file component or env var
+  # (FLOCI_AZ_HOSTNAME/FLOCI_AZ_BASE_URL) that changes this — those only
+  # affect TLS cert SANs, not ARM response bodies. A real fix needs a
+  # host-level DNS resolver AND a port 80/443->4577 redirect (iptables
+  # NAT or a reverse proxy), which is a materially bigger, more
+  # privileged host change than this queue's tags/405 fix and was not
+  # attempted. Kept per the visible-stall-over-silent-skip design —
+  # retried forever (bounded by APPLY_TIMEOUT_SECONDS per attempt, see
+  # grow-stack-azure.sh).
   - module.azure-storage.azurerm_storage_container.artifacts
   - module.azure-storage.azurerm_storage_table.main
 
   # -- azure-security -------------------------------------------------------------
   - module.azure-security.azurerm_key_vault.main
-  # CONFIRMED STUCK (2026-08-13 apply test), same root cause as the storage
-  # entries above: floci-az's Key Vault ARM response returns a real-Azure-
-  # shaped vaultUri (https://<vault>.vault.azure.net/), which the azurerm
-  # provider uses directly for secret data-plane calls — and that hostname
-  # doesn't resolve either. Kept, retried forever (bounded per attempt).
+  # CONFIRMED UNFIXABLE AT THE TERRAFORM LEVEL (2026-08-14), same root
+  # cause as the storage entries above: floci-az's Key Vault ARM response
+  # returns a real-Azure-shaped vaultUri with no port
+  # (https://<vault>.vault.azure.net/), which the azurerm provider uses
+  # directly for secret data-plane calls. Same port-mismatch problem (443
+  # vs floci-az's :4577), same conclusion: needs a host-level DNS + port
+  # redirect, not a Terraform or floci-az config change. Kept, retried
+  # forever (bounded per attempt).
   - module.azure-security.azurerm_key_vault_secret.app_config
 
   # -- azure-compute --------------------------------------------------------------
@@ -76,21 +87,40 @@ queue:
   - module.azure-compute.tls_private_key.app
   - module.azure-compute.azurerm_linux_virtual_machine.app
   - module.azure-compute.azurerm_storage_account.functions
-  # INCONCLUSIVE (2026-08-13 apply test), not confirmed-failed: exactly one
-  # PUT + one GET reached floci-az's generic ArmHandler fallback (Microsoft.
-  # Web is not one of floci-az's dedicated ARM provider namespaces), then
-  # total silence for 10+ minutes with no error and no completion. Root
-  # cause not fully isolated. Because the Function App below depends on
-  # this, it never even starts applying while this is stuck.
+  # CONFIRMED FAILURE, ROOT CAUSE ISOLATED (2026-08-14 follow-up — see
+  # CONTEXT.md's Research log; supersedes the 2026-08-13 "inconclusive"
+  # classification, which described a silent 10+ minute hang under the
+  # image pulled that night). Reproduced fresh via a real traced
+  # `terraform apply -target` AND a direct curl PUT with the provider's
+  # exact api-version (2023-12-01): the create PUT to `Microsoft.Web/
+  # serverFarms/{name}` returns an IMMEDIATE `404 ResourceNotFound`
+  # against the resource's OWN path — not a hang. Confirmed this is
+  # specific to `serverFarms`, not a generic "unregistered namespace"
+  # limitation: a PUT to `Microsoft.Web/sites/{name}` in the same
+  # resource group, same provider namespace, same generic ArmHandler
+  # fallback, returns `200 OK` and creates successfully. floci-az's
+  # fallback handler evidently doesn't recognize `serverFarms` as a
+  # creatable resource type the way it does `sites` — a gap in floci-az
+  # itself, not a Terraform config issue. Because the Function App below
+  # depends on this, it never even starts applying while this fails.
   - module.azure-compute.azurerm_service_plan.functions
   - module.azure-compute.azurerm_linux_function_app.main
-  # CONFIRMED FAILURE (2026-08-13 isolated test), independent of the above:
-  # the netavark/iptables fix (podman-compose.yml) works correctly here —
-  # the k3s container is created and STARTS. k3s itself then crashes
-  # fatally within ~1 second: "Error: failed to find cpuset cgroup (v2)" —
-  # rootless Podman doesn't delegate the cpuset cgroup v2 controller to
-  # containers spawned via floci-az's Docker-API call. floci-az's own
-  # provisioningState never leaves "Creating" (it doesn't detect the
-  # backing container died), so this stalls forever from the ARM API's
-  # perspective too, not just slowly.
+  # CONFIRMED FAILURE, CONFIRMED PERMANENT HOST LIMITATION (2026-08-13
+  # isolated test, root-caused further 2026-08-14 -- see CONTEXT.md's
+  # Research log): the netavark/iptables fix (podman-compose.yml) works
+  # correctly here -- the k3s container is created and STARTS. k3s itself
+  # then crashes fatally within ~1 second: "Error: failed to find cpuset
+  # cgroup (v2)". Confirmed directly (2026-08-14): the KERNEL has cpuset
+  # available (/sys/fs/cgroup/cgroup.controllers lists it at the root),
+  # but systemd does NOT delegate it down to the user slice
+  # (/sys/fs/cgroup/user.slice/user-<uid>.slice/cgroup.controllers and
+  # `podman info`'s CgroupControllers both list only cpu/memory/pids --
+  # no cpuset). This is a systemd delegation gap, not a Podman config
+  # toggle: the only fix is a root-owned systemd drop-in
+  # (/etc/systemd/system/user@.service.d/*.conf with Delegate=cpuset,
+  # then daemon-reload + re-login), a privileged host-wide change, not
+  # attempted per the same "report, don't force" framing as AWS's EKS
+  # uncertainty. floci-az's own provisioningState never leaves "Creating"
+  # (it doesn't detect the backing container died), so this stalls
+  # forever from the ARM API's perspective too, not just slowly.
   - module.azure-compute.azurerm_kubernetes_cluster.main
