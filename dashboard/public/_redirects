@@ -1,0 +1,5 @@
+# Cloudflare Pages edge redirect -- / always lands on the AWS page by
+# default. index.html at the root still exists as a static fallback
+# (in case _redirects isn't honored in some preview context), but this
+# is the primary, flash-free mechanism.
+/  /aws  302
