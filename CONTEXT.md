@@ -501,16 +501,23 @@ from docs):
 >   treatment as AWS's MSK/RDS/OpenSearch findings above. Because
 >   `azurerm_linux_function_app.main` depends on this plan, it never even
 >   starts applying while this is stuck.
-> - `azurerm_kubernetes_cluster.main` — **confirmed failure**, independent
->   root cause from the two findings above: the netavark/iptables fix
->   (see [Why floci-az](#why-floci-az)) works correctly here — the k3s
->   container is created and starts, no nftables error. k3s itself then
->   crashes fatally within ~1 second: `Error: failed to find cpuset
->   cgroup (v2)` — rootless Podman doesn't delegate the cpuset cgroup v2
->   controller to containers spawned via `floci-az`'s Docker-API call.
->   `floci-az`'s own `provisioningState` never leaves `"Creating"` (it
->   doesn't detect the backing container died), so this stalls forever
->   from the ARM API's perspective too, not just slowly.
+> - `azurerm_kubernetes_cluster.main` — **confirmed failure, confirmed
+>   permanent host limitation** (root-caused further 2026-08-14 — see the
+>   Research log below), independent root cause from the two findings
+>   above: the netavark/iptables fix (see [Why floci-az](#why-floci-az))
+>   works correctly here — the k3s container is created and starts, no
+>   nftables error. k3s itself then crashes fatally within ~1 second:
+>   `Error: failed to find cpuset cgroup (v2)`. Confirmed directly: the
+>   kernel has `cpuset` available at the cgroup v2 root, but systemd does
+>   NOT delegate it down to the user slice (both `/sys/fs/cgroup/
+>   user.slice/user-<uid>.slice/cgroup.controllers` and `podman info`'s
+>   `CgroupControllers` list only `cpu`/`memory`/`pids`). This is a
+>   systemd delegation gap, not a Podman config toggle — the only fix is
+>   a root-owned systemd drop-in (`Delegate=cpuset` on `user@.service`,
+>   then `daemon-reload` + re-login), a privileged host-wide change not
+>   attempted here. `floci-az`'s own `provisioningState` never leaves
+>   `"Creating"` (it doesn't detect the backing container died), so this
+>   stalls forever from the ARM API's perspective too, not just slowly.
 > - `azurerm_resource_group.main` — a real, fixed **incremental-apply
 >   bug**, not a stall: `floci-az`'s ARM create response doesn't persist
 >   the tags sent on create, so any later `-target` apply of a dependent
@@ -680,6 +687,24 @@ port and `http` scheme. Conclusion: genuinely a host-level problem
 the "different kind of change than the tags/405 fix" framing going in.
 Not attempted, per the same bounded-effort framing as AWS's inconclusive
 MSK/RDS/OpenSearch findings.
+
+**AKS cpuset host-capability check (2026-08-14, `fix/azure-phase2-bugs`):**
+Before treating the AKS cpuset failure as fixable, checked whether this
+host's rootless Podman CAN delegate the cpuset cgroup v2 controller at
+all, or whether it's a genuine kernel/systemd gap. `/sys/fs/cgroup/
+cgroup.controllers` (the v2 root) lists `cpuset` as available at the
+kernel level. But `/sys/fs/cgroup/user.slice/user-1000.slice/
+cgroup.controllers` and that slice's `cgroup.subtree_control` both list
+only `cpu memory pids` — no `cpuset`, no `io`, no `hugetlb`, no `rdma`.
+`podman info`'s `CgroupControllers` confirms the same three, with
+`CgroupManager: systemd`. Conclusion: this is systemd's default
+per-user delegation policy not including `cpuset`, not a Podman
+configuration issue — the fix is a root-owned drop-in
+(`/etc/systemd/system/user@.service.d/*.conf`, `Delegate=cpuset`) plus
+`daemon-reload` and a fresh login session, a privileged host-wide
+change well outside what a repo-local fix should do unprompted. Not
+attempted, per the same "report a genuine host gap rather than force a
+workaround" framing used for AWS's EKS uncertainty.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the

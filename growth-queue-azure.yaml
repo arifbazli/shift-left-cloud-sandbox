@@ -95,13 +95,22 @@ queue:
   # this, it never even starts applying while this is stuck.
   - module.azure-compute.azurerm_service_plan.functions
   - module.azure-compute.azurerm_linux_function_app.main
-  # CONFIRMED FAILURE (2026-08-13 isolated test), independent of the above:
-  # the netavark/iptables fix (podman-compose.yml) works correctly here —
-  # the k3s container is created and STARTS. k3s itself then crashes
-  # fatally within ~1 second: "Error: failed to find cpuset cgroup (v2)" —
-  # rootless Podman doesn't delegate the cpuset cgroup v2 controller to
-  # containers spawned via floci-az's Docker-API call. floci-az's own
-  # provisioningState never leaves "Creating" (it doesn't detect the
-  # backing container died), so this stalls forever from the ARM API's
-  # perspective too, not just slowly.
+  # CONFIRMED FAILURE, CONFIRMED PERMANENT HOST LIMITATION (2026-08-13
+  # isolated test, root-caused further 2026-08-14 -- see CONTEXT.md's
+  # Research log): the netavark/iptables fix (podman-compose.yml) works
+  # correctly here -- the k3s container is created and STARTS. k3s itself
+  # then crashes fatally within ~1 second: "Error: failed to find cpuset
+  # cgroup (v2)". Confirmed directly (2026-08-14): the KERNEL has cpuset
+  # available (/sys/fs/cgroup/cgroup.controllers lists it at the root),
+  # but systemd does NOT delegate it down to the user slice
+  # (/sys/fs/cgroup/user.slice/user-<uid>.slice/cgroup.controllers and
+  # `podman info`'s CgroupControllers both list only cpu/memory/pids --
+  # no cpuset). This is a systemd delegation gap, not a Podman config
+  # toggle: the only fix is a root-owned systemd drop-in
+  # (/etc/systemd/system/user@.service.d/*.conf with Delegate=cpuset,
+  # then daemon-reload + re-login), a privileged host-wide change, not
+  # attempted per the same "report, don't force" framing as AWS's EKS
+  # uncertainty. floci-az's own provisioningState never leaves "Creating"
+  # (it doesn't detect the backing container died), so this stalls
+  # forever from the ARM API's perspective too, not just slowly.
   - module.azure-compute.azurerm_kubernetes_cluster.main
