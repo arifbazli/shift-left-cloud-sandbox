@@ -638,6 +638,7 @@ in someone's head. This table collects them in one place.
 | `scripts/toggle-fixture-azure.sh` | The *only* sanctioned way to change the Azure fixture's state — same reasoning as `toggle-fixture.sh`, with an inverted presence-check (fixture `on` means `network_acls` is absent). `grow-stack-azure.sh` and `agent-loop.sh` are both forbidden from touching it. |
 | `scripts/grow-stack-azure.sh` | Same "make the dangerous action impossible" philosophy as `grow-stack.sh` — one `-target` per invocation, never destroys, never edits `*.tf`. Deliberately wraps its apply in a wall-clock `timeout` (default 240s) — a deviation from `grow-stack.sh` justified by confirmed unbounded stalls on this cloud's slowest targets, not present in AWS's queue. |
 | `scripts/scan.sh` | Scans `terraform/azure/` alongside `terraform/`, but the Azure result is intentionally decoupled from this script's own exit code — an Azure-only finding (including its own fixture) must never block the AWS-gated `deploy.sh`. `grow-stack-azure.sh` is the one place that reads the Azure gate file. |
+| `scripts/verify-azure.sh` | Deliberately FULL PARITY, not partial like AWS's `verify.sh` — attempts every address in `growth-queue-azure.yaml`, including the confirmed-broken ones, rather than only checking resources known to deploy cleanly. Every check runs under an outer `timeout` (`CHECK_TIMEOUT_SECONDS`), same lesson `grow-stack-azure.sh` already learned: a stuck external call must never be trusted to return on its own. A `known_issue` resource never affects the exit code, mirroring `scan.sh`'s AWS/Azure gate decoupling — a pre-documented, permanent gap must not block a script whose whole job is reporting reality. |
 
 ## Research log
 
@@ -733,6 +734,42 @@ itself works — it specifically doesn't treat `serverFarms` as a
 creatable type. Reclassified from "inconclusive" to "confirmed failure,
 root cause isolated" in `growth-queue-azure.yaml` and the module comment
 in `terraform/modules/azure-compute/main.tf`.
+
+**verify-azure.sh build + real test (2026-08-14, `feat/azure-verify-drift-agent`):**
+Real end-to-end test against a freshly-grown `floci-az` (10 network
+resources + the storage account applied via `grow-stack-azure.sh`, plus a
+directly-targeted `azurerm_kubernetes_cluster.main` apply to get a genuine
+stuck-`Creating` state to test against). Findings:
+- The 3 confirmed DNS-hang resources (storage container/table, Key Vault
+  secret) resolve via plain `curl` as a **fast** `Could not resolve host`
+  failure (~2.2s), not a hang — a materially different, better-behaved
+  failure mode than the azurerm *provider's* client-side stall (which
+  hangs for 10+ minutes with zero DNS attempt made at all, confirmed
+  earlier). `verify-azure.sh` classifies this as `check_error`, distinct
+  from `timed_out` (which never actually triggered in this test) — both
+  are excluded from the exit code the same way, but the JSON records
+  which one actually happened rather than assuming.
+- The confirmed AKS cpuset failure leaves floci-az's own ARM object
+  reachable and returning `200 OK` forever, stuck at
+  `provisioningState: "Creating"` — confirmed directly by curling it
+  after a real (interrupted) apply. `verify-azure.sh` parses this field
+  and reports `stuck_creating` rather than a plain `found`, so a 200
+  response is never mistaken for a healthy resource.
+- **Unrelated infra snag found during setup, not a `verify-azure.sh`
+  bug**: `floci-az`'s image declares a persistent volume at `/app/data`
+  that survives a plain `podman rm` (no `-v`) — a previous session's test
+  resource group was still present after a "fresh" container restart,
+  causing a confusing `terraform apply` failure ("already exists") on
+  what should have been a clean environment. Fixed for this test with
+  `podman rm -v`; worth remembering for any future isolated test that
+  assumes a restart alone means a clean slate.
+- **A provider-plugin crash was also observed once**, independent of the
+  volume issue above: `azurerm_resource_group.main`'s create succeeded
+  server-side (confirmed via a direct GET) but the terraform plugin
+  crashed before writing it to local state, leaving state and reality out
+  of sync. Reconciled with `terraform import`. Not investigated further
+  (single occurrence, not reproduced on retry) — noted here rather than
+  silently worked around.
 
 **Open, undiagnosed items — not explained away:**
 - A `collecting instance settings: empty result` error appeared during the
