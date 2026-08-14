@@ -1,0 +1,23 @@
+flowchart TD
+    SCAN["scan<br/>tfsec gate"] --> DEPLOY["deploy<br/>full apply"]
+    SCAN --> GROWTH["growth<br/>one resource/tick"]
+    DEPLOY --> VERIFY["verify<br/>API reachability"]
+    GROWTH --> VERIFY
+    DEPLOY --> DRIFT["drift<br/>plan vs state"]
+    GROWTH --> DRIFT
+    DRIFT --> AGENT["agent loop<br/>safe drift only"]
+    AGENT -.->|re-checks| DRIFT
+
+    %% 2026 modern aesthetic: black-and-white shape language with one
+    %% warm amber accent reserved for the security choke-point (SCAN) --
+    %% same fill/stroke as the GATE diamond above, just applied to a
+    %% rectangle since SCAN is a gate node, not a decision node.
+    classDef gate fill:#ff6b35,stroke:#ff6b35,color:#ffffff,stroke-width:2px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+
+    class SCAN gate
+    class DEPLOY,GROWTH black
+    class VERIFY,DRIFT white
+    class AGENT gray

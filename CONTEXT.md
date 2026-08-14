@@ -21,7 +21,7 @@ quick start; this is *why the sandbox is built the way it is*. See also
 
 ## Architecture
 
-Four diagrams, each a different zoom level on the same loop. Sources live in
+Six diagrams, each a different zoom level on the same loop. Sources live in
 `docs/diagrams/*.mmd`; `scripts/render-mermaid.sh` can render them to SVG for
 non-Mermaid viewers, but GitHub renders the blocks below natively.
 
@@ -57,6 +57,38 @@ flowchart LR
     style BLOCK fill:#fde2e2,stroke:#e05252,color:#7a1f1f
     style SCAN fill:#fff7d6,stroke:#f6c54b,color:#5a4400
     style TRIAGE fill:#e8f4ff,stroke:#4a90e2,color:#1a3a5c
+```
+
+### Pipeline stages
+
+Same six stages, framed as a resource-level state machine instead of a CI
+job graph — growth is scan's other apply path; see [Growth loop](#growth-loop)
+for why it exists as a separate, incremental mechanism.
+
+```mermaid
+flowchart TD
+    SCAN["scan<br/>tfsec gate"] --> DEPLOY["deploy<br/>full apply"]
+    SCAN --> GROWTH["growth<br/>one resource/tick"]
+    DEPLOY --> VERIFY["verify<br/>API reachability"]
+    GROWTH --> VERIFY
+    DEPLOY --> DRIFT["drift<br/>plan vs state"]
+    GROWTH --> DRIFT
+    DRIFT --> AGENT["agent loop<br/>safe drift only"]
+    AGENT -.->|re-checks| DRIFT
+
+    %% 2026 modern aesthetic: black-and-white shape language with one
+    %% warm amber accent reserved for the security choke-point (SCAN) --
+    %% same fill/stroke as the GATE diamond above, just applied to a
+    %% rectangle since SCAN is a gate node, not a decision node.
+    classDef gate fill:#ff6b35,stroke:#ff6b35,color:#ffffff,stroke-width:2px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+
+    class SCAN gate
+    class DEPLOY,GROWTH black
+    class VERIFY,DRIFT white
+    class AGENT gray
 ```
 
 ### Local sandbox loop
@@ -177,6 +209,48 @@ flowchart LR
     class AG,DEV,DEP gray
     class GATE diamond
     class J store
+```
+
+### AWS/Azure architecture
+
+Both clouds run on real floci.io emulators as equal siblings, not
+AWS-with-Azure-bolted-on — see [Why floci specifically](#why-floci-specifically)
+and [Why floci-az](#why-floci-az) for the emulator-level rationale behind
+each box above.
+
+```mermaid
+flowchart LR
+    subgraph AWS["AWS — floci-core :4566"]
+        direction TB
+        AWSTF["terraform/<br/>7 modules, single root<br/>deploy + growth-queue.yaml"]
+        AWSOPS["verify · drift · agent-loop<br/>full parity, all live<br/>EKS/MSK/OpenSearch uncertain"]
+        AWSTF --> AWSOPS
+    end
+
+    subgraph AZ["Azure — floci-az :4577"]
+        direction TB
+        AZTF["terraform/azure/<br/>4 modules, separate root<br/>growth only, no deploy"]
+        AZOPS["verify · drift · agent-loop<br/>full parity, all live<br/>AKS, DNS data-plane broken"]
+        AZTF --> AZOPS
+    end
+
+    AWSOPS --> DASH["dashboard<br/>/aws and /azure routes"]
+    AZOPS --> DASH
+
+    %% 2026 modern aesthetic: pure black-and-white, no amber accent --
+    %% each cloud already gates its own applies (see Pipeline stages
+    %% above). AWS and AZ get byte-identical classDef treatment: neither
+    %% subgraph reads as primary/secondary, matching this repo's framing
+    %% of both clouds as equal siblings under floci.io.
+    classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+
+    class AWS,AZ section
+    class AWSTF,AZTF black
+    class AWSOPS,AZOPS white
+    class DASH gray
 ```
 
 ## Why floci specifically

@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph AWS["AWS — floci-core :4566"]
+        direction TB
+        AWSTF["terraform/<br/>7 modules, single root<br/>deploy + growth-queue.yaml"]
+        AWSOPS["verify · drift · agent-loop<br/>full parity, all live<br/>EKS/MSK/OpenSearch uncertain"]
+        AWSTF --> AWSOPS
+    end
+
+    subgraph AZ["Azure — floci-az :4577"]
+        direction TB
+        AZTF["terraform/azure/<br/>4 modules, separate root<br/>growth only, no deploy"]
+        AZOPS["verify · drift · agent-loop<br/>full parity, all live<br/>AKS, DNS data-plane broken"]
+        AZTF --> AZOPS
+    end
+
+    AWSOPS --> DASH["dashboard<br/>/aws and /azure routes"]
+    AZOPS --> DASH
+
+    %% 2026 modern aesthetic: pure black-and-white, no amber accent --
+    %% each cloud already gates its own applies (see Pipeline stages
+    %% above). AWS and AZ get byte-identical classDef treatment: neither
+    %% subgraph reads as primary/secondary, matching this repo's framing
+    %% of both clouds as equal siblings under floci.io.
+    classDef section fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1px
+    classDef black fill:#0a0a0a,stroke:#0a0a0a,color:#ffffff,stroke-width:2px
+    classDef white fill:#ffffff,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+    classDef gray fill:#fafafa,stroke:#0a0a0a,color:#0a0a0a,stroke-width:1.5px
+
+    class AWS,AZ section
+    class AWSTF,AZTF black
+    class AWSOPS,AZOPS white
+    class DASH gray
