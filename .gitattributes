@@ -1,0 +1,13 @@
+# =============================================================================
+# .gitattributes
+# =============================================================================
+# This repo's toolchain (bash, terraform, tfsec, podman) is Linux-only --
+# WSL2 and CI both read these files as LF. Without this file, Windows git's
+# core.autocrlf=true silently re-flips the whole tree to CRLF on every
+# checkout/pull, which WSL2's git (no autocrlf) then sees as fully modified
+# and which can break bash scripts outright (CRLF after a shebang, or inside
+# a `set -o pipefail`-style option string). Confirmed recurring across
+# multiple sessions -- this pins LF for real instead of renormalizing by
+# hand each time it resurfaces.
+# =============================================================================
+* text=auto eol=lf
