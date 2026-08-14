@@ -48,27 +48,38 @@ queue:
 
   # -- azure-storage ------------------------------------------------------------
   - module.azure-storage.azurerm_storage_account.main
-  # CONFIRMED STUCK (2026-08-13 apply test): both resources below hang
-  # indefinitely on apply — ZERO corresponding request ever appeared in
-  # floci-az's own logs, confirming the hang is client-side, before any
-  # request is even sent. Root cause: floci-az's ARM response for the
-  # storage account above returns real-Azure-shaped data-plane hostnames
-  # (http://<account>.blob.core.windows.net/, .../table.core.windows.net/),
-  # which the azurerm provider targets directly for these two resources —
-  # and those hostnames don't resolve. No per-resource endpoint override
-  # exists on the real azurerm provider for this. Kept per the visible-
-  # stall-over-silent-skip design — retried forever (bounded by
-  # APPLY_TIMEOUT_SECONDS per attempt, see grow-stack-azure.sh).
+  # CONFIRMED UNFIXABLE AT THE TERRAFORM LEVEL (2026-08-14 follow-up
+  # investigation, see CONTEXT.md's Research log for the full writeup):
+  # both resources below hang indefinitely on apply — ZERO corresponding
+  # request ever appeared in floci-az's own logs, confirming the hang is
+  # client-side, before any request is even sent. Root cause, confirmed
+  # via a direct ARM API probe against the real container: floci-az
+  # returns real-Azure-shaped data-plane hostnames with NO PORT and
+  # scheme http, e.g. "blob":"http://<account>.blob.core.windows.net/" —
+  # so even a DNS-level fix (custom resolver, /etc/hosts) would only get
+  # a client to port 80, and floci-az listens on :4577 only. Checked
+  # floci-az's own docs directly: no DNS/hosts-file component or env var
+  # (FLOCI_AZ_HOSTNAME/FLOCI_AZ_BASE_URL) that changes this — those only
+  # affect TLS cert SANs, not ARM response bodies. A real fix needs a
+  # host-level DNS resolver AND a port 80/443->4577 redirect (iptables
+  # NAT or a reverse proxy), which is a materially bigger, more
+  # privileged host change than this queue's tags/405 fix and was not
+  # attempted. Kept per the visible-stall-over-silent-skip design —
+  # retried forever (bounded by APPLY_TIMEOUT_SECONDS per attempt, see
+  # grow-stack-azure.sh).
   - module.azure-storage.azurerm_storage_container.artifacts
   - module.azure-storage.azurerm_storage_table.main
 
   # -- azure-security -------------------------------------------------------------
   - module.azure-security.azurerm_key_vault.main
-  # CONFIRMED STUCK (2026-08-13 apply test), same root cause as the storage
-  # entries above: floci-az's Key Vault ARM response returns a real-Azure-
-  # shaped vaultUri (https://<vault>.vault.azure.net/), which the azurerm
-  # provider uses directly for secret data-plane calls — and that hostname
-  # doesn't resolve either. Kept, retried forever (bounded per attempt).
+  # CONFIRMED UNFIXABLE AT THE TERRAFORM LEVEL (2026-08-14), same root
+  # cause as the storage entries above: floci-az's Key Vault ARM response
+  # returns a real-Azure-shaped vaultUri with no port
+  # (https://<vault>.vault.azure.net/), which the azurerm provider uses
+  # directly for secret data-plane calls. Same port-mismatch problem (443
+  # vs floci-az's :4577), same conclusion: needs a host-level DNS + port
+  # redirect, not a Terraform or floci-az config change. Kept, retried
+  # forever (bounded per attempt).
   - module.azure-security.azurerm_key_vault_secret.app_config
 
   # -- azure-compute --------------------------------------------------------------
