@@ -93,6 +93,11 @@ flowchart TD
 
 ### Local sandbox loop
 
+Depicts AWS's local loop specifically. Azure's local loop mirrors this
+shape via `verify-azure.sh`, `drift-check-azure.sh`, and
+`agent-loop-azure.sh` — deploy has no Azure equivalent, a permanent gap
+(growth is Azure's only apply path).
+
 ```mermaid
 flowchart LR
     subgraph L["LOCAL SANDBOX"]
@@ -157,6 +162,11 @@ flowchart LR
 ```
 
 ### Developer dataflow
+
+Names AWS's five scripts specifically. Azure has full siblings for
+verify/drift/agent-loop (`verify-azure.sh`, `drift-check-azure.sh`,
+`agent-loop-azure.sh`) but no `deploy-azure.sh` — a permanent gap, not a
+pending one (growth is Azure's only apply path).
 
 ```mermaid
 flowchart LR
