@@ -201,8 +201,10 @@ html, body {
   animation: spin 0.7s linear infinite;
 }
 
-/* ── cloud tab switcher ────────────────────────────────────── */
-.tab-switcher {
+/* ── cloud nav — real links (separate /aws, /azure pages), not a
+   client-side tab switcher. Visually the same pill-toggle look as the
+   old tab-switcher; semantics are now real navigation. ────────────── */
+.cloud-nav {
   display: inline-flex;
   gap: 4px;
   margin-bottom: 18px;
@@ -211,7 +213,7 @@ html, body {
   border: 0.5px solid var(--border);
   border-radius: var(--radius-sm);
 }
-.tab-btn {
+.cloud-nav-link {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
@@ -222,22 +224,48 @@ html, body {
   border-radius: 6px;
   padding: 6px 16px;
   cursor: pointer;
+  text-decoration: none;
   transition: background .15s, color .15s;
 }
-.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-.tab-btn.active { color: var(--teal); background: rgba(0,212,170,0.12); }
-.tab-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
-.tab-panel[hidden] { display: none; }
+.cloud-nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.cloud-nav-link.active { color: var(--teal); background: rgba(0,212,170,0.12); }
+.cloud-nav-link:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
-/* Placeholder cards (Azure verify/drift/agent — no script exists yet).
-   Visually distinct from a normal "no data yet" empty-state: dashed
-   border, no pulse/skeleton — this isn't waiting on data, it's an
-   honestly-labeled gap. */
-.card.is-placeholder {
+/* Gap cards — a CONFIRMED, PERMANENT structural absence (e.g. Azure has
+   no single-shot deploy). Deliberately NOT the same treatment as an
+   ordinary "no data yet" empty-state (which uses skeleton + a plain
+   .empty-state and stays fully legible) and NOT built by dimming a
+   live card's opacity: opacity on top of --text-muted's already-low
+   contrast against --surface compounds into text that's borderline
+   illegible (~3.3:1 alone, well under WCAG AA's 4.5:1 -- confirmed by
+   direct measurement, not assumed). Dashed border is the only visual
+   signal; background and text stay at full, normal contrast. */
+.card.is-gap {
   border-style: dashed;
-  opacity: 0.6;
+  border-color: var(--border-strong);
 }
-.card.is-placeholder .empty-state { padding: 20px 0; }
+.gap-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  padding: var(--space-6) var(--space-2);
+}
+.gap-icon { color: var(--text-muted); } /* decorative icon, not reading text -- fine at muted contrast */
+.gap-copy {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary); /* NOT --text-muted -- this is the actual explanation, must stay legible */
+  max-width: 220px;
+}
+.pill.na {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  border: 0.5px dashed var(--border-strong);
+}
 
 /* ── card grid ─────────────────────────────────────────────── */
 /* Use auto-fit so cards get evenly sized; with 5 cards on a wide screen

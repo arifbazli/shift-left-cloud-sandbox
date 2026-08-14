@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<meta name="description" content="Shift-Left Sandbox — tfsec gate, floci-emulated Azure, bounded infra agent." />
+<title>Shift-Left Sandbox — Azure</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%2300d4aa'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<div class="dash-wrap">
+
+  <!-- ── header ────────────────────────────────────────── -->
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">shift-left cloud sandbox</div>
+      <div class="dash-sub">floci-emulated Azure · tfsec-gated · agent allowlisted</div>
+    </div>
+    <div class="sync-status" id="sync-status">
+      <span class="dot" id="sync-dot"></span>
+      <span id="sync-text">loading…</span>
+      <span class="live-mode-badge" id="live-mode-badge">POLLING</span>
+      <button class="pipeline-btn" id="pipeline-trigger-btn" title="Trigger GitHub Actions pipeline">&#9654; Pipeline</button>
+    </div>
+  </div>
+
+  <!-- ── cloud nav — real links, real navigation ─────────── -->
+  <nav class="cloud-nav" aria-label="Cloud">
+    <a class="cloud-nav-link" href="/aws">AWS</a>
+    <a class="cloud-nav-link active" href="/azure" aria-current="page">Azure</a>
+  </nav>
+
+  <div class="grid">
+
+    <!-- SCAN GATE (Azure) -->
+    <div class="card" id="card-scan-azure">
+      <div class="card-head">
+        <span class="card-label">tfsec gate</span>
+        <span class="pill idle" id="pill-scan-azure" role="status">—</span>
+      </div>
+
+      <div id="skel-scan-azure" class="skeleton-wrap">
+        <div class="skeleton skel-h"></div>
+        <div class="skeleton skel-m"></div>
+      </div>
+
+      <div id="body-scan-azure" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-scan-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
+        <div class="stat-row">
+          <div class="stat-item">
+            <span class="stat-num danger" id="cnt-critical-azure">0</span>
+            <span class="stat-cap">critical</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num warn" id="cnt-high-azure">0</span>
+            <span class="stat-cap">high</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="cnt-medium-azure">0</span>
+            <span class="stat-cap">medium</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num dim" id="cnt-low-azure">0</span>
+            <span class="stat-cap">low</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num dim" id="cnt-ignored-azure">0</span>
+            <span class="stat-cap">ignored</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="empty-scan-azure" class="empty-state" hidden>
+        No data — run <code>scripts/scan.sh</code>
+      </div>
+
+      <div class="list-row" style="margin-top:10px;padding-top:10px">
+        <span class="list-key">last run</span>
+        <span class="list-mono" id="scan-azure-ts">—</span>
+      </div>
+    </div>
+
+    <!-- DEPLOY (Azure) — PERMANENT STRUCTURAL GAP, not "not built yet".
+         No deploy-azure.sh exists, and structurally can't the way AWS
+         has one: growth is Azure's only apply mechanism, and it is
+         incremental by design (see growth-queue-azure.yaml). This is a
+         real, permanent absence, not a pending task -- copy reflects
+         that. See CONTEXT.md. -->
+    <div class="card is-gap" id="card-deploy-azure">
+      <div class="card-head">
+        <span class="card-label">deploy</span>
+        <span class="pill na">N/A</span>
+      </div>
+      <div class="gap-body">
+        <svg class="gap-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <p class="gap-copy">No single-shot deploy — growth applies incrementally.</p>
+      </div>
+    </div>
+
+    <!-- GROWTH (Azure) -->
+    <div class="card" id="card-growth-azure">
+      <div class="card-head">
+        <span class="card-label">growth</span>
+        <span class="pill idle" id="pill-growth-azure" role="status">—</span>
+      </div>
+
+      <div id="skel-growth-azure" class="skeleton-wrap">
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-s"></div>
+      </div>
+
+      <div id="body-growth-azure" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-growth-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
+        <div class="list-row">
+          <span class="list-key">progress</span>
+          <span class="list-mono" id="growth-azure-progress">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">next target</span>
+          <span class="list-mono" id="growth-azure-next">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">timestamp</span>
+          <span class="list-mono" id="growth-azure-ts">—</span>
+        </div>
+      </div>
+
+      <div id="empty-growth-azure" class="empty-state" hidden>
+        No data — run <code>scripts/grow-stack-azure.sh</code>
+      </div>
+    </div>
+
+    <!-- VERIFY (Azure) — full parity: attempts every resource, including
+         the confirmed DNS-hang / permanently-broken ones. See CONTEXT.md
+         § Known floci-az limitations for what "known gaps" means below. -->
+    <div class="card" id="card-verify-azure">
+      <div class="card-head">
+        <span class="card-label">verify (api direct)</span>
+        <span class="pill idle" id="pill-verify-azure" role="status">—</span>
+      </div>
+
+      <div id="skel-verify-azure" class="skeleton-wrap">
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-s"></div>
+      </div>
+
+      <div id="body-verify-azure" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-verify-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
+        <div class="list-row">
+          <span class="list-key">found</span>
+          <span class="list-mono" id="ver-azure-found">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">known gaps</span>
+          <span class="list-mono" id="ver-azure-known">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">unexpected</span>
+          <span class="list-mono" id="ver-azure-unexpected">—</span>
+        </div>
+        <div class="list-row">
+          <span class="list-key">timestamp</span>
+          <span class="list-mono" id="ver-azure-ts">—</span>
+        </div>
+      </div>
+
+      <div id="empty-verify-azure" class="empty-state" hidden>
+        No data — run <code>scripts/verify-azure.sh</code>
+      </div>
+    </div>
+
+    <!-- DRIFT (Azure) -->
+    <div class="card" id="card-drift-azure">
+      <div class="card-head">
+        <span class="card-label">drift</span>
+        <span class="pill idle" id="pill-drift-azure" role="status">—</span>
+      </div>
+
+      <div id="skel-drift-azure" class="skeleton-wrap">
+        <div class="skeleton skel-h"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+      </div>
+
+      <div id="body-drift-azure" hidden>
+        <div class="sparkline-wrap"><svg class="sparkline" id="spark-drift-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
+        <div id="drift-azure-changes"></div>
+      </div>
+
+      <div id="empty-drift-azure" class="empty-state" hidden>
+        No data — run <code>scripts/drift-check-azure.sh</code>
+      </div>
+
+      <div class="list-row" style="margin-top:10px;padding-top:10px">
+        <span class="list-key">class</span>
+        <span class="list-mono" id="drift-azure-class">—</span>
+        <span class="list-ts" id="drift-azure-count">0 changes</span>
+      </div>
+      <div class="list-row">
+        <span class="list-key">pending growth</span>
+        <span class="list-mono" id="drift-azure-pending">—</span>
+      </div>
+      <div class="list-row">
+        <span class="list-key">last run</span>
+        <span class="list-mono" id="drift-azure-ts">—</span>
+      </div>
+    </div>
+
+    <!-- AGENT LOOP (Azure) -->
+    <div class="card" id="card-agent-azure">
+      <div class="card-head">
+        <span class="card-label">agent loop</span>
+        <span class="pill idle" id="pill-agent-azure" role="status">—</span>
+      </div>
+
+      <div id="skel-agent-azure" class="skeleton-wrap">
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+        <div class="skeleton skel-m"></div>
+      </div>
+
+      <div id="body-agent-azure" hidden>
+        <div id="agent-azure-list"></div>
+        <div class="list-row" style="margin-top:4px">
+          <span class="list-key">heartbeat</span>
+          <span class="list-mono" id="agent-azure-heartbeat">—</span>
+        </div>
+      </div>
+
+      <div id="empty-agent-azure" class="empty-state" hidden>
+        Not started — run <code>scripts/agent-loop-azure.sh</code>
+      </div>
+    </div>
+
+    <!-- RECENT FINDINGS (Azure) -->
+    <div class="card findings-wrap" id="card-findings-azure">
+      <div class="findings-header">
+        <span class="card-label">recent findings</span>
+        <span class="findings-count" id="findings-count-azure">0 total</span>
+      </div>
+      <div id="findings-list-azure">
+        <div class="empty-state">No scan data yet.</div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- ── meta bar ──────────────────────────────────────── -->
+  <div class="meta-bar">
+    <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
+    <span><span class="meta-key">data plane</span><span class="meta-val">static json</span></span>
+    <span><span class="meta-key">refresh</span><span class="meta-val">10s</span></span>
+    <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
+  </div>
+
+</div><!-- /dash-wrap -->
+
+<!-- visually hidden ARIA live region for screen readers -->
+<div id="aria-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+<div id="toast" class="toast" role="alert" hidden>
+  <span id="toast-msg"></span>
+  <button class="toast-dismiss" id="toast-dismiss" aria-label="Dismiss">&times;</button>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

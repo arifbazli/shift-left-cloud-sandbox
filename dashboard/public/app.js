@@ -22,22 +22,33 @@ function getRefreshMs() {
 const REFRESH_MS    = getRefreshMs();   // ?refresh=<ms> or localStorage 'dashboard.refreshMs'
 const DATA_SERVER   = 'http://localhost:7788';  // local data-server
 
+// Absolute paths, not relative -- app.js is now loaded from two different
+// nested pages (/aws/, /azure/), and a relative 'data/...' path resolves
+// against the PAGE's URL, not the script's location. A relative path here
+// would 404 as /aws/data/tfsec-last.json instead of the real /data/... .
+// Confirmed via a real fetch test after the routing split (findings-list
+// silently fell back to "No scan data yet" -- every fetch was 404ing).
 const FETCH_TARGETS = [
-  'data/tfsec-last.json',
-  'data/deploy-last.json',
-  'data/verify-last.json',
-  'data/drift-last.json',
-  'data/agent-actions.json',
+  '/data/tfsec-last.json',
+  '/data/deploy-last.json',
+  '/data/growth-last.json',
+  '/data/verify-last.json',
+  '/data/drift-last.json',
+  '/data/agent-actions.json',
 ];
 
-// Azure tab data -- fetched independently of the AWS SSE/poll path above.
-// data-server.py's live snapshot only knows about the 5 AWS files, so
-// Azure's 2 real cards (scan, growth) always poll on their own cadence,
-// never pushed over SSE. verify/drift/agent have no Azure sibling yet --
-// see index.html's placeholder cards, no fetch target needed for those.
+// Azure page data -- fetched independently of the AWS SSE/poll path above.
+// data-server.py's live snapshot only knows about the AWS files, so every
+// Azure card polls on its own cadence, never pushed over SSE. All 5 have
+// real scripts and real data as of the verify/drift/agent-loop siblings
+// merged 2026-08-14 -- deploy has no fetch target, it's a static
+// permanent-gap card (see azure/index.html), not data-driven.
 const FETCH_TARGETS_AZURE = [
-  'data/tfsec-azure-last.json',
-  'data/growth-last-azure.json',
+  '/data/tfsec-azure-last.json',
+  '/data/growth-last-azure.json',
+  '/data/verify-last-azure.json',
+  '/data/drift-last-azure.json',
+  '/data/agent-actions-azure.json',
 ];
 
 // fmtDataAge: given epoch seconds (file mtime), return e.g. "3s ago" / "2m ago"
@@ -167,12 +178,15 @@ function escHtml(s) {
 // ── sparklines (reads *-history.json, independent of the SSE/poll path
 //    since data-server.py's SSE snapshot only carries *-last.json) ──────
 const HISTORY_TARGETS = {
-  scan:   'data/tfsec-history.json',
-  deploy: 'data/deploy-history.json',
-  verify: 'data/verify-history.json',
-  drift:  'data/drift-history.json',
-  'scan-azure':   'data/tfsec-azure-history.json',
-  'growth-azure': 'data/growth-history-azure.json',
+  scan:   '/data/tfsec-history.json',
+  deploy: '/data/deploy-history.json',
+  growth: '/data/growth-history.json',
+  verify: '/data/verify-history.json',
+  drift:  '/data/drift-history.json',
+  'scan-azure':   '/data/tfsec-azure-history.json',
+  'growth-azure': '/data/growth-history-azure.json',
+  'verify-azure': '/data/verify-history-azure.json',
+  'drift-azure':  '/data/drift-history-azure.json',
 };
 const HISTORY_POLL_MS = 30_000;
 
@@ -206,20 +220,44 @@ async function fetchHistories() {
     let series = null;
     if (key === 'scan')   series = recent.map(r => (r.counts?.critical || 0) + (r.counts?.high || 0));
     if (key === 'deploy') series = recent.map(r => Object.keys(r.outputs || {}).length);
+    if (key === 'growth') series = recent.map(r => r.applied_count || 0);
     if (key === 'verify') series = recent.map(r => (r.total ? r.passed / r.total : 0));
     if (key === 'drift')  series = recent.map(r => (r.changes || []).filter(c => !(c.actions || []).every(a => a === 'no-op')).length);
     if (key === 'scan-azure')   series = recent.map(r => (r.counts?.critical || 0) + (r.counts?.high || 0));
     if (key === 'growth-azure') series = recent.map(r => r.applied_count || 0);
+    if (key === 'verify-azure') series = recent.map(r => (r.total ? r.found / r.total : 0));
+    if (key === 'drift-azure')  series = recent.map(r => (r.changes || []).length);
     if (series) renderSparkline(`spark-${key}`, series);
   }
 }
 
-// Independent fetch cycle for the Azure tab's 2 real cards (scan, growth).
+// Independent fetch cycle for the Azure page's 5 real cards (deploy is a
+// static permanent-gap card, not data-driven -- see azure/index.html).
 // Not part of applySnapshot()/the SSE path -- see FETCH_TARGETS_AZURE above.
 async function fetchAllAzure() {
-  const [scanAzure, growthAzure] = await Promise.all(FETCH_TARGETS_AZURE.map(safeFetch));
-  try { renderScanAzure(scanAzure); } catch (e) { console.error('renderScanAzure failed:', e); }
-  try { renderGrowthAzure(growthAzure); } catch (e) { console.error('renderGrowthAzure failed:', e); }
+  const results = await Promise.all(FETCH_TARGETS_AZURE.map(safeFetch));
+  const [scanAzure, growthAzure, verifyAzure, driftAzure, agentAzure] = results;
+  if (results.every(d => d && d.__networkError)) {
+    showToast('Can’t reach dashboard data — retrying…');
+  } else {
+    hideToast();
+  }
+  const renderers = [
+    ['renderScanAzure',   () => renderScanAzure(scanAzure)],
+    ['renderGrowthAzure', () => renderGrowthAzure(growthAzure)],
+    ['renderVerifyAzure', () => renderVerifyAzure(verifyAzure)],
+    ['renderDriftAzure',  () => renderDriftAzure(driftAzure)],
+    ['renderAgentAzure',  () => renderAgentAzure(agentAzure)],
+  ];
+  for (const [name, fn] of renderers) {
+    try { fn(); } catch (e) { console.error(`${name} failed:`, e); }
+  }
+  // Keeps the sync-status dot/text meaningful on the Azure page too --
+  // without this, __latestTs (set only from the AWS path) would stay
+  // null forever here and the header would perpetually show "no data"
+  // even while Azure's own cards are loading fine.
+  updateLatestTs([scanAzure, growthAzure, verifyAzure, driftAzure, agentAzure]);
+  if (liveEl) liveEl.textContent = `Dashboard refreshed at ${fmtTs(new Date().toISOString())}`;
 }
 
 // ── fetch-error toast ──────────────────────────────────────────────────
@@ -415,14 +453,18 @@ const SCAN_AZURE_IDS = {
 function renderScan(d) { renderScanGeneric(d, SCAN_IDS, AWS_MODULE_MAP); }
 function renderScanAzure(d) { renderScanGeneric(d, SCAN_AZURE_IDS, AZURE_MODULE_MAP); }
 
-// growth-last-azure.json: {timestamp, status, next_target, total_queued,
-// applied_count, error?} -- written by scripts/grow-stack-azure.sh. No AWS
-// equivalent card exists (the AWS growth loop was built without one).
-function renderGrowthAzure(d) {
-  const cardId = 'card-growth-azure';
+// growth-last*.json: {timestamp, status, next_target, total_queued,
+// applied_count, error?} -- written by scripts/grow-stack.sh /
+// grow-stack-azure.sh. AWS's growth card has no committed data file as
+// of this build (grow-stack.sh + its scheduled CI job exist, but nothing
+// has synced real output to dashboard/public/data/growth-last.json yet)
+// -- it renders the same empty-state as any other never-run card until
+// that happens; seeding real data is a separate concern from this UI.
+// ids: { card, pill, progress, next, ts }
+function renderGrowthGeneric(d, ids) {
   if (!d || d.__error) {
-    setPill('pill-growth-azure', 'idle', '—');
-    showCard(cardId, true, true);
+    setPill(ids.pill, 'idle', '—');
+    showCard(ids.card, true, true);
     return;
   }
 
@@ -435,17 +477,28 @@ function renderGrowthAzure(d) {
   };
   const byStatus = PILL_BY_STATUS[status] || ['idle', status.toUpperCase()];
   const pillCls = byStatus[0], pillLabel = byStatus[1];
-  setPill('pill-growth-azure', pillCls, pillLabel);
-  setCardState(cardId, (pillCls === 'pass' || pillCls === 'clean') ? 'pass'
+  setPill(ids.pill, pillCls, pillLabel);
+  setCardState(ids.card, (pillCls === 'pass' || pillCls === 'clean') ? 'pass'
     : pillCls === 'fail' ? 'fail' : 'warn');
-  showCard(cardId, true, false);
+  showCard(ids.card, true, false);
 
   const total = d.total_queued ?? '?';
   const applied = d.applied_count ?? '?';
-  $('growth-azure-progress').textContent = `${applied} / ${total}`;
-  $('growth-azure-next').textContent = d.next_target || '(queue complete)';
-  $('growth-azure-ts').textContent = fmtTs(d.timestamp);
+  $(ids.progress).textContent = `${applied} / ${total}`;
+  $(ids.next).textContent = d.next_target || '(queue complete)';
+  $(ids.ts).textContent = fmtTs(d.timestamp);
 }
+
+const GROWTH_IDS = {
+  card: 'card-growth', pill: 'pill-growth',
+  progress: 'growth-progress', next: 'growth-next', ts: 'growth-ts',
+};
+const GROWTH_AZURE_IDS = {
+  card: 'card-growth-azure', pill: 'pill-growth-azure',
+  progress: 'growth-azure-progress', next: 'growth-azure-next', ts: 'growth-azure-ts',
+};
+function renderGrowth(d) { renderGrowthGeneric(d, GROWTH_IDS); }
+function renderGrowthAzure(d) { renderGrowthGeneric(d, GROWTH_AZURE_IDS); }
 
 function renderDeploy(d) {
   const cardId = 'card-deploy';
@@ -493,11 +546,40 @@ function renderVerify(d) {
   $('ver-ts').textContent       = fmtTs(d.timestamp);
 }
 
-function renderDrift(d) {
-  const cardId = 'card-drift';
-  if (!d || d.__error || d.result === undefined) {
-    setPill('pill-drift', 'idle', '—');
+// verify-last-azure.json: {timestamp, endpoint, total, found, not_found,
+// timed_out, check_error, not_applicable, stuck, unexpected_issues,
+// all_expected_healthy, results}. Deliberately NOT reusing renderVerify's
+// logic -- full parity means most resources are expected to be
+// not_found/check_error/stuck (documented known_issue gaps), so "healthy"
+// here means "zero UNEXPECTED issues", not "everything found" the way
+// AWS's all_passed does.
+function renderVerifyAzure(d) {
+  const cardId = 'card-verify-azure';
+  if (!d || d.__error) {
+    setPill('pill-verify-azure', 'idle', '—');
     showCard(cardId, true, true);
+    return;
+  }
+
+  const ok = d.all_expected_healthy === true;
+  setPill('pill-verify-azure', ok ? 'pass' : 'warn', ok ? 'PASS' : `${d.unexpected_issues ?? '?'} unexpected`);
+  setCardState(cardId, ok ? 'pass' : 'warn');
+  showCard(cardId, true, false);
+
+  const knownGaps = (d.results || []).filter(r => r.known_issue).length;
+  $('ver-azure-found').textContent      = `${d.found ?? '?'} / ${d.total ?? '?'}`;
+  $('ver-azure-known').textContent      = `${knownGaps} (documented, excluded)`;
+  $('ver-azure-unexpected').textContent = String(d.unexpected_issues ?? '?');
+  $('ver-azure-ts').textContent         = fmtTs(d.timestamp);
+}
+
+// ids: { card, pill, class, count, ts, changes, pending? }
+// `pending` is Azure-only (drift-check-azure.sh's pending_growth array --
+// AWS's drift-check.sh has no equivalent concept, see its header comment).
+function renderDriftGeneric(d, ids) {
+  if (!d || d.__error || d.result === undefined) {
+    setPill(ids.pill, 'idle', '—');
+    showCard(ids.card, true, true);
     return;
   }
 
@@ -519,17 +601,26 @@ function renderDrift(d) {
     : cls === 'security_only'  ? 'FROZEN · security'
     : 'DRIFT';
 
-  setPill('pill-drift', pillCls, pillLabel);
-  setCardState(cardId, clean ? 'pass' : cls === 'destructive' ? 'fail' : 'warn');
-  showCard(cardId, true, false);
+  setPill(ids.pill, pillCls, pillLabel);
+  setCardState(ids.card, clean ? 'pass' : cls === 'destructive' ? 'fail' : 'warn');
+  showCard(ids.card, true, false);
 
-  $('drift-class').textContent = `classification: ${cls}`;
-  $('drift-ts').textContent    = fmtTs(d.timestamp);
+  $(ids.class).textContent = `classification: ${cls}`;
+  $(ids.ts).textContent    = fmtTs(d.timestamp);
 
+  // AWS's raw changes can include no-ops; Azure's drift-check-azure.sh
+  // already excludes them (and pending_growth separately) -- filtering
+  // here is a no-op for Azure's already-clean array, harmless either way.
   const changes = (d.changes || []).filter(c => !(c.actions || []).every(a => a === 'no-op'));
-  $('drift-count').textContent = `${changes.length} change${changes.length === 1 ? '' : 's'}`;
+  $(ids.count).textContent = `${changes.length} change${changes.length === 1 ? '' : 's'}`;
 
-  $('drift-changes').innerHTML = changes.length === 0
+  if (ids.pending) {
+    const pending = d.pending_growth || [];
+    $(ids.pending).textContent = pending.length
+      ? `${pending.length} resource${pending.length === 1 ? '' : 's'} (not drift)` : '0';
+  }
+
+  $(ids.changes).innerHTML = changes.length === 0
     ? '<div class="drift-row"><span class="drift-address" style="color:var(--text-muted);font-style:italic">no-op across all resources</span></div>'
     : changes.slice(0, 20).map(c => {
         const acts = (c.actions || []).join('|');
@@ -543,18 +634,30 @@ function renderDrift(d) {
       }).join('');
 }
 
-function renderAgent(d) {
-  const cardId = 'card-agent';
+const DRIFT_IDS = {
+  card: 'card-drift', pill: 'pill-drift', class: 'drift-class',
+  count: 'drift-count', ts: 'drift-ts', changes: 'drift-changes',
+};
+const DRIFT_AZURE_IDS = {
+  card: 'card-drift-azure', pill: 'pill-drift-azure', class: 'drift-azure-class',
+  count: 'drift-azure-count', ts: 'drift-azure-ts', changes: 'drift-azure-changes',
+  pending: 'drift-azure-pending',
+};
+function renderDrift(d) { renderDriftGeneric(d, DRIFT_IDS); }
+function renderDriftAzure(d) { renderDriftGeneric(d, DRIFT_AZURE_IDS); }
+
+// ids: { card, pill, list, heartbeat, empty }
+function renderAgentGeneric(d, ids) {
   const arr = Array.isArray(d) ? d : [];
 
   if (!d || d.__error || !Array.isArray(d)) {
-    setPill('pill-agent', 'idle', 'IDLE');
+    setPill(ids.pill, 'idle', 'IDLE');
     // Show real error in empty-state instead of leaving skeleton up
-    const emptyEl = $('empty-agent');
+    const emptyEl = $(ids.empty);
     if (emptyEl && d && d.__error) {
-      emptyEl.innerHTML = `Could not load agent-actions.json: <code>${escHtml(d.__error)}</code>`;
+      emptyEl.innerHTML = `Could not load agent data: <code>${escHtml(d.__error)}</code>`;
     }
-    showCard(cardId, true, true);
+    showCard(ids.card, true, true);
     return;
   }
 
@@ -588,11 +691,11 @@ function renderAgent(d) {
     else if (lastEvt.kind === 'no_action')          { pillCls = 'idle'; pillLabel = 'WATCHING'; }
   }
 
-  setPill('pill-agent', pillCls, pillLabel);
-  setCardState(cardId, pillCls === 'fail' ? 'fail' : pillCls === 'warn' ? 'warn' : 'pass');
-  showCard(cardId, true, false);
+  setPill(ids.pill, pillCls, pillLabel);
+  setCardState(ids.card, pillCls === 'fail' ? 'fail' : pillCls === 'warn' ? 'warn' : 'pass');
+  showCard(ids.card, true, false);
 
-  $('agent-list').innerHTML = deduped.map(e => {
+  $(ids.list).innerHTML = deduped.map(e => {
     const kindCls = (e.reason || '').includes('FROZEN') ? 'frozen' : (e.kind || 'no_action');
     const countTxt = e._count > 1 ? ` <span class="act-count">×${e._count}</span>` : '';
     const reasonHtml = e.reason
@@ -607,19 +710,30 @@ function renderAgent(d) {
     </div>`;
   }).join('');
 
-  $('agent-heartbeat').textContent = lastHb ? fmtTs(lastHb.timestamp) : '—';
+  $(ids.heartbeat).textContent = lastHb ? fmtTs(lastHb.timestamp) : '—';
 }
+
+const AGENT_IDS = {
+  card: 'card-agent', pill: 'pill-agent', list: 'agent-list',
+  heartbeat: 'agent-heartbeat', empty: 'empty-agent',
+};
+const AGENT_AZURE_IDS = {
+  card: 'card-agent-azure', pill: 'pill-agent-azure', list: 'agent-azure-list',
+  heartbeat: 'agent-azure-heartbeat', empty: 'empty-agent-azure',
+};
+function renderAgent(d) { renderAgentGeneric(d, AGENT_IDS); }
+function renderAgentAzure(d) { renderAgentGeneric(d, AGENT_AZURE_IDS); }
 
 // ── refresh ────────────────────────────────────────────────
 async function fetchAll() {
   const results = await Promise.all(FETCH_TARGETS.map(safeFetch));
-  const [scan, deploy, verify, drift, agent] = results;
+  const [scan, deploy, growth, verify, drift, agent] = results;
   if (results.every(d => d && d.__networkError)) {
     showToast('Can’t reach dashboard data — retrying…');
   } else {
     hideToast();
   }
-  applySnapshot({ scan, deploy, verify, drift, agent, _running: {}, _ts: Date.now() });
+  applySnapshot({ scan, deploy, growth, verify, drift, agent, _running: {}, _ts: Date.now() });
 }
 
 // Announce refreshes to screen readers via a polite live region.
@@ -643,10 +757,11 @@ function applySnapshot(snap) {
     if (mtimes[name]) _cardMtimes[name] = mtimes[name];
   });
 
-  // snap = { scan, deploy, verify, drift, agent, _running, _ts }
+  // snap = { scan, deploy, growth, verify, drift, agent, _running, _ts }
   const renderers = [
     ['scan',   renderScan,   snap.scan],
     ['deploy', renderDeploy, snap.deploy],
+    ['growth', renderGrowth, snap.growth],
     ['verify', renderVerify, snap.verify],
     ['drift',  renderDrift,  snap.drift],
     ['agent',  renderAgent,  snap.agent],
@@ -672,7 +787,7 @@ function applySnapshot(snap) {
       } catch {}
     }
   }
-  updateLatestTs([snap.scan, snap.deploy, snap.verify, snap.drift, snap.agent]);
+  updateLatestTs([snap.scan, snap.deploy, snap.growth, snap.verify, snap.drift, snap.agent]);
 
   // Show spinner on cards whose script is currently running
   const running = snap._running || {};
@@ -785,34 +900,15 @@ document.querySelectorAll('[data-run]').forEach(btn => {
   });
 });
 
-// ── Cloud tab switcher ─────────────────────────────────────
-// AWS is the default/first tab. Persists the active tab across reloads
-// (same localStorage pattern as dashboard.refreshMs).
-(function setupTabSwitcher() {
-  const tabBtnAws = $('tab-btn-aws'), tabBtnAzure = $('tab-btn-azure');
-  const tabAws = $('tab-aws'), tabAzure = $('tab-azure');
-  if (!tabBtnAws || !tabBtnAzure || !tabAws || !tabAzure) return;
-
-  function switchTab(target) {
-    const toAzure = target === 'azure';
-    tabAws.hidden = toAzure;
-    tabAzure.hidden = !toAzure;
-    tabBtnAws.classList.toggle('active', !toAzure);
-    tabBtnAzure.classList.toggle('active', toAzure);
-    tabBtnAws.setAttribute('aria-selected', String(!toAzure));
-    tabBtnAzure.setAttribute('aria-selected', String(toAzure));
-    try { localStorage.setItem('dashboard.activeTab', target); } catch {}
-  }
-
-  tabBtnAws.addEventListener('click', () => switchTab('aws'));
-  tabBtnAzure.addEventListener('click', () => switchTab('azure'));
-
-  try {
-    if (localStorage.getItem('dashboard.activeTab') === 'azure') switchTab('azure');
-  } catch {}
-})();
-
 // ── Boot sequence ─────────────────────────────────────────
+// /aws and /azure are now real, separate pages (not a client-side tab
+// switch) sharing this one app.js. Detect which page loaded it by
+// checking for that page's own scan card, rather than a body data
+// attribute -- same defensive existence-check style already used
+// throughout this file (e.g. `if (pipelineBtn) ...`).
+const HAS_AWS_PAGE   = !!$('card-scan');
+const HAS_AZURE_PAGE = !!$('card-scan-azure');
+
 // On Cloudflare Pages (HTTPS) the browser blocks HTTP localhost
 // as mixed content — EventSource never fires onerror cleanly,
 // so the fallback never starts. Gate SSE on hostname.
@@ -825,36 +921,52 @@ if (!IS_LOCAL) {
   });
 }
 
-// Always do an immediate file fetch so the dashboard isn't blank.
-fetchAllAndAnnounce();
+// Safe to call regardless of which page loaded this script -- each
+// sparkline render is a no-op if its target <svg> isn't on the page.
 fetchHistories();
 setInterval(fetchHistories, HISTORY_POLL_MS);
 
-// Azure tab: independent poll cycle, same cadence as AWS's fallback
-// polling, regardless of whether AWS is in SSE or polling mode.
-fetchAllAzure();
-setInterval(fetchAllAzure, REFRESH_MS);
+if (HAS_AWS_PAGE) {
+  // Always do an immediate file fetch so the dashboard isn't blank.
+  fetchAllAndAnnounce();
 
-if (IS_LOCAL) {
-  // Local dev: use SSE for 1s live updates.
-  startSSE();
-} else {
-  // Cloudflare Pages / any remote host: pure file polling.
-  // No localhost server is reachable; mixed-content blocks HTTP anyway.
-  startPolling();
+  if (IS_LOCAL) {
+    // Local dev: use SSE for 1s live updates.
+    startSSE();
+  } else {
+    // Cloudflare Pages / any remote host: pure file polling.
+    // No localhost server is reachable; mixed-content blocks HTTP anyway.
+    startPolling();
+    if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
+  }
+}
+
+if (HAS_AZURE_PAGE) {
+  // Azure page: independent poll cycle, same cadence as AWS's fallback
+  // polling. No SSE path -- data-server.py's live snapshot only knows
+  // about the AWS files.
+  fetchAllAzure();
+  setInterval(fetchAllAzure, REFRESH_MS);
   if (_modeEl) { _modeEl.textContent = 'POLLING'; _modeEl.classList.remove('live'); }
 }
 
 setInterval(paintStale, 1000);
 
 // Sync dot is a click-to-refresh affordance. Make it accessible.
+// Dispatches to whichever page actually loaded -- calling AWS's refresh
+// on the Azure page (or vice versa) would just throw caught-but-spurious
+// console errors against IDs that don't exist on that page.
+function refreshCurrentPage() {
+  if (HAS_AWS_PAGE) return fetchAllAndAnnounce();
+  if (HAS_AZURE_PAGE) return fetchAllAzure();
+}
 const syncEl = $('sync-status');
 if (syncEl) {
   syncEl.setAttribute('role', 'button');
   syncEl.setAttribute('tabindex', '0');
   syncEl.setAttribute('aria-label', 'Refresh dashboard');
-  syncEl.addEventListener('click', e => { e.preventDefault(); fetchAllAndAnnounce(); });
+  syncEl.addEventListener('click', e => { e.preventDefault(); refreshCurrentPage(); });
   syncEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fetchAllAndAnnounce(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); refreshCurrentPage(); }
   });
 }
