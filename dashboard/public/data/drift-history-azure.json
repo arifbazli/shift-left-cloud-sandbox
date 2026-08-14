@@ -1,0 +1,1028 @@
+[
+  {
+    "timestamp": "2026-08-14T03:11:43Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "module.azure-storage.azurerm_storage_account.main",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": false
+      }
+    ],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:14:18Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "destructive",
+    "changes": [
+      {
+        "address": "module.azure-network.azurerm_virtual_network.main",
+        "type": "azurerm_virtual_network",
+        "actions": [
+          "update"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_account.main",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": false
+      }
+    ],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:36:52Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "security_only",
+    "changes": [
+      {
+        "address": "module.azure-network.azurerm_virtual_network.main",
+        "type": "azurerm_virtual_network",
+        "actions": [
+          "update"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_account.main",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "update"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": true
+      }
+    ],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:47:36Z",
+    "result": "drift",
+    "drift_detected": false,
+    "classification": "no_drift",
+    "changes": [],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:48:57Z",
+    "result": "drift",
+    "drift_detected": false,
+    "classification": "no_drift",
+    "changes": [],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:50:57Z",
+    "result": "no_drift",
+    "drift_detected": false,
+    "classification": "no_drift",
+    "changes": [],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:53:14Z",
+    "result": "drift",
+    "drift_detected": true,
+    "classification": "safe",
+    "changes": [
+      {
+        "address": "module.azure-network.azurerm_virtual_network.main",
+        "type": "azurerm_virtual_network",
+        "actions": [
+          "update"
+        ],
+        "was_in_state": true,
+        "known_issue": false,
+        "has_security_path": false
+      }
+    ],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  },
+  {
+    "timestamp": "2026-08-14T03:59:40Z",
+    "result": "no_drift",
+    "drift_detected": false,
+    "classification": "no_drift",
+    "changes": [],
+    "pending_growth": [
+      {
+        "address": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "type": "azurerm_kubernetes_cluster",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_function_app.main",
+        "type": "azurerm_linux_function_app",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "type": "azurerm_linux_virtual_machine",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_network_interface.app",
+        "type": "azurerm_network_interface",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_service_plan.functions",
+        "type": "azurerm_service_plan",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-compute.azurerm_storage_account.functions",
+        "type": "azurerm_storage_account",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-compute.tls_private_key.app",
+        "type": "tls_private_key",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault.main",
+        "type": "azurerm_key_vault",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": false,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "type": "azurerm_key_vault_secret",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": true
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_container.artifacts",
+        "type": "azurerm_storage_container",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      },
+      {
+        "address": "module.azure-storage.azurerm_storage_table.main",
+        "type": "azurerm_storage_table",
+        "actions": [
+          "create"
+        ],
+        "was_in_state": false,
+        "known_issue": true,
+        "has_security_path": false
+      }
+    ],
+    "unexpected_known_issue_drift": []
+  }
+]

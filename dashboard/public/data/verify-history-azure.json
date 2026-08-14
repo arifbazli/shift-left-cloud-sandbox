@@ -1,0 +1,395 @@
+[
+  {
+    "timestamp": "2026-08-14T02:51:15Z",
+    "endpoint": "http://localhost:4577",
+    "total": 22,
+    "found": 11,
+    "not_found": 7,
+    "timed_out": 0,
+    "check_error": 3,
+    "not_applicable": 1,
+    "unexpected_issues": 4,
+    "all_expected_healthy": false,
+    "results": [
+      {
+        "resource": "module.azure-network.azurerm_resource_group.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox?api-version=2021-04-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_virtual_network.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_subnet.private",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet/subnets/floci-private?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_group.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_subnet_network_security_group_association.private",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet/subnets/floci-private?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "no standalone ARM GET for an association; verified via the subnet resource itself"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.ssh_admin",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/ssh-admin?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.app_internal",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/app-internal?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_https",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-https?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_dns_tcp",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-dns-tcp?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_dns_udp",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-dns-udp?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_account.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Storage/storageAccounts/flociartifactssandbox?api-version=2023-01-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_container.artifacts",
+        "url": "http://flociartifactssandbox.blob.core.windows.net/artifacts?restype=container",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang (see CONTEXT.md Known floci-az limitations) — floci-az returns this real-Azure-shaped hostname but it never resolves"
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_table.main",
+        "url": "http://flociartifactssandbox.table.core.windows.net/Tables('flociitemssandbox')",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang — same root cause as the container above"
+      },
+      {
+        "resource": "module.azure-security.azurerm_key_vault.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.KeyVault/vaults/floci-kv-sandbox?api-version=2023-07-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "url": "https://floci-kv-sandbox.vault.azure.net/secrets/app-config?api-version=7.4",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang — same root cause as the storage container/table above"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_network_interface.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkInterfaces/floci-app-nic?api-version=2023-09-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.tls_private_key.app",
+        "url": null,
+        "status": "not_applicable",
+        "http_code": null,
+        "known_issue": false,
+        "note": "local-only resource (hashicorp/tls provider) — no external API to verify against"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Compute/virtualMachines/floci-app-sandbox?api-version=2023-09-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.azurerm_storage_account.functions",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Storage/storageAccounts/flocifuncsasandbox?api-version=2023-01-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.azurerm_service_plan.functions",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Web/serverFarms/floci-func-plan-sandbox?api-version=2023-12-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": true,
+        "note": "CONFIRMED FAILURE — floci-az's fallback handler doesn't treat serverFarms as creatable, so this never exists (see CONTEXT.md)"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_linux_function_app.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Web/sites/floci-hello-sandbox?api-version=2023-12-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": true,
+        "note": "depends on the Service Plan above, which never creates — never even starts applying"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.ContainerService/managedClusters/floci-aks-sandbox?api-version=2023-10-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": true,
+        "note": "CONFIRMED FAILURE — permanent systemd cpuset delegation gap (see CONTEXT.md); if reachable, check provisioningState for a stuck 'Creating'"
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-08-14T02:59:11Z",
+    "endpoint": "http://localhost:4577",
+    "total": 22,
+    "found": 11,
+    "not_found": 6,
+    "timed_out": 0,
+    "check_error": 3,
+    "not_applicable": 1,
+    "stuck": 1,
+    "unexpected_issues": 4,
+    "all_expected_healthy": false,
+    "results": [
+      {
+        "resource": "module.azure-network.azurerm_resource_group.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox?api-version=2021-04-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_virtual_network.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_subnet.private",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet/subnets/floci-private?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_group.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_subnet_network_security_group_association.private",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/virtualNetworks/floci-vnet/subnets/floci-private?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "no standalone ARM GET for an association; verified via the subnet resource itself",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.ssh_admin",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/ssh-admin?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.app_internal",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/app-internal?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_https",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-https?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_dns_tcp",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-dns-tcp?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-network.azurerm_network_security_rule.egress_dns_udp",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkSecurityGroups/floci-app-nsg/securityRules/egress-dns-udp?api-version=2023-09-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_account.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Storage/storageAccounts/flociartifactssandbox?api-version=2023-01-01",
+        "status": "found",
+        "http_code": 200,
+        "known_issue": false,
+        "note": "",
+        "provisioning_state": "Succeeded"
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_container.artifacts",
+        "url": "http://flociartifactssandbox.blob.core.windows.net/artifacts?restype=container",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang (see CONTEXT.md Known floci-az limitations) — floci-az returns this real-Azure-shaped hostname but it never resolves"
+      },
+      {
+        "resource": "module.azure-storage.azurerm_storage_table.main",
+        "url": "http://flociartifactssandbox.table.core.windows.net/Tables('flociitemssandbox')",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang — same root cause as the container above"
+      },
+      {
+        "resource": "module.azure-security.azurerm_key_vault.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.KeyVault/vaults/floci-kv-sandbox?api-version=2023-07-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-security.azurerm_key_vault_secret.app_config",
+        "url": "https://floci-kv-sandbox.vault.azure.net/secrets/app-config?api-version=7.4",
+        "status": "check_error",
+        "http_code": null,
+        "known_issue": true,
+        "note": "CONFIRMED DNS-hang — same root cause as the storage container/table above"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_network_interface.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Network/networkInterfaces/floci-app-nic?api-version=2023-09-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.tls_private_key.app",
+        "url": null,
+        "status": "not_applicable",
+        "http_code": null,
+        "known_issue": false,
+        "note": "local-only resource (hashicorp/tls provider) — no external API to verify against"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_linux_virtual_machine.app",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Compute/virtualMachines/floci-app-sandbox?api-version=2023-09-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.azurerm_storage_account.functions",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Storage/storageAccounts/flocifuncsasandbox?api-version=2023-01-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": false,
+        "note": ""
+      },
+      {
+        "resource": "module.azure-compute.azurerm_service_plan.functions",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Web/serverFarms/floci-func-plan-sandbox?api-version=2023-12-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": true,
+        "note": "CONFIRMED FAILURE — floci-az's fallback handler doesn't treat serverFarms as creatable, so this never exists (see CONTEXT.md)"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_linux_function_app.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.Web/sites/floci-hello-sandbox?api-version=2023-12-01",
+        "status": "not_found",
+        "http_code": 404,
+        "known_issue": true,
+        "note": "depends on the Service Plan above, which never creates — never even starts applying"
+      },
+      {
+        "resource": "module.azure-compute.azurerm_kubernetes_cluster.main",
+        "url": "http://localhost:4577/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/floci-rg-sandbox/providers/Microsoft.ContainerService/managedClusters/floci-aks-sandbox?api-version=2023-10-01",
+        "status": "stuck_creating",
+        "http_code": 200,
+        "known_issue": true,
+        "note": "CONFIRMED FAILURE — permanent systemd cpuset delegation gap (see CONTEXT.md); if reachable, check provisioningState for a stuck 'Creating'",
+        "provisioning_state": "Creating"
+      }
+    ]
+  }
+]

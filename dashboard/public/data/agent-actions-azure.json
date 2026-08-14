@@ -1,0 +1,43 @@
+[
+  {
+    "timestamp": "2026-08-14T03:56:55Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop-azure completed 1 iterations",
+    "max_loops": 1
+  },
+  {
+    "timestamp": "2026-08-14T03:58:26Z",
+    "kind": "heartbeat",
+    "action": "startup",
+    "reason": "agent-loop-azure started with bounded allowlist",
+    "config": {
+      "max_loops": 1,
+      "interval_seconds": 1
+    }
+  },
+  {
+    "timestamp": "2026-08-14T03:58:27Z",
+    "kind": "heartbeat",
+    "action": "tick",
+    "reason": "loop 1 / 1",
+    "loop": 1,
+    "max": 1
+  },
+  {
+    "timestamp": "2026-08-14T03:58:27Z",
+    "kind": "no_action",
+    "action": "apply_drift",
+    "reason": "drift includes 1 documented known_issue address(es) -- excluded from auto-remediation by design (confirmed permanent limitations, not uncertain like AWS's EKS/MSK). Operator must investigate.",
+    "known_issue_addresses": [
+      "module.azure-compute.azurerm_kubernetes_cluster.main"
+    ]
+  },
+  {
+    "timestamp": "2026-08-14T03:58:28Z",
+    "kind": "heartbeat",
+    "action": "shutdown",
+    "reason": "agent-loop-azure completed 1 iterations",
+    "max_loops": 1
+  }
+]

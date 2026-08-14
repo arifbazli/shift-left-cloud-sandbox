@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-13T08:58:48Z",
+  "timestamp": "2026-08-14T03:59:12Z",
   "tfsec_exit": 1,
   "counts": {
     "critical": 1,
@@ -14,7 +14,7 @@
       "rule_id": "AVD-AZU-0040",
       "resource": "module.azure-compute",
       "description": "Cluster does not have logging enabled via OMS Agent.",
-      "line": 194
+      "line": 207
     },
     {
       "severity": "LOW",

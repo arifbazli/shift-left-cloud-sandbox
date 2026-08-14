@@ -160,6 +160,18 @@ resource "azurerm_storage_account" "functions" {
   tags = {
     Name = "floci-func-sa"
   }
+
+  # SEC_INTENT: same confirmed floci-az response-consistency bug as
+  # azure-storage's azurerm_storage_account.main — see that resource's
+  # comment for the full explanation. Applied here defensively (not yet
+  # separately confirmed on THIS specific storage account, since apply
+  # never gets this far — see the CONFIRMED GAP note above on
+  # azurerm_service_plan.functions) but the resource type and floci-az's
+  # ARM handler are identical, so the same fix is applied preemptively
+  # rather than waiting to rediscover it once Service Plan is fixed.
+  lifecycle {
+    ignore_changes = [queue_encryption_key_type, table_encryption_key_type]
+  }
 }
 
 resource "azurerm_linux_function_app" "main" {
