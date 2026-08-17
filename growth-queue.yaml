@@ -124,3 +124,19 @@ queue:
   - module.api.aws_api_gateway_stage.main
   - module.api.aws_api_gateway_domain_name.main
   - module.api.aws_cloudwatch_metric_alarm.api_5xx
+
+# =============================================================================
+# known_permanent_failures
+# =============================================================================
+# Machine-readable mirror of the CONFIRMED FAILURE prose comments above --
+# grow-stack.sh checks this list before attempting a terraform apply on the
+# computed "next" target. A match is skipped entirely (never applied, never
+# advanced past) and recorded as status "stalled_known_issue" instead of
+# "failed". Ordering and blocking behavior are unchanged -- this only stops
+# the doomed apply attempt itself. See CONTEXT.md "Known floci limitation"
+# for the root-caused detail behind each entry. Mirrors the known_issue
+# precedent already established on the Azure side (drift-check-azure.sh /
+# agent-loop-azure.sh), not a new idiom.
+known_permanent_failures:
+  - module.compute.aws_instance.app
+  - module.compute.aws_eks_cluster.main
