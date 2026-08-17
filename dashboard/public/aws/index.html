@@ -33,91 +33,82 @@
     <a class="cloud-nav-link" href="/azure">Azure</a>
   </nav>
 
-  <div class="grid">
-
-    <!-- SCAN GATE -->
-    <div class="card" id="card-scan">
-      <div class="card-head">
-        <span class="card-label">tfsec gate</span>
-        <span class="pill idle" id="pill-scan" role="status">—</span>
-        <button class="run-btn" data-run="scan" title="Run scan now">&#9654;</button>
-      </div>
-
-      <div id="skel-scan" class="skeleton-wrap">
-        <div class="skeleton skel-h"></div>
-        <div class="skeleton skel-m"></div>
-      </div>
-
-      <div id="body-scan" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-scan" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="stat-row">
-          <div class="stat-item">
-            <span class="stat-num danger" id="cnt-critical">0</span>
-            <span class="stat-cap">critical</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num warn" id="cnt-high">0</span>
-            <span class="stat-cap">high</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num" id="cnt-medium">0</span>
-            <span class="stat-cap">medium</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num dim" id="cnt-low">0</span>
-            <span class="stat-cap">low</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num dim" id="cnt-ignored">0</span>
-            <span class="stat-cap">ignored</span>
-          </div>
-        </div>
-      </div>
-
-      <div id="empty-scan" class="empty-state" hidden>
-        No data — run <code>scripts/scan.sh</code>
-      </div>
-
-      <div class="list-row" style="margin-top:10px;padding-top:10px">
-        <span class="list-key">last run</span>
-        <span class="list-mono" id="scan-ts">—</span>
-        <span class="data-age" id="scan-age"></span>
-      </div>
+  <!-- GATE BANNER — replaces the scan card as the single loudest element
+       on the page; everything else steps back in visual weight from here.
+       Still animCount()s critical/high/medium/low/ignored under the hood
+       (kept for the findings list + any future consumer) even though the
+       banner itself only surfaces the compact counts line. -->
+  <div class="gate-banner" id="card-scan">
+    <div class="gate-banner-head">
+      <svg class="gate-banner-icon icon-pass" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+      <svg class="gate-banner-icon icon-fail" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"></path>
+      </svg>
+      <span class="pill idle" id="pill-scan" role="status">—</span>
+      <button class="run-btn" data-run="scan" title="Run scan now">&#9654;</button>
     </div>
 
+    <div id="skel-scan" class="skeleton-wrap">
+      <div class="skeleton skel-h"></div>
+    </div>
+
+    <div id="body-scan" class="gate-banner-body" hidden>
+      <span class="gate-banner-headline" id="gate-banner-headline">—</span>
+      <span class="gate-banner-counts" id="gate-banner-counts">—</span>
+    </div>
+
+    <div id="empty-scan" class="empty-state" hidden>
+      No data — run <code>scripts/scan.sh</code>
+    </div>
+
+    <div class="gate-banner-ts">
+      <span class="list-mono" id="scan-ts">—</span>
+      <span class="data-age" id="scan-age"></span>
+    </div>
+
+    <!-- animCount() still targets these every render (existing logic left
+         intact) -- not shown in the banner itself, so genuinely hidden
+         (not sr-only, which would double-announce the same counts the
+         banner's own text already speaks) rather than removed. -->
+    <div class="stat-row" hidden>
+      <span class="stat-num" id="cnt-critical">0</span>
+      <span class="stat-num" id="cnt-high">0</span>
+      <span class="stat-num" id="cnt-medium">0</span>
+      <span class="stat-num" id="cnt-low">0</span>
+      <span class="stat-num" id="cnt-ignored">0</span>
+    </div>
+  </div>
+
+  <!-- QUIET METRIC TILES — no border, no status pill badges (badges are
+       hidden not removed: setPill() keeps running unchanged). Status is
+       already owned by the gate banner above. Sparklines dropped here,
+       same "no-op if the target <svg> isn't on the page" pattern already
+       relied on elsewhere in app.js -- deploy/growth/verify are single
+       point-in-time facts, not the loudest thing on the page anymore. -->
+  <div class="tiles">
+
     <!-- DEPLOY -->
-    <div class="card" id="card-deploy">
+    <div class="card tile" id="card-deploy">
       <div class="card-head">
         <span class="card-label">last deploy</span>
-        <span class="pill idle" id="pill-deploy" role="status">—</span>
+        <span class="pill idle" id="pill-deploy" role="status" hidden>—</span>
         <button class="run-btn" data-run="deploy" title="Run deploy now">&#9654;</button>
       </div>
 
       <div id="skel-deploy" class="skeleton-wrap">
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-s"></div>
+        <div class="skeleton skel-h"></div>
       </div>
 
       <div id="body-deploy" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-deploy" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="list-row">
-          <span class="list-key">endpoint</span>
-          <span class="list-mono" id="dep-endpoint">—</span>
+        <div class="tile-value-row">
+          <span class="tile-value" id="dep-resources">—</span>
+          <span class="tile-unit">outputs</span>
         </div>
-        <div class="list-row">
-          <span class="list-key">resources</span>
-          <span class="list-mono" id="dep-resources">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">pages</span>
-          <span class="list-mono" id="dep-gate">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">timestamp</span>
-          <span class="list-mono" id="dep-ts">—</span>
-          <span class="data-age" id="deploy-age"></span>
-        </div>
+        <div class="tile-context"><span id="dep-gate">—</span> · <span id="dep-ts">—</span></div>
+        <span class="list-mono" id="dep-endpoint" hidden>—</span>
+        <span class="data-age" id="deploy-age" hidden></span>
       </div>
 
       <div id="empty-deploy" class="empty-state" hidden>
@@ -126,32 +117,21 @@
     </div>
 
     <!-- GROWTH -->
-    <div class="card" id="card-growth">
+    <div class="card tile" id="card-growth">
       <div class="card-head">
         <span class="card-label">growth</span>
-        <span class="pill idle" id="pill-growth" role="status">—</span>
+        <span class="pill idle" id="pill-growth" role="status" hidden>—</span>
       </div>
 
       <div id="skel-growth" class="skeleton-wrap">
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-s"></div>
+        <div class="skeleton skel-h"></div>
       </div>
 
       <div id="body-growth" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-growth" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="list-row">
-          <span class="list-key">progress</span>
-          <span class="list-mono" id="growth-progress">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">next target</span>
-          <span class="list-mono" id="growth-next">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">timestamp</span>
-          <span class="list-mono" id="growth-ts">—</span>
-        </div>
+        <span class="tile-value" id="growth-progress">—</span>
+        <div class="tile-context">next: <span id="growth-next">—</span></div>
+        <div class="tile-progress"><div class="tile-progress-fill" id="growth-bar-fill" style="width:0%"></div></div>
+        <span class="list-mono" id="growth-ts" hidden>—</span>
       </div>
 
       <div id="empty-growth" class="empty-state" hidden>
@@ -160,38 +140,23 @@
     </div>
 
     <!-- VERIFY -->
-    <div class="card" id="card-verify">
+    <div class="card tile" id="card-verify">
       <div class="card-head">
         <span class="card-label">verify (api direct)</span>
-        <span class="pill idle" id="pill-verify" role="status">—</span>
+        <span class="pill idle" id="pill-verify" role="status" hidden>—</span>
         <button class="run-btn" data-run="verify" title="Run verify now">&#9654;</button>
       </div>
 
       <div id="skel-verify" class="skeleton-wrap">
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-s"></div>
+        <div class="skeleton skel-h"></div>
       </div>
 
       <div id="body-verify" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-verify" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="list-row">
-          <span class="list-key">endpoint</span>
-          <span class="list-mono" id="ver-endpoint">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">passed</span>
-          <span class="list-mono" id="ver-passed">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">detail</span>
-          <span class="list-mono" id="ver-detail">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">timestamp</span>
-          <span class="list-mono" id="ver-ts">—</span>
-          <span class="data-age" id="verify-age"></span>
-        </div>
+        <span class="tile-value" id="ver-passed">—</span>
+        <div class="tile-context" id="ver-detail">—</div>
+        <span class="list-mono" id="ver-endpoint" hidden>—</span>
+        <span class="list-mono" id="ver-ts" hidden>—</span>
+        <span class="data-age" id="verify-age" hidden></span>
       </div>
 
       <div id="empty-verify" class="empty-state" hidden>
@@ -199,8 +164,15 @@
       </div>
     </div>
 
+  </div><!-- /tiles -->
+
+  <!-- MERGED LIST — drift (keeps its status pill + sparkline) as the
+       first row, agent-loop (muted icon + status text) as the second.
+       One bordered container instead of two separate cards. -->
+  <div class="merged-list">
+
     <!-- DRIFT -->
-    <div class="card" id="card-drift">
+    <div class="merged-row" id="card-drift">
       <div class="card-head">
         <span class="card-label">drift</span>
         <span class="pill idle" id="pill-drift" role="status">—</span>
@@ -235,8 +207,12 @@
     </div>
 
     <!-- AGENT LOOP -->
-    <div class="card" id="card-agent">
+    <div class="merged-row" id="card-agent">
       <div class="card-head">
+        <svg class="merged-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4l3 2"></path>
+        </svg>
         <span class="card-label">agent loop</span>
         <span class="pill idle" id="pill-agent" role="status">—</span>
       </div>
@@ -261,25 +237,29 @@
       </div>
     </div>
 
-    <!-- RECENT FINDINGS — sits next to agent loop on the same row -->
-    <div class="card findings-wrap" id="card-findings">
-      <div class="findings-header">
-        <span class="card-label">recent findings</span>
-        <span class="findings-count" id="findings-count">0 total</span>
-      </div>
-      <div id="findings-list">
-        <div class="empty-state">No scan data yet.</div>
-      </div>
+  </div><!-- /merged-list -->
+
+  <!-- RECENT FINDINGS -->
+  <div class="card findings-wrap" id="card-findings">
+    <div class="findings-header">
+      <span class="card-label">recent findings</span>
+      <span class="findings-count" id="findings-count">0 total</span>
     </div>
+    <div id="findings-list">
+      <div class="empty-state">No scan data yet.</div>
+    </div>
+  </div>
 
-  </div><!-- /grid -->
-
-  <!-- ── meta bar ──────────────────────────────────────── -->
+  <!-- ── footer ────────────────────────────────────────── -->
   <div class="meta-bar">
-    <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
-    <span><span class="meta-key">data plane</span><span class="meta-val">static json</span></span>
-    <span><span class="meta-key">refresh</span><span class="meta-val">10s <span class="meta-hint">click sync dot</span></span></span>
-    <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
+    <div class="meta-bar-line">
+      <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
+      <span><span class="meta-key">data plane</span><span class="meta-val">static json</span></span>
+    </div>
+    <div class="meta-bar-line">
+      <span><span class="meta-key">refresh</span><span class="meta-val">10s <span class="meta-hint">click sync dot</span></span></span>
+      <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
+    </div>
   </div>
 
 </div><!-- /dash-wrap -->

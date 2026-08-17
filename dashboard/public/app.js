@@ -389,6 +389,11 @@ function renderScanGeneric(d, ids, moduleMap) {
   setCardState(ids.card, pass ? 'pass' : 'fail');
   showCard(ids.card, true, false);
 
+  // Gate banner headline/counts -- optional fields, only present on the
+  // scan card's ids object (the banner that replaced the old scan card).
+  if (ids.headline) $(ids.headline).textContent = pass ? 'Gate passing' : 'Gate failing';
+  if (ids.counts) $(ids.counts).textContent = `${crit} critical · ${high} high · ${med} medium · ${low} low`;
+
   animCount($(ids.cntCritical), crit);
   animCount($(ids.cntHigh),     high);
   animCount($(ids.cntMedium),   med);
@@ -410,29 +415,26 @@ function renderScanGeneric(d, ids, moduleMap) {
     return;
   }
 
-  // Build ordered groups (preserve first-seen order per module).
-  const groupOrder = [];
-  const groups = {};
-  findings.slice(0, 30).forEach(r => {
-    const mod = getModule(r.resource || '', moduleMap);
-    if (!groups[mod]) { groups[mod] = []; groupOrder.push(mod); }
-    groups[mod].push(r);
+  // Flat list, sorted CRITICAL/HIGH first, then MEDIUM, then LOW (and
+  // anything else -- INFO/IGNORED -- alongside LOW). Replaces the old
+  // per-module grouping: severity is the thing worth scanning for first.
+  const SEV_RANK = { CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const sorted = findings.slice(0, 30).slice().sort((a, b) => {
+    const ra = SEV_RANK[(a.severity || '').toUpperCase()] ?? 2;
+    const rb = SEV_RANK[(b.severity || '').toUpperCase()] ?? 2;
+    return ra - rb;
   });
 
-  $(ids.findingsList).innerHTML = groupOrder.map(mod => {
-    const rows = groups[mod].map(r => {
-      const sev  = (r.severity || 'low').toLowerCase();
-      const bCls = sev === 'critical' ? 'crit' : sev;
-      return `<div class="list-row">
-          <span class="sev-badge ${bCls}">${r.severity}</span>
-          <span class="rule-id">${escHtml(r.rule_id || '')}</span>
-          <span class="rule-desc">${escHtml(r.description || '')}</span>
-          <span class="rule-res">${escHtml(r.resource || '')}</span>
-        </div>`;
-    }).join('');
-    return `<div class="findings-module-group">
-        <div class="findings-module-label">${mod}</div>
-        ${rows}
+  $(ids.findingsList).innerHTML = sorted.map(r => {
+    const sev    = (r.severity || 'low').toLowerCase();
+    const bCls   = sev === 'critical' ? 'crit' : sev;
+    const isLow  = (SEV_RANK[(r.severity || '').toUpperCase()] ?? 2) === 2;
+    const mod    = getModule(r.resource || '', moduleMap);
+    const detail = `${r.rule_id || ''} · ${r.resource || ''}`;
+    return `<div class="finding-row${isLow ? ' is-low' : ''}" title="${escHtml(detail)}">
+        <span class="sev-badge ${bCls}">${r.severity}</span>
+        <span class="finding-desc">${escHtml(r.description || '')}</span>
+        <span class="finding-module">${escHtml(mod)}</span>
       </div>`;
   }).join('');
 }
@@ -442,12 +444,14 @@ const SCAN_IDS = {
   cntCritical: 'cnt-critical', cntHigh: 'cnt-high', cntMedium: 'cnt-medium',
   cntLow: 'cnt-low', cntIgnored: 'cnt-ignored',
   ts: 'scan-ts', findingsList: 'findings-list', findingsCount: 'findings-count',
+  headline: 'gate-banner-headline', counts: 'gate-banner-counts',
 };
 const SCAN_AZURE_IDS = {
   card: 'card-scan-azure', pill: 'pill-scan-azure',
   cntCritical: 'cnt-critical-azure', cntHigh: 'cnt-high-azure', cntMedium: 'cnt-medium-azure',
   cntLow: 'cnt-low-azure', cntIgnored: 'cnt-ignored-azure',
   ts: 'scan-azure-ts', findingsList: 'findings-list-azure', findingsCount: 'findings-count-azure',
+  headline: 'gate-banner-headline-azure', counts: 'gate-banner-counts-azure',
 };
 
 function renderScan(d) { renderScanGeneric(d, SCAN_IDS, AWS_MODULE_MAP); }
@@ -490,15 +494,25 @@ function renderGrowthGeneric(d, ids) {
   $(ids.progress).textContent = `${applied} / ${total}`;
   $(ids.next).textContent = d.next_target || '(queue complete)';
   $(ids.ts).textContent = fmtTs(d.timestamp);
+
+  // Thin progress-bar fill on the quiet growth tile -- additive, doesn't
+  // touch anything the pill/border-state logic above already computed.
+  if (ids.bar) {
+    const pct = (typeof total === 'number' && total > 0 && typeof applied === 'number')
+      ? Math.max(0, Math.min(100, (applied / total) * 100)) : 0;
+    $(ids.bar).style.width = `${pct}%`;
+  }
 }
 
 const GROWTH_IDS = {
   card: 'card-growth', pill: 'pill-growth',
   progress: 'growth-progress', next: 'growth-next', ts: 'growth-ts',
+  bar: 'growth-bar-fill',
 };
 const GROWTH_AZURE_IDS = {
   card: 'card-growth-azure', pill: 'pill-growth-azure',
   progress: 'growth-azure-progress', next: 'growth-azure-next', ts: 'growth-azure-ts',
+  bar: 'growth-azure-bar-fill',
 };
 function renderGrowth(d) { renderGrowthGeneric(d, GROWTH_IDS); }
 function renderGrowthAzure(d) { renderGrowthGeneric(d, GROWTH_AZURE_IDS); }
@@ -522,8 +536,9 @@ function renderDeploy(d) {
 
   $('dep-endpoint').textContent  = d.endpoint || '—';
   $('dep-endpoint').title        = d.endpoint || '';  // hover shows full URL
-  $('dep-resources').textContent = outputKeys.length
-    ? `${outputKeys.length} outputs` : '—';
+  // Bare number -- the quiet tile's "big number" treatment supplies the
+  // "outputs" unit as a static label beside it, not part of this text.
+  $('dep-resources').textContent = outputKeys.length ? String(outputKeys.length) : '—';
   $('dep-gate').textContent = d.pages_url ? 'synced' : 'local only';
   $('dep-gate').title = d.pages_url || '';
   $('dep-ts').textContent   = fmtTs(d.timestamp);
@@ -571,7 +586,9 @@ function renderVerifyAzure(d) {
 
   const knownGaps = (d.results || []).filter(r => r.known_issue).length;
   $('ver-azure-found').textContent      = `${d.found ?? '?'} / ${d.total ?? '?'}`;
-  $('ver-azure-known').textContent      = `${knownGaps} (documented, excluded)`;
+  // Bare number -- the quiet tile's context line supplies "known/excluded"
+  // and "unexpected" as static labels, not part of this text.
+  $('ver-azure-known').textContent      = String(knownGaps);
   $('ver-azure-unexpected').textContent = String(d.unexpected_issues ?? '?');
   $('ver-azure-ts').textContent         = fmtTs(d.timestamp);
 }

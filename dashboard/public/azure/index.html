@@ -33,103 +33,83 @@
     <a class="cloud-nav-link active" href="/azure" aria-current="page">Azure</a>
   </nav>
 
-  <div class="grid">
-
-    <!-- SCAN GATE (Azure) -->
-    <div class="card" id="card-scan-azure">
-      <div class="card-head">
-        <span class="card-label">tfsec gate</span>
-        <span class="pill idle" id="pill-scan-azure" role="status">—</span>
-      </div>
-
-      <div id="skel-scan-azure" class="skeleton-wrap">
-        <div class="skeleton skel-h"></div>
-        <div class="skeleton skel-m"></div>
-      </div>
-
-      <div id="body-scan-azure" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-scan-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="stat-row">
-          <div class="stat-item">
-            <span class="stat-num danger" id="cnt-critical-azure">0</span>
-            <span class="stat-cap">critical</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num warn" id="cnt-high-azure">0</span>
-            <span class="stat-cap">high</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num" id="cnt-medium-azure">0</span>
-            <span class="stat-cap">medium</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num dim" id="cnt-low-azure">0</span>
-            <span class="stat-cap">low</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-num dim" id="cnt-ignored-azure">0</span>
-            <span class="stat-cap">ignored</span>
-          </div>
-        </div>
-      </div>
-
-      <div id="empty-scan-azure" class="empty-state" hidden>
-        No data — run <code>scripts/scan.sh</code>
-      </div>
-
-      <div class="list-row" style="margin-top:10px;padding-top:10px">
-        <span class="list-key">last run</span>
-        <span class="list-mono" id="scan-azure-ts">—</span>
-      </div>
+  <!-- GATE BANNER (Azure) — same structure as AWS's, byte-identical CSS
+       classes, only the data + id suffixes differ. -->
+  <div class="gate-banner" id="card-scan-azure">
+    <div class="gate-banner-head">
+      <svg class="gate-banner-icon icon-pass" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+      <svg class="gate-banner-icon icon-fail" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"></path>
+      </svg>
+      <span class="pill idle" id="pill-scan-azure" role="status">—</span>
     </div>
 
-    <!-- DEPLOY (Azure) — PERMANENT STRUCTURAL GAP, not "not built yet".
-         No deploy-azure.sh exists, and structurally can't the way AWS
-         has one: growth is Azure's only apply mechanism, and it is
-         incremental by design (see growth-queue-azure.yaml). This is a
-         real, permanent absence, not a pending task -- copy reflects
-         that. See CONTEXT.md. -->
-    <div class="card is-gap" id="card-deploy-azure">
-      <div class="card-head">
-        <span class="card-label">deploy</span>
-        <span class="pill na">N/A</span>
-      </div>
-      <div class="gap-body">
-        <svg class="gap-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <p class="gap-copy">No single-shot deploy — growth applies incrementally.</p>
-      </div>
+    <div id="skel-scan-azure" class="skeleton-wrap">
+      <div class="skeleton skel-h"></div>
     </div>
+
+    <div id="body-scan-azure" class="gate-banner-body" hidden>
+      <span class="gate-banner-headline" id="gate-banner-headline-azure">—</span>
+      <span class="gate-banner-counts" id="gate-banner-counts-azure">—</span>
+    </div>
+
+    <div id="empty-scan-azure" class="empty-state" hidden>
+      No data — run <code>scripts/scan.sh</code>
+    </div>
+
+    <div class="gate-banner-ts">
+      <span class="list-mono" id="scan-azure-ts">—</span>
+    </div>
+
+    <!-- animCount() still targets these every render (existing logic left
+         intact) -- not shown in the banner itself, so genuinely hidden
+         (not sr-only, which would double-announce the same counts the
+         banner's own text already speaks) rather than removed. -->
+    <div class="stat-row" hidden>
+      <span class="stat-num" id="cnt-critical-azure">0</span>
+      <span class="stat-num" id="cnt-high-azure">0</span>
+      <span class="stat-num" id="cnt-medium-azure">0</span>
+      <span class="stat-num" id="cnt-low-azure">0</span>
+      <span class="stat-num" id="cnt-ignored-azure">0</span>
+    </div>
+  </div>
+
+  <!-- Azure's permanent "no deploy" gap -- was a full dashed placeholder
+       CARD (a whole grid slot); it's permanent and never becomes "live,"
+       so it shouldn't compete visually with the real tiles beside it.
+       No deploy-azure.sh exists, and structurally can't the way AWS has
+       one: growth is Azure's only apply mechanism, incremental by design
+       (see growth-queue-azure.yaml). See CONTEXT.md. -->
+  <div class="inline-gap-note">
+    <svg class="gap-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+    <span>No single-shot deploy — growth applies incrementally.</span>
+  </div>
+
+  <!-- QUIET METRIC TILES (Azure) — growth + verify only (no deploy tile,
+       see the inline note above). Same .tiles/.tile classes as AWS. -->
+  <div class="tiles">
 
     <!-- GROWTH (Azure) -->
-    <div class="card" id="card-growth-azure">
+    <div class="card tile" id="card-growth-azure">
       <div class="card-head">
         <span class="card-label">growth</span>
-        <span class="pill idle" id="pill-growth-azure" role="status">—</span>
+        <span class="pill idle" id="pill-growth-azure" role="status" hidden>—</span>
       </div>
 
       <div id="skel-growth-azure" class="skeleton-wrap">
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-s"></div>
+        <div class="skeleton skel-h"></div>
       </div>
 
       <div id="body-growth-azure" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-growth-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="list-row">
-          <span class="list-key">progress</span>
-          <span class="list-mono" id="growth-azure-progress">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">next target</span>
-          <span class="list-mono" id="growth-azure-next">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">timestamp</span>
-          <span class="list-mono" id="growth-azure-ts">—</span>
-        </div>
+        <span class="tile-value" id="growth-azure-progress">—</span>
+        <div class="tile-context">next: <span id="growth-azure-next">—</span></div>
+        <div class="tile-progress"><div class="tile-progress-fill" id="growth-azure-bar-fill" style="width:0%"></div></div>
+        <span class="list-mono" id="growth-azure-ts" hidden>—</span>
       </div>
 
       <div id="empty-growth-azure" class="empty-state" hidden>
@@ -140,36 +120,20 @@
     <!-- VERIFY (Azure) — full parity: attempts every resource, including
          the confirmed DNS-hang / permanently-broken ones. See CONTEXT.md
          § Known floci-az limitations for what "known gaps" means below. -->
-    <div class="card" id="card-verify-azure">
+    <div class="card tile" id="card-verify-azure">
       <div class="card-head">
         <span class="card-label">verify (api direct)</span>
-        <span class="pill idle" id="pill-verify-azure" role="status">—</span>
+        <span class="pill idle" id="pill-verify-azure" role="status" hidden>—</span>
       </div>
 
       <div id="skel-verify-azure" class="skeleton-wrap">
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-m"></div>
-        <div class="skeleton skel-s"></div>
+        <div class="skeleton skel-h"></div>
       </div>
 
       <div id="body-verify-azure" hidden>
-        <div class="sparkline-wrap"><svg class="sparkline" id="spark-verify-azure" viewBox="0 0 100 24" preserveAspectRatio="none"></svg></div>
-        <div class="list-row">
-          <span class="list-key">found</span>
-          <span class="list-mono" id="ver-azure-found">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">known gaps</span>
-          <span class="list-mono" id="ver-azure-known">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">unexpected</span>
-          <span class="list-mono" id="ver-azure-unexpected">—</span>
-        </div>
-        <div class="list-row">
-          <span class="list-key">timestamp</span>
-          <span class="list-mono" id="ver-azure-ts">—</span>
-        </div>
+        <span class="tile-value" id="ver-azure-found">—</span>
+        <div class="tile-context"><span id="ver-azure-known">—</span> known/excluded · <span id="ver-azure-unexpected">—</span> unexpected</div>
+        <span class="list-mono" id="ver-azure-ts" hidden>—</span>
       </div>
 
       <div id="empty-verify-azure" class="empty-state" hidden>
@@ -177,8 +141,13 @@
       </div>
     </div>
 
+  </div><!-- /tiles -->
+
+  <!-- MERGED LIST (Azure) — same .merged-list/.merged-row classes as AWS. -->
+  <div class="merged-list">
+
     <!-- DRIFT (Azure) -->
-    <div class="card" id="card-drift-azure">
+    <div class="merged-row" id="card-drift-azure">
       <div class="card-head">
         <span class="card-label">drift</span>
         <span class="pill idle" id="pill-drift-azure" role="status">—</span>
@@ -215,8 +184,12 @@
     </div>
 
     <!-- AGENT LOOP (Azure) -->
-    <div class="card" id="card-agent-azure">
+    <div class="merged-row" id="card-agent-azure">
       <div class="card-head">
+        <svg class="merged-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4l3 2"></path>
+        </svg>
         <span class="card-label">agent loop</span>
         <span class="pill idle" id="pill-agent-azure" role="status">—</span>
       </div>
@@ -240,25 +213,29 @@
       </div>
     </div>
 
-    <!-- RECENT FINDINGS (Azure) -->
-    <div class="card findings-wrap" id="card-findings-azure">
-      <div class="findings-header">
-        <span class="card-label">recent findings</span>
-        <span class="findings-count" id="findings-count-azure">0 total</span>
-      </div>
-      <div id="findings-list-azure">
-        <div class="empty-state">No scan data yet.</div>
-      </div>
+  </div><!-- /merged-list -->
+
+  <!-- RECENT FINDINGS (Azure) -->
+  <div class="card findings-wrap" id="card-findings-azure">
+    <div class="findings-header">
+      <span class="card-label">recent findings</span>
+      <span class="findings-count" id="findings-count-azure">0 total</span>
     </div>
+    <div id="findings-list-azure">
+      <div class="empty-state">No scan data yet.</div>
+    </div>
+  </div>
 
-  </div><!-- /grid -->
-
-  <!-- ── meta bar ──────────────────────────────────────── -->
+  <!-- ── footer ────────────────────────────────────────── -->
   <div class="meta-bar">
-    <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
-    <span><span class="meta-key">data plane</span><span class="meta-val">static json</span></span>
-    <span><span class="meta-key">refresh</span><span class="meta-val">10s</span></span>
-    <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
+    <div class="meta-bar-line">
+      <span><span class="meta-key">backend</span><span class="meta-val">localhost only</span></span>
+      <span><span class="meta-key">data plane</span><span class="meta-val">static json</span></span>
+    </div>
+    <div class="meta-bar-line">
+      <span><span class="meta-key">refresh</span><span class="meta-val">10s</span></span>
+      <span><span class="meta-key">storage</span><span class="meta-val">no kv · no d1 · no workers</span></span>
+    </div>
   </div>
 
 </div><!-- /dash-wrap -->
