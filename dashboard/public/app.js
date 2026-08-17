@@ -474,12 +474,15 @@ function renderGrowthGeneric(d, ids) {
     complete:  ['clean', 'COMPLETE'],
     failed:    ['fail', 'FAILED'],
     timed_out: ['warn', 'TIMED OUT'],
+    stalled_known_issue: ['na', 'KNOWN ISSUE'],
   };
   const byStatus = PILL_BY_STATUS[status] || ['idle', status.toUpperCase()];
   const pillCls = byStatus[0], pillLabel = byStatus[1];
   setPill(ids.pill, pillCls, pillLabel);
   setCardState(ids.card, (pillCls === 'pass' || pillCls === 'clean') ? 'pass'
-    : pillCls === 'fail' ? 'fail' : 'warn');
+    : pillCls === 'fail' ? 'fail'
+    : pillCls === 'na' ? ''
+    : 'warn');
   showCard(ids.card, true, false);
 
   const total = d.total_queued ?? '?';

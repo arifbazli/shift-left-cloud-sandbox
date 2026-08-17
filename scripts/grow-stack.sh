@@ -86,7 +86,14 @@ if [[ ! -s "$QUEUE_FILE" ]]; then
   exit 2
 fi
 
-mapfile -t QUEUE < <(grep -E '^[[:space:]]*-[[:space:]]+module\.' "$QUEUE_FILE" \
+# Bounded to the queue: block only -- stops before known_permanent_failures:
+# so its addresses (deliberately duplicated there) never get double-counted
+# into QUEUE/total_queued.
+mapfile -t QUEUE < <(awk '/^known_permanent_failures:/{exit} /^[[:space:]]*-[[:space:]]+module\./' "$QUEUE_FILE" \
+  | sed -E 's/^[[:space:]]*-[[:space:]]+([^[:space:]#]+).*/\1/')
+
+mapfile -t KNOWN_PERMANENT_FAILURES < <(awk '/^known_permanent_failures:/{f=1;next} f' "$QUEUE_FILE" \
+  | grep -E '^[[:space:]]*-[[:space:]]+module\.' \
   | sed -E 's/^[[:space:]]*-[[:space:]]+([^[:space:]#]+).*/\1/')
 
 if [[ "${#QUEUE[@]}" -eq 0 ]]; then
@@ -138,6 +145,25 @@ if [[ -z "$next" ]]; then
   mv "$hist_tmp" "$HIST_FILE"
   exit 0
 fi
+
+# ---- Known permanent failure: skip the apply entirely ----------------------
+for kpf in "${KNOWN_PERMANENT_FAILURES[@]:-}"; do
+  if [[ "$kpf" == "$next" ]]; then
+    echo "Target is a documented permanent known issue — skipping apply, see CONTEXT.md. Growth remains blocked at this position by design."
+    record="$(jq -n --arg ts "$ts" --arg target "$next" --argjson total "${#QUEUE[@]}" \
+      --argjson applied "$applied_count" \
+      '{timestamp: $ts, status: "stalled_known_issue", next_target: $target, total_queued: $total, applied_count: $applied, note: "Documented permanent known issue — apply skipped by design. See CONTEXT.md \"Known floci limitation\" and growth-queue.yaml known_permanent_failures."}')"
+    echo "$record" | jq '.' >"$LAST_FILE"
+    hist_tmp="$(mktemp)"
+    if [[ -s "$HIST_FILE" ]] && jq -e 'type == "array"' "$HIST_FILE" >/dev/null 2>&1; then
+      jq --argjson r "$record" '. + [$r]' "$HIST_FILE" >"$hist_tmp"
+    else
+      echo "[$record]" | jq '.' >"$hist_tmp"
+    fi
+    mv "$hist_tmp" "$HIST_FILE"
+    exit 0
+  fi
+done
 
 # ---- Apply exactly one target ----------------------------------------------
 echo "Next growth target: $next"
