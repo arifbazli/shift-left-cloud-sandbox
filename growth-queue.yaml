@@ -56,6 +56,16 @@ queue:
   - module.compute.aws_ecs_cluster.main
   - module.compute.aws_ecs_task_definition.main
   - module.compute.aws_instance.app
+  # CONFIRMED FAILURE under real floci, root cause isolated (2026-08-17
+  # bisection against a standalone floci-core instance): two independent
+  # apply-time gaps, no config avoids both. With root_block_device present
+  # (any attributes, even empty), the provider's post-create "collecting
+  # instance settings" call gets an empty result from floci-core. Without
+  # it, the instance creates but immediately self-terminates instead of
+  # reaching "running". Stuck retrying this exact target every ~20 min
+  # since 2026-08-14 19:10 UTC -- see CONTEXT.md "Known floci limitation".
+  # Kept per the visible-stall-over-silent-skip design -- retried forever,
+  # not removed.
   # CONFIRMED FAILURE under real floci (2026-08-13 apply test): transitions
   # to "FAILED" state on its own — not a timeout/kill artifact. Same
   # practical outcome as moto's prior uncertainty (no regression), stated
