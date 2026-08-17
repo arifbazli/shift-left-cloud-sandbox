@@ -228,8 +228,70 @@ html, body {
   transition: background .15s, color .15s;
 }
 .cloud-nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-.cloud-nav-link.active { color: var(--teal); background: rgba(0,212,170,0.12); }
+.cloud-nav-link.active { color: var(--text); background: var(--surface); }
 .cloud-nav-link:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* ── gate banner — replaces the scan card as the single loudest element
+   on the page. Color-coded background (pass/fail), everything else on
+   the page steps back in visual weight from here. state-pass/state-fail
+   are the SAME classes setCardState() already toggles -- only the CSS
+   target (a full-width banner instead of a bordered card) changed. ── */
+.gate-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  flex-wrap: wrap;
+}
+.gate-banner.state-pass { background: var(--green-bg); border-color: var(--green-border); }
+.gate-banner.state-fail { background: var(--red-bg);   border-color: var(--red-border); }
+.gate-banner-icon { width: 22px; height: 22px; flex-shrink: 0; color: var(--text-muted); }
+.gate-banner.state-pass .gate-banner-icon { color: var(--green); }
+.gate-banner.state-fail .gate-banner-icon { color: var(--red); }
+.gate-banner .icon-fail,
+.gate-banner.state-fail .icon-pass { display: none; }
+.gate-banner.state-fail .icon-fail { display: block; }
+.gate-banner-body {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.gate-banner-headline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.gate-banner-counts {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.gate-banner-ts {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.gate-banner-ts .list-mono { color: var(--text-secondary); }
+.gate-banner-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+.gate-banner .skeleton-wrap { flex: 1; }
 
 /* Gap cards — a CONFIRMED, PERMANENT structural absence (e.g. Azure has
    no single-shot deploy). Deliberately NOT the same treatment as an
@@ -265,6 +327,108 @@ html, body {
   background: rgba(255,255,255,0.04);
   color: var(--text-secondary);
   border: 0.5px dashed var(--border-strong);
+}
+
+/* Inline gap note — Azure's permanent "no deploy" absence. Replaces the
+   old full dashed CARD (a whole grid slot) with a single quiet line: it's
+   permanent and never becomes "live," so it shouldn't compete visually
+   with the real tiles beside it. */
+.inline-gap-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.inline-gap-note .gap-icon { flex-shrink: 0; }
+
+/* ── quiet metric tiles (deploy / growth / verify) ───────────────────
+   Deliberately the opposite of a card: no border, no shadow, no status
+   pill badge -- status is already owned by the gate banner above and
+   the merged list below. A tile is a fact, not an alert. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+/* .card.tile (not .tile alone) -- .card's own border/shadow rules sit
+   later in this file and would otherwise win on source order at equal
+   specificity. The combined selector outranks .card alone regardless
+   of where either rule sits. */
+.card.tile {
+  border: none;
+  box-shadow: none;
+  background: var(--surface);
+  padding: var(--space-4) var(--space-4);
+}
+.tile .card-head { margin-bottom: var(--space-2); min-height: 0; }
+.tile-value-row { display: flex; align-items: baseline; gap: 5px; }
+.tile-value {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  display: block;
+}
+.tile-unit {
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.tile-context {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tile-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  margin-top: var(--space-2);
+  overflow: hidden;
+}
+.tile-progress-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+/* Skeletons/empty-states inside a tile shouldn't render at the old
+   card's font sizes -- keep them, just scaled down to fit. */
+.tile .skel-h { height: 20px; }
+
+/* ── merged list (drift + agent-loop) ─────────────────────────────
+   One bordered container instead of two separate cards -- drift as the
+   first row (keeps its status pill), agent-loop as the second row
+   (muted icon + status text). setCardState()/showCard() still target
+   these by the same ids (card-drift/card-agent) they always have --
+   only the CSS selector changed from ".card" to ".merged-row". */
+.merged-list {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.merged-row {
+  padding: 1.15rem 1.3rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+}
+.merged-row + .merged-row { border-top: 0.5px solid var(--border); }
+.merged-row-icon {
+  width: 14px; height: 14px; flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 /* ── card grid ─────────────────────────────────────────────── */
@@ -511,14 +675,11 @@ html, body {
   max-height: calc(1.45em * 2 + 2px);
 }
 
-/* ── findings list (grid card next to agent loop) ──── */
+/* ── findings list — bordered container (.card, unchanged), one flat
+   row per finding, sorted CRITICAL/HIGH → MEDIUM → LOW (see app.js).
+   Replaces the old per-module grouping entirely. ──────────────────── */
 .findings-wrap {
-  /* No margin-top: it's a grid item now, gap handles spacing */
   padding: 1.15rem 1.3rem;
-  /* Span 3 columns so findings stretches from agent's column to the right
-     edge of the grid (drift + findings×3 fills the second row).
-     Agent loop gets bumped up to row 1 next to verify. */
-  grid-column: span 3;
 }
 .findings-wrap.is-empty { padding: 0.8rem 1.3rem; }
 .findings-header {
@@ -533,21 +694,6 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-/* Module group header inside the findings card */
-.findings-module-group {
-  margin-bottom: 6px;
-}
-.findings-module-label {
-  font-size: 9.5px;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--teal);
-  opacity: 0.7;
-  padding: 4px 0 2px;
-  border-bottom: 0.5px solid var(--border);
-  margin-bottom: 3px;
-}
 .sev-badge {
   display: inline-block;
   font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
@@ -556,31 +702,36 @@ html, body {
 }
 .sev-badge.crit, .sev-badge.high { background: var(--red-bg);   color: var(--red);   border: 0.5px solid var(--red-border); }
 .sev-badge.med                   { background: var(--amber-bg); color: var(--amber); border: 0.5px solid var(--amber-border); }
-.sev-badge.low                   { background: rgba(255,255,255,.05); color: var(--text-muted); border: 0.5px solid var(--border); }
-.rule-id   {
-  font-family: var(--font-mono); font-size: 11px;
-  color: var(--text-secondary); white-space: nowrap;
-  padding: 2px 7px; background: rgba(255,255,255,0.04); border-radius: 3px;
-  border: 0.5px solid var(--border);
-}
-.rule-desc {
-  font-size: 12.5px; color: var(--text); flex: 1;
-  /* Allow wrapping so long descriptions don't get truncated */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
+.sev-badge.low                   { background: var(--surface); color: var(--text-muted); border: 0.5px solid var(--border); }
+.finding-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--border);
   min-width: 0;
 }
-.rule-res  {
-  font-size: 11px; font-family: var(--font-mono);
-  color: var(--text-muted); white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  max-width: 35%;
+.finding-row:last-child { border-bottom: none; }
+.finding-desc {
+  font-size: 12.5px;
+  color: var(--text);
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+/* LOW-severity rows recede visually -- text-secondary instead of the
+   full-contrast base text color, same "quiet unless it matters"
+   language used everywhere else in this redesign. */
+.finding-row.is-low .finding-desc { color: var(--text-secondary); }
+.finding-module {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 .empty-state {
   padding: 14px 0;
@@ -617,19 +768,23 @@ html, body {
 .skel-m { height: 13px; width: 80%; }
 .skel-s { height: 11px; width: 40%; }
 
-/* ── meta bar ──────────────────────────────────────────────── */
+/* ── footer — 2 collapsed lines, fully de-emphasized. Was a single
+   dense inline-flex row of 4 items; same info, quieter presentation,
+   clearly the last thing on the page. ──────────────────────────── */
 .meta-bar {
   margin-top: 14px;
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.9rem 1.3rem;
+  padding: 0.7rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+.meta-bar-line {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 32px;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
 }
 .meta-bar span {
   display: inline-flex;
@@ -643,12 +798,12 @@ html, body {
   letter-spacing: 0.04em;
 }
 .meta-val {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .meta-hint {
-  color: var(--teal);
+  color: var(--text-muted);
   font-size: 10px;
   margin-left: 2px;
   opacity: 0.7;
