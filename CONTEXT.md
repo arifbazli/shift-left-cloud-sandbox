@@ -514,6 +514,20 @@ agent.
 > Growth visibly stalling at any of the five resources above is expected,
 > not a bug in the script.
 
+> [!TIP]
+> `aws_instance.app` — **confirmed failure, root cause isolated**
+> (2026-08-17, bisected against a standalone floci-core instance, not the
+> full module graph): two independent apply-time gaps, no config avoids
+> both. `root_block_device` present (any attributes, even empty) → the
+> provider's post-create "collecting instance settings" call gets an
+> empty result from floci-core. `root_block_device` absent → the instance
+> creates but immediately self-terminates instead of reaching `running`.
+> `grow-stack.sh` has retried this exact target every ~20 min since
+> 2026-08-14 19:10 UTC, which also blocks everything queued after it
+> (`module.compute.aws_iam_role.eks_cluster` onward, all of `messaging`,
+> all of `data`) — consistent with the same visible-stall design already
+> accepted for those.
+
 ## Known floci-az limitations
 
 `floci-az` runs the real floci.io Azure emulator on `:4577` — not a stub of
@@ -964,8 +978,13 @@ surfaced two real, useful findings beyond the design question itself:
   equivalent to the other, fully organic tests above.
 
 **Open, undiagnosed items — not explained away:**
-- A `collecting instance settings: empty result` error appeared during the
-  full apply test, likely EC2-related (`aws_instance.app`), but was not
-  isolated or root-caused.
 - `terraform state list` reported 65 resources after the aborted apply
   test — three more than the 62 planned. Not investigated further.
+
+**2026-08-17 — `aws_instance.app` root-caused via bisection.** The
+`collecting instance settings: empty result` error above is no longer
+undiagnosed — see "Known floci limitation" for the isolated cause
+(`root_block_device`'s post-create describe call, plus a second,
+independent self-termination gap without it). No fix exists; documented
+as a permanent known_issue in `growth-queue.yaml`, same treatment as
+`aws_eks_cluster`.

@@ -268,11 +268,20 @@ jobs:
     name: "publish to Cloudflare Pages"
     runs-on: ubuntu-latest
     needs: deploy-local
+    # SEC_INTENT: !cancelled() (not the bare default) -- publish even if
+    # deploy-local failed partway, e.g. a stuck growth target. deploy-
+    # local's "Upload all dashboard data" step already runs on always()
+    # and still produces fresh scan/verify/drift/agent-loop data even when
+    # grow-stack.sh fails. A stuck queue should never again silently stop
+    # the live dashboard from getting everything else it CAN publish.
+    # Never publish after an explicit cancellation, though.
     if: >
-      github.event_name == 'push' && github.ref == 'refs/heads/main' ||
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'repository_dispatch'
+      !cancelled() && (
+        github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'repository_dispatch'
+      )
 
     permissions:
       contents: read
